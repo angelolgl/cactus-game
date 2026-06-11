@@ -1,0 +1,1778 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🌵 Cactus</title>
+<style>
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap');
+:root{
+  --felt:#1a5c35;--felt-dark:#0d3520;--felt-light:#236b40;
+  --gold:#d4a84b;--gold-light:#f0c96e;
+  --card-bg:#fdf8f0;--card-border:#c8b898;
+  --red:#c0392b;--black:#1a1a1a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Inter',sans-serif;background:var(--felt-dark);color:white;font-size:14px;position:relative}
+.screen{position:fixed;inset:0;display:none;z-index:1}
+.screen.active{display:flex}
+
+/* ─── SETUP ─── */
+#s-setup{flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:24px;overflow-y:auto}
+.logo{text-align:center}
+.logo-cactus{font-size:60px;filter:drop-shadow(0 4px 16px rgba(0,0,0,.5))}
+.logo h1{font-family:'Playfair Display',serif;font-size:52px;color:var(--gold-light);letter-spacing:.1em;text-shadow:0 2px 12px rgba(0,0,0,.5)}
+.logo p{color:rgba(255,255,255,.4);font-size:12px;letter-spacing:.15em;text-transform:uppercase;margin-top:2px}
+.setup-panel{background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:24px;width:100%;max-width:440px;backdrop-filter:blur(6px)}
+.slabel{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:10px}
+.row-btns{display:flex;gap:8px;flex-wrap:wrap}
+.cbtn{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:10px;color:white;padding:9px 18px;font-size:15px;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;font-weight:500}
+.cbtn:hover{background:rgba(255,255,255,.14);border-color:var(--gold)}
+.cbtn.sel{background:var(--gold);border-color:var(--gold-light);color:#1a1a1a;font-weight:700}
+.name-grid{display:grid;gap:8px;margin-top:6px}
+.ninput{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:white;padding:9px 13px;font-size:14px;font-family:'Inter',sans-serif;width:100%;outline:none;transition:border-color .2s}
+.ninput:focus{border-color:var(--gold)}
+.ninput::placeholder{color:rgba(255,255,255,.3)}
+.start-btn{width:100%;max-width:440px;background:linear-gradient(135deg,var(--gold),var(--gold-light));border:none;border-radius:13px;color:#1a1a1a;font-size:17px;font-weight:700;padding:16px;cursor:pointer;font-family:'Inter',sans-serif;box-shadow:0 4px 20px rgba(212,168,75,.4);transition:all .2s}
+.start-btn:hover{transform:translateY(-2px);box-shadow:0 6px 28px rgba(212,168,75,.5)}
+
+/* ─── PEEK ─── */
+#s-peek{flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:24px}
+.peek-box{background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:28px 32px;max-width:560px;width:100%;text-align:center}
+.peek-box h2{font-family:'Playfair Display',serif;font-size:24px;color:var(--gold-light);margin-bottom:6px}
+.peek-box .sub{color:rgba(255,255,255,.45);font-size:13px;margin-bottom:22px}
+.peek-cards{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;min-height:130px}
+.peek-btn{margin-top:20px;background:linear-gradient(135deg,var(--gold),var(--gold-light));border:none;border-radius:10px;color:#1a1a1a;font-size:15px;font-weight:700;padding:12px 32px;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;opacity:0;pointer-events:none}
+.peek-btn.on{opacity:1;pointer-events:all}
+.peek-btn:hover{transform:translateY(-2px)}
+
+/* ─── GAME ─── */
+#s-game{flex-direction:column;padding:10px 12px;gap:8px;overflow:hidden}
+.g-header{display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.g-title{font-family:'Playfair Display',serif;font-size:20px;color:var(--gold-light)}
+.g-btns{display:flex;gap:6px}
+.gbtn{background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:white;font-size:12px;padding:6px 13px;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s}
+.gbtn:hover{border-color:var(--gold)}
+.gbtn.cactus{border-color:#27ae60;color:#2ecc71;background:rgba(39,174,96,.15)}
+.gbtn.cactus:hover{background:rgba(39,174,96,.3)}
+.g-banner{background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:8px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.g-dot{width:8px;height:8px;border-radius:50%;background:#2ecc71;box-shadow:0 0 0 0 rgba(46,204,113,.6);animation:pulse 1.4s infinite;flex-shrink:0}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(46,204,113,.6)}70%{box-shadow:0 0 0 7px rgba(46,204,113,0)}100%{box-shadow:0 0 0 0 rgba(46,204,113,0)}}
+.g-playername{font-size:16px;font-weight:600;color:var(--gold-light)}
+.g-instruction{font-size:12px;color:rgba(255,255,255,.45);margin-top:1px}
+.g-log{font-size:11px;color:rgba(255,255,255,.4);min-height:28px;max-height:44px;overflow:hidden;line-height:1.7;flex-shrink:0}
+.table-zone{display:flex;align-items:center;justify-content:center;gap:20px;flex-shrink:0;flex-wrap:wrap;padding:4px 0}
+.plabel{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:5px;text-align:center}
+.draw-count{font-size:10px;color:rgba(255,255,255,.3);margin-top:3px;text-align:center}
+.pile-wrap{text-align:center}
+.action-area{display:flex;flex-direction:column;gap:7px;min-width:150px;max-width:180px}
+.abtn{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.15);border-radius:9px;color:white;font-size:13px;font-weight:500;padding:9px 14px;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;text-align:left}
+.abtn:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.3)}
+.abtn.gold{background:rgba(212,168,75,.2);border-color:var(--gold);color:var(--gold-light)}
+.abtn.gold:hover{background:rgba(212,168,75,.35)}
+.power-note{background:rgba(212,168,75,.12);border:1px solid rgba(212,168,75,.3);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--gold-light)}
+.players-area{display:flex;flex-direction:column;gap:8px;flex:1;overflow-y:auto;min-height:0}
+.prow{background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:10px 12px;transition:border-color .3s,background .3s;flex-shrink:0}
+.prow.active{background:rgba(0,0,0,.35);border-color:rgba(212,168,75,.45);box-shadow:0 0 18px rgba(212,168,75,.08)}
+.prow-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.prow-name{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:600}
+.adot{width:7px;height:7px;border-radius:50%;background:#2ecc71;box-shadow:0 0 5px #2ecc71;flex-shrink:0}
+.cbadge{font-size:10px;background:rgba(255,255,255,.1);border-radius:20px;padding:2px 8px;color:rgba(255,255,255,.45)}
+.pscore{font-size:12px;color:rgba(255,255,255,.35)}
+.phand{display:flex;gap:7px;flex-wrap:wrap;align-items:flex-end;min-height:100px}
+
+/* ─── CARDS ─── */
+.card{
+  width:65px;height:94px;border-radius:9px;
+  display:inline-flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;position:relative;flex-shrink:0;
+  user-select:none;
+  /* 3D flip support */
+  transform-style:preserve-3d;
+  transition:transform .5s ease,box-shadow .18s ease;
+  perspective:600px;
+}
+/* Back face */
+.card-inner{
+  width:100%;height:100%;border-radius:9px;
+  position:relative;transform-style:preserve-3d;
+  transition:transform .5s ease;
+}
+.card.flipped .card-inner{transform:rotateY(180deg)}
+.card-face-back,.card-face-front{
+  position:absolute;top:0;left:0;right:0;bottom:0;
+  width:100%;height:100%;
+  border-radius:9px;
+  backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+}
+.card-face-front{transform:rotateY(180deg)}
+
+/* BACK DESIGN — cactus desert SVG */
+.card-face-back{
+  background:#0f3020;
+  border:none;
+  overflow:hidden;
+}
+.card-back-svg{width:100%;height:100%;position:absolute;inset:0}
+
+/* FRONT DESIGN */
+.card-face-front{
+  background:var(--card-bg);
+  border:1.5px solid var(--card-border);
+  box-shadow:0 4px 14px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.8);
+  flex-direction:column;
+}
+.card-face-front.imgcard{
+  background:transparent!important;
+  border:none!important;
+  box-shadow:none!important;
+}
+.card-face-front.r{color:var(--red)}
+.card-face-front:not(.r){color:var(--black)}
+.cv-tl{position:absolute;top:5px;left:7px;font-size:12px;font-weight:800;line-height:1.1;text-align:left}
+.cv-br{position:absolute;bottom:5px;right:7px;font-size:12px;font-weight:800;line-height:1.1;text-align:right;transform:rotate(180deg)}
+.cs-mid{font-size:24px;line-height:1;position:relative;z-index:2}
+.card-bg-pattern{position:absolute;inset:0;opacity:.06;pointer-events:none}
+
+/* Face cards (J Q K) */
+.face-img{width:44px;height:58px;object-fit:contain;position:relative;z-index:2;border-radius:3px}
+
+/* Selected / glow states */
+.card.selected .card-inner{box-shadow:0 0 0 3px var(--gold),0 8px 20px rgba(0,0,0,.4)}
+.card:hover{transform:translateY(-5px)}
+
+
+/* Draw stack */
+.draw-wrap{position:relative;width:65px;height:94px;cursor:pointer}
+.draw-wrap .card{position:absolute;top:0;left:0;transition:none}
+.draw-wrap .card:nth-child(1){transform:translate(3px,3px);opacity:.45}
+.draw-wrap .card:nth-child(2){transform:translate(1.5px,1.5px);opacity:.7}
+.draw-wrap .card:nth-child(3){transform:translate(0,0);opacity:1}
+
+/* ─── FLY LAYER ─── */
+#fly-layer{position:fixed;inset:0;pointer-events:none;z-index:500}
+.fly-card{position:absolute;border-radius:9px;overflow:hidden}
+
+/* ─── COUNTDOWN (small, top-right) ─── */
+#countdown-overlay{
+  position:fixed;top:10px;right:12px;z-index:400;pointer-events:none;
+  opacity:0;transition:opacity .3s;
+}
+#countdown-overlay.show{opacity:1}
+.countdown-pill{
+  background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.18);
+  border-radius:20px;padding:4px 12px;
+  font-size:12px;color:rgba(255,255,255,.55);
+  display:flex;align-items:center;gap:6px;
+  transition:border-color .3s,box-shadow .3s;
+}
+.countdown-pill.urgent{
+  border-color:rgba(255,60,60,.7);
+  box-shadow:0 0 8px rgba(255,60,60,.5);
+  animation:urgentPulse 0.5s ease infinite alternate;
+}
+@keyframes urgentPulse{
+  from{box-shadow:0 0 4px rgba(255,60,60,.4);}
+  to{box-shadow:0 0 14px rgba(255,60,60,.8);}
+}
+.countdown-num{font-size:13px;font-weight:700;color:var(--gold-light);min-width:14px;text-align:center}
+.countdown-num.urgent{color:#ff4444;}
+.cactus-announce-btn{display:none}
+
+/* ─── MODAL ─── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:800;backdrop-filter:blur(5px);animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal-box{background:linear-gradient(150deg,#1e4a2e,#0f2c1a);border:1px solid rgba(212,168,75,.3);border-radius:20px;padding:28px 32px;max-width:380px;width:90%;text-align:center;animation:slideUp .25s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes slideUp{from{transform:translateY(24px) scale(.95);opacity:0}to{transform:none;opacity:1}}
+.modal-box h3{font-family:'Playfair Display',serif;font-size:24px;color:var(--gold-light);margin-bottom:10px}
+.modal-box p{color:rgba(255,255,255,.6);font-size:14px;line-height:1.65;margin-bottom:18px}
+.modal-card-wrap{display:inline-block;margin:10px auto;animation:flipIn .4s ease .1s both}
+@keyframes flipIn{0%{transform:rotateY(90deg) scale(.8)}100%{transform:rotateY(0)}}
+.mbtn-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.mbtn{background:linear-gradient(135deg,var(--gold),var(--gold-light));border:none;border-radius:10px;color:#1a1a1a;font-size:14px;font-weight:700;padding:11px 24px;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s}
+.mbtn:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(212,168,75,.4)}
+.mbtn.sec{background:rgba(255,255,255,.1);color:white;border:1px solid rgba(255,255,255,.2)}
+.mbtn.sec:hover{background:rgba(255,255,255,.18);box-shadow:none;transform:none}
+
+/* ─── SCORE / FINAL ─── */
+#s-score,#s-final{flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;overflow-y:auto}
+.sc-card{background:rgba(0,0,0,.35);border:1px solid rgba(212,168,75,.2);border-radius:20px;padding:24px 28px;width:100%;max-width:480px}
+.sc-card h2{font-family:'Playfair Display',serif;color:var(--gold-light);font-size:26px;text-align:center;margin-bottom:16px}
+.sc-row{display:flex;align-items:flex-start;justify-content:space-between;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.07);gap:12px}
+.sc-row:last-child{border:none}
+.sc-name{font-size:15px;font-weight:600}
+.sc-tags{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
+.sc-tag{font-size:10px;background:rgba(255,255,255,.08);border-radius:3px;padding:1px 6px;color:rgba(255,255,255,.45)}
+.sc-pts{text-align:right}
+.sc-r{font-size:20px;font-weight:700;color:var(--gold-light)}
+.sc-t{font-size:11px;color:rgba(255,255,255,.35)}
+.sc-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.sc-btn{background:linear-gradient(135deg,var(--gold),var(--gold-light));border:none;border-radius:12px;color:#1a1a1a;font-size:15px;font-weight:700;padding:13px 26px;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;box-shadow:0 4px 16px rgba(212,168,75,.3)}
+.sc-btn:hover{transform:translateY(-2px);box-shadow:0 6px 22px rgba(212,168,75,.45)}
+.sc-btn.sec{background:rgba(255,255,255,.1);color:white;border:1px solid rgba(255,255,255,.2);box-shadow:none}
+.sc-btn.sec:hover{background:rgba(255,255,255,.18);box-shadow:none}
+.snap-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:rgba(0,0,0,.8);border:1px solid var(--gold);border-radius:10px;padding:10px 20px;font-size:13px;color:var(--gold-light);z-index:600;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap}
+.snap-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@keyframes dealIn{from{opacity:0;transform:translateY(-30px) scale(.75) rotate(-6deg)}to{opacity:1;transform:none}}
+@keyframes penaltyIn{from{transform:translateX(30px) scale(.7);opacity:0}to{transform:none;opacity:1}}
+
+
+/* ── LOBBY ── */
+#s-lobby{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:24px;overflow-y:auto}
+.lobby-box{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:24px;width:100%;max-width:440px;text-align:center}
+.lobby-box h2{font-family:'Playfair Display',serif;font-size:22px;color:var(--gold-light);margin-bottom:16px}
+.lobby-code{font-family:'Playfair Display',serif;font-size:42px;color:var(--gold-light);letter-spacing:.15em;text-shadow:0 2px 8px rgba(0,0,0,.5);margin:12px 0}
+.lobby-players{display:flex;flex-direction:column;gap:8px;margin:16px 0;min-height:60px}
+.lobby-player{background:rgba(255,255,255,.08);border-radius:8px;padding:8px 14px;font-size:14px;display:flex;align-items:center;gap:8px}
+.lobby-player.host::after{content:'👑';margin-left:auto}
+.error-msg{color:#e74c3c;font-size:13px;margin-top:8px;min-height:20px}
+.waiting-msg{color:rgba(255,255,255,.4);font-size:13px;margin-top:8px}
+</style>
+</head>
+<body>
+<div id="fly-layer"></div>
+<div id="modal-root"></div>
+<div id="toast" class="snap-toast"></div>
+<div id="countdown-overlay">
+  <div class="countdown-pill">
+    <span id="cd-text">suivant dans</span>
+    <span class="countdown-num" id="cd-num">3</span>
+  </div>
+</div>
+
+<!-- LOBBY -->
+<div id="s-lobby" class="screen active">
+  <div class="logo">
+    <div class="logo-cactus">🌵</div>
+    <h1>CACTUS</h1>
+    <p>Jeu de cartes en ligne</p>
+  </div>
+  <div class="lobby-box" id="lobby-main">
+    <h2>Rejoindre ou créer</h2>
+    <input class="ninput" id="player-name" placeholder="Votre prénom" maxlength="20" style="margin-bottom:12px">
+    <div style="display:flex;gap:10px;margin-bottom:12px">
+      <input class="ninput" id="room-code" placeholder="Code (ex: AB12)" maxlength="4" style="text-transform:uppercase;text-align:center;font-size:18px;letter-spacing:.1em">
+      <button class="start-btn" style="padding:0 16px;font-size:14px" onclick="joinRoom()">Rejoindre</button>
+    </div>
+    <div style="color:rgba(255,255,255,.3);font-size:12px;margin:8px 0">— ou —</div>
+    <button class="start-btn" onclick="showCreate()">Créer une partie</button>
+    <div class="error-msg" id="lobby-error"></div>
+  </div>
+  
+  <!-- Create room panel -->
+  <div class="lobby-box" id="lobby-create" style="display:none">
+    <h2>Nouvelle partie</h2>
+    <div style="margin-bottom:14px">
+      <div class="slabel">Cartes par joueur</div>
+      <div class="row-btns" id="lobby-cc-btns" style="justify-content:center">
+        <button class="cbtn cbc sel" data-c="4">4</button>
+        <button class="cbtn cbc" data-c="5">5</button>
+        <button class="cbtn cbc" data-c="6">6</button>
+        <button class="cbtn cbc" data-c="7">7</button>
+        <button class="cbtn cbc" data-c="8">8</button>
+      </div>
+    </div>
+    <button class="start-btn" onclick="createRoom()">Créer →</button>
+    <div style="margin-top:10px"><button class="cbtn" onclick="hideCreate()" style="width:100%">← Retour</button></div>
+    <div class="error-msg" id="create-error"></div>
+  </div>
+  
+  <!-- Waiting room -->
+  <div class="lobby-box" id="lobby-waiting" style="display:none">
+    <h2>Salle d'attente</h2>
+    <div class="lobby-code" id="lobby-code-display">----</div>
+    <p style="color:rgba(255,255,255,.4);font-size:12px">Partagez ce code avec vos amis</p>
+    <div class="lobby-players" id="lobby-players-list"></div>
+    <button class="start-btn" id="btn-start-game" style="display:none" onclick="startGame()">Lancer la partie →</button>
+    <div class="waiting-msg" id="waiting-msg">En attente d'autres joueurs...</div>
+  </div>
+</div>
+
+<!-- PEEK -->
+<div id="s-peek" class="screen">
+  <div class="peek-box">
+    <h2 id="peek-h">Mémorisez 2 cartes</h2>
+    <div class="sub">Cliquez sur 2 cartes pour les retourner</div>
+    <div class="peek-cards" id="peek-cards"></div>
+    <button class="peek-btn" id="btn-peek-ok">J'ai mémorisé →</button>
+  </div>
+</div>
+
+<!-- GAME -->
+<div id="s-game" class="screen">
+  <div class="g-header">
+    <div class="g-title">🌵 Cactus</div>
+    <div class="g-btns">
+      <button class="gbtn cactus" id="btn-cactus">🌵 Cactus !</button>
+      <button class="gbtn" id="btn-rules">Règles</button>
+      <button class="gbtn" id="btn-debug" style="font-size:10px;opacity:0.5" onclick="window.DEBUG_LABELS=!window.DEBUG_LABELS;renderPlayers();this.style.opacity=window.DEBUG_LABELS?1:0.5">🏷️</button>
+    </div>
+  </div>
+  <div class="g-banner">
+    <div class="g-dot"></div>
+    <div><div class="g-playername" id="g-name">—</div><div class="g-instruction" id="g-instr">En attente...</div></div>
+  </div>
+  <div class="g-log" id="g-log"></div>
+  <div class="power-banner" id="power-banner"></div>
+  <div class="table-zone">
+    <div class="pile-wrap">
+      <div class="plabel">Pioche</div>
+      <div class="draw-wrap" id="draw-wrap"></div>
+      <div class="draw-count" id="draw-count"></div>
+    </div>
+    <div class="pile-wrap">
+      <div class="plabel">Défausse</div>
+      <div id="discard-slot"></div>
+    </div>
+    <div class="action-area" id="action-area"></div>
+  </div>
+  <div class="players-area" id="players-area"></div>
+</div>
+
+<!-- SCORE -->
+<div id="s-score" class="screen">
+  <div style="font-size:44px;text-align:center">🏆</div>
+  <div class="sc-card"><h2 id="sc-title">Fin de manche</h2><div id="sc-rows"></div></div>
+  <div class="sc-btns">
+    <button class="sc-btn" id="btn-newround">Nouvelle manche →</button>
+    <button class="sc-btn sec" id="btn-endgame">Terminer</button>
+  </div>
+</div>
+
+<!-- FINAL -->
+<div id="s-final" class="screen">
+  <div style="font-size:56px;text-align:center">🌵🏆🌵</div>
+  <div class="sc-card"><h2>Fin de partie !</h2><div id="fin-rows"></div></div>
+  <button class="sc-btn" id="btn-newgame">Nouvelle partie →</button>
+</div>
+
+<script src="/images1.js"></script>
+<script src="/images2.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+// ══ CLIENT STATE ══
+let socket;
+let myIndex = -1;
+let myRoom = '';
+let selectedCardCount = 4;
+let G = null; // received from server
+let peekSel = [];
+
+// ══ SOCKET INIT ══
+function initSocket() {
+  socket = io();
+
+  socket.on('roomCreated', ({code, playerIndex}) => {
+    myIndex = playerIndex;
+    myRoom = code;
+    showWaiting(code, true);
+  });
+
+  socket.on('roomJoined', ({code, playerIndex}) => {
+    myIndex = playerIndex;
+    myRoom = code;
+    showWaiting(code, false);
+  });
+
+  socket.on('lobbyUpdate', ({players, host}) => {
+    updateLobbyPlayers(players, host);
+  });
+
+  socket.on('gameStarted', () => {
+    peekSel = [];
+    show('peek');
+  });
+
+  socket.on('gameState', (state) => {
+    G = state;
+    updateGame(state);
+  });
+
+  socket.on('revealCard', ({card, reason}) => {
+    showRevealModal(card, () => {});
+  });
+
+  socket.on('wrongSnap', ({playerIndex, card}) => {
+    if (playerIndex === myIndex) {
+      showWrongSnapModal(card, () => {});
+    }
+  });
+
+  socket.on('error', (msg) => {
+    showToast('⚠️ ' + msg);
+    document.getElementById('lobby-error').textContent = msg;
+    document.getElementById('create-error').textContent = msg;
+  });
+}
+
+// ══ LOBBY ══
+let selectedCC = 4;
+document.getElementById('lobby-cc-btns')?.querySelectorAll('.cbc').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#lobby-cc-btns .cbc').forEach(x => x.classList.remove('sel'));
+    b.classList.add('sel');
+    selectedCC = +b.dataset.c;
+  });
+});
+
+document.getElementById('room-code').addEventListener('input', e => {
+  e.target.value = e.target.value.toUpperCase();
+});
+
+function showCreate() {
+  document.getElementById('lobby-main').style.display = 'none';
+  document.getElementById('lobby-create').style.display = 'block';
+}
+function hideCreate() {
+  document.getElementById('lobby-create').style.display = 'none';
+  document.getElementById('lobby-main').style.display = 'block';
+}
+
+function getName() {
+  return document.getElementById('player-name').value.trim() || 'Joueur';
+}
+
+function createRoom() {
+  initSocket();
+  socket.emit('createRoom', { name: getName(), cardCount: selectedCC });
+}
+
+function joinRoom() {
+  const code = document.getElementById('room-code').value.trim().toUpperCase();
+  if (!code) { document.getElementById('lobby-error').textContent = 'Entrez un code'; return; }
+  initSocket();
+  socket.emit('joinRoom', { code, name: getName() });
+}
+
+function showWaiting(code, isHost) {
+  document.getElementById('lobby-main').style.display = 'none';
+  document.getElementById('lobby-create').style.display = 'none';
+  document.getElementById('lobby-waiting').style.display = 'block';
+  document.getElementById('lobby-code-display').textContent = code;
+  document.getElementById('btn-start-game').style.display = isHost ? 'block' : 'none';
+}
+
+function updateLobbyPlayers(players, host) {
+  const list = document.getElementById('lobby-players-list');
+  list.innerHTML = players.map((name, i) => {
+    const isHost = i === 0;
+    return `<div class="lobby-player${isHost?' host':''}">
+      <span>${i+1}.</span><strong>${name}</strong>
+      ${isHost?'<span style="margin-left:auto;font-size:11px;color:var(--gold-light)">Hôte</span>':''}
+    </div>`;
+  }).join('');
+}
+
+function startGame() {
+  socket.emit('startGame', { code: myRoom });
+}
+
+// ══ PEEK ══
+function renderPeek(hand) {
+  const row = document.getElementById('peek-cards');
+  row.innerHTML = '';
+  hand.forEach((c, i) => {
+    const sel = peekSel.includes(i);
+    const el = mkCardEl(c, {flipped: sel, selected: sel});
+    el.addEventListener('click', () => {
+      if (peekSel.includes(i)) peekSel = peekSel.filter(x => x !== i);
+      else if (peekSel.length < 2) peekSel.push(i);
+      renderPeek(hand);
+    });
+    row.appendChild(el);
+  });
+  document.getElementById('btn-peek-ok').classList.toggle('on', peekSel.length === 2);
+}
+
+document.getElementById('btn-peek-ok').addEventListener('click', () => {
+  socket.emit('peekDone', { code: myRoom });
+  show('game');
+});
+
+// ══ GAME RENDER ══
+function updateGame(state) {
+  if (!state) return;
+  G = state;
+  const isMyTurn = state.cur === myIndex;
+  const me = state.players[myIndex];
+
+  // Update header
+  const turnPlayer = state.players[state.cur];
+  document.getElementById('g-name').textContent = isMyTurn ? '🎴 Votre tour' : `🎴 Tour de ${turnPlayer.name}`;
+  document.getElementById('g-instr').textContent = getInstruction(state, isMyTurn);
+
+  // Render log
+  const logEl = document.getElementById('g-log');
+  logEl.innerHTML = (state.log||[]).slice(0,4).map((l,i)=>
+    `<span style="opacity:${1-i*.22}">${l}</span>`).join(' · ');
+
+  renderDiscard(state, isMyTurn);
+  renderDrawPile(state, isMyTurn);
+  renderActions(state, isMyTurn);
+  renderPlayers(state);
+
+  // Handle peek if needed
+  if (state.phase === 'peek' && me?.hand) {
+    renderPeek(me.hand);
+    show('peek');
+    return;
+  }
+  if (state.phase === 'score') { renderScore(state); return; }
+  show('game');
+}
+
+function getInstruction(state, isMyTurn) {
+  if (!isMyTurn) return `Tour de ${state.players[state.cur].name}...`;
+  if (state.sevenP) return 'Cliquez sur une de vos cartes pour la regarder';
+  if (state.jackP) {
+    const s = state.jackTimerStep;
+    if (s==='decide') return '🃏 Utiliser le pouvoir ou ignorer';
+    if (s==='pick1') return '🃏 Choisissez la 1ère carte';
+    if (s==='pick2') return '🃏 Choisissez la 2ème carte';
+  }
+  if (state.phase==='drawn') return 'Défaussez ou échangez';
+  if (state.phase==='exchange') return 'Cliquez sur une de vos cartes';
+  return 'Piochez ou prenez la défausse';
+}
+
+function renderDiscard(state, isMyTurn) {
+  const slot = document.getElementById('discard-slot');
+  slot.innerHTML = '';
+  if (state.discardEmpty || !state.discard) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'width:65px;height:94px;border-radius:9px;border:2px dashed rgba(255,255,255,.2);opacity:.5';
+    slot.appendChild(empty);
+    return;
+  }
+  const top = state.discard;
+  const el = mkFrontEl(top);
+  el.id = 'discard-card';
+  const noTake = ['7','J'];
+  if (isMyTurn && state.phase === 'draw' && !noTake.includes(top.value)) {
+    el.style.cursor = 'pointer';
+    el.addEventListener('click', () => socket.emit('takeDiscard', { code: myRoom }));
+  } else if (isMyTurn && state.phase === 'exchange') {
+    el.style.cursor = 'pointer';
+    el.style.boxShadow = '0 0 0 2px rgba(212,168,75,.5)';
+    el.addEventListener('click', () => socket.emit('cancelExchange', { code: myRoom }));
+  }
+  slot.appendChild(el);
+}
+
+function renderDrawPile(state, isMyTurn) {
+  document.getElementById('draw-count').textContent = state.deckCount + ' cartes';
+  const dw = document.getElementById('draw-wrap');
+  if (!dw.children.length) {
+    dw.innerHTML = '';
+    for (let i = 0; i < 3; i++) {
+      const c = document.createElement('div'); c.className = 'card';
+      if (i === 2) c.id = 'draw-top';
+      c.innerHTML = `<div class="card-inner"><div class="card-face-back"><img src="${BACK_IMG}" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;border-radius:9px;"></div><div class="card-face-front"></div></div>`;
+      dw.appendChild(c);
+    }
+  }
+  if (isMyTurn && state.phase === 'draw') {
+    dw.style.cursor = 'pointer';
+    dw.onclick = () => socket.emit('draw', { code: myRoom });
+  } else {
+    dw.style.cursor = 'default';
+    dw.onclick = null;
+  }
+}
+
+function renderActions(state, isMyTurn) {
+  const area = document.getElementById('action-area');
+  area.innerHTML = '';
+
+  if (state.drawn && state.phase === 'drawn' && isMyTurn) {
+    const lbl2 = document.createElement('div'); lbl2.className='plabel'; lbl2.textContent='Carte piochée';
+    area.appendChild(lbl2);
+    const cf = mkFrontEl(state.drawn); cf.id='drawn-card-el'; area.appendChild(cf);
+    const db = document.createElement('button'); db.className='abtn'; db.textContent='🗑 Défausser';
+    db.onclick = () => socket.emit('discardDrawn', { code: myRoom });
+    const eb = document.createElement('button'); eb.className='abtn gold'; eb.textContent='🔄 Échanger';
+    eb.onclick = () => { G.phase='exchange'; renderActions(state, isMyTurn); };
+    area.appendChild(db); area.appendChild(eb);
+  } else if (state.sevenP && isMyTurn) {
+    const pn = document.createElement('div'); pn.className='power-note';
+    pn.innerHTML='🔮 <b>7</b> — Cliquez sur une de vos cartes'; area.appendChild(pn);
+    const sk = document.createElement('button'); sk.className='abtn'; sk.textContent='⏭ Ignorer';
+    sk.onclick = () => socket.emit('sevenSkip', { code: myRoom });
+    area.appendChild(sk);
+  } else if (state.jackP) {
+    const s = state.jackTimerStep;
+    const pn = document.createElement('div'); pn.className='power-note';
+    const jackOwnerName = state.jackOwner !== null ? state.players[state.jackOwner]?.name : '?';
+    const isJackOwner = state.jackOwner === myIndex;
+    if (s==='decide') {
+      pn.innerHTML=`🃏 <b>Valet</b> de <b>${jackOwnerName}</b>`;
+      area.appendChild(pn);
+      if (isJackOwner) {
+        const useBtn = document.createElement('button'); useBtn.className='abtn gold';
+        useBtn.textContent='⚡ Utiliser le pouvoir';
+        useBtn.onclick = () => socket.emit('jackActivate', { code: myRoom });
+        area.appendChild(useBtn);
+        const sk = document.createElement('button'); sk.className='abtn'; sk.textContent='⏭ Ignorer';
+        sk.onclick = () => socket.emit('jackIgnore', { code: myRoom });
+        area.appendChild(sk);
+      }
+    } else if (s==='pick1'||s==='pick2') {
+      if (s==='pick1') pn.innerHTML='🃏 Choisissez la 1ère carte';
+      else {
+        const sel = state.jackSel[0];
+        pn.innerHTML=`🃏 Choisissez la 2ème carte<br><small style="color:rgba(255,255,255,.5)">${sel?state.players[sel.p].name+' #'+(sel.i+1):''}</small>`;
+      }
+      area.appendChild(pn);
+      if (isJackOwner && s==='pick2' && state.jackSel.length===2) {
+        const cb = document.createElement('button'); cb.className='abtn gold';
+        cb.textContent='✅ Confirmer';
+        cb.onclick = () => socket.emit('jackConfirm', { code: myRoom });
+        area.appendChild(cb);
+      }
+      if (isJackOwner) {
+        const sk = document.createElement('button'); sk.className='abtn'; sk.textContent='⏭ Annuler';
+        sk.onclick = () => socket.emit('jackIgnore', { code: myRoom });
+        area.appendChild(sk);
+      }
+    }
+  }
+}
+
+function renderPlayers(state) {
+  const area = document.getElementById('players-area');
+  area.innerHTML = '';
+  state.players.forEach((pl, pi) => {
+    const isActive = pi === state.cur;
+    const isMe = pi === myIndex;
+    const row = document.createElement('div');
+    row.className = 'prow' + (isActive?' active':'');
+    row.innerHTML = `<div class="prow-header">
+      <div class="prow-name">${isActive?'<div class="adot"></div>':''}
+        ${isMe?'<span style="color:var(--gold-light)">Vous</span>':pl.name}
+        <span class="cbadge">${pl.cardCount}🃏</span>
+        ${state.cactusRound&&pi===state.cactusPl?'<span style="color:#2ecc71;font-size:11px">🌵</span>':''}
+      </div>
+      <span class="pscore">${state.totals?.[pi]||0} pts</span>
+    </div>`;
+    const hand = document.createElement('div'); hand.className='phand'; hand.id=`hand-${pi}`;
+    if (pl.hand) {
+      pl.hand.forEach((c, ci) => {
+        const inJack = state.jackSel?.some(s=>s.p===pi&&s.i===ci);
+        const isRevealed = !c.hidden;
+        const el = isRevealed ? mkCardEl(c,{flipped:true,selected:inJack}) : mkCardEl({value:'?',suit:'?',uid:-1},{flipped:false,selected:inJack});
+        el.addEventListener('click', () => onCardClick(pi, ci, c, state));
+        hand.appendChild(el);
+      });
+    }
+    row.appendChild(hand); area.appendChild(row);
+  });
+}
+
+function onCardClick(pi, ci, card, state) {
+  if (!G) return;
+  const isMe = pi === myIndex;
+  const isMyTurn = G.cur === myIndex;
+  const isJackOwner = G.jackOwner === myIndex;
+
+  // SEVEN: look at own card
+  if (G.sevenP && isMyTurn && isMe) {
+    socket.emit('sevenLook', { code: myRoom, cardIndex: ci });
+    return;
+  }
+
+  // JACK pick
+  if (G.jackP && G.jackActivated && isJackOwner) {
+    socket.emit('jackPick', { code: myRoom, playerIndex: pi, cardIndex: ci });
+    return;
+  }
+
+  // EXCHANGE: click own card
+  if (G.phase === 'exchange' && isMyTurn && isMe) {
+    socket.emit('exchange', { code: myRoom, cardIndex: ci });
+    return;
+  }
+
+  // SNAP: own cards only
+  const snapPhases = ['draw','drawn'];
+  if (G.phase==='jack'&&G.jackTimerStep==='decide') snapPhases.push('jack');
+  if (snapPhases.includes(G.phase) && isMe) {
+    socket.emit('snap', { code: myRoom, cardIndex: ci });
+  }
+}
+
+// ── Score ──
+function renderScore(state) {
+  show('score');
+  document.getElementById('sc-title').textContent = `Manche ${state.round} — Résultats`;
+  // Will be populated from server data
+  document.getElementById('sc-rows').innerHTML = '<p style="color:rgba(255,255,255,.5);text-align:center">Résultats reçus du serveur</p>';
+  document.getElementById('btn-newround').style.display = myIndex === 0 ? 'block' : 'none';
+}
+
+document.getElementById('btn-newround')?.addEventListener('click', () => {
+  socket.emit('nextRound', { code: myRoom });
+});
+document.getElementById('btn-endgame')?.addEventListener('click', () => show('final'));
+document.getElementById('btn-newgame')?.addEventListener('click', () => { show('s-lobby'); location.reload(); });
+
+// ── Cactus ──
+document.getElementById('btn-cactus')?.addEventListener('click', () => {
+  if (!G || G.phase !== 'draw' || G.cur !== myIndex) return;
+  socket.emit('cactus', { code: myRoom });
+});
+
+// ── Rules ──
+document.getElementById('btn-rules')?.addEventListener('click', () => {
+  qid('modal-root').innerHTML=`<div class="modal-bg"><div class="modal-box">
+    <h3>📖 Règles</h3>
+    <p style="text-align:left;font-size:12px;line-height:1.9">
+    <b>Tour :</b> Pioche ou prend la défausse (sauf 7/Valet). Défausse ou échange.<br>
+    <b>Snap ⚡ :</b> Cliquez sur une de vos cartes pour snap la défausse.<br>
+    <b>7</b> → Regardez une de vos cartes<br>
+    <b>Valet</b> → Échangez 2 cartes entre joueurs différents<br>
+    <b>Points :</b> A=1 · 2–8=valeur · ♠♣9=14 · ♥♦9=−2 · 10=10 · V=11 · D=12 · R=0<br>
+    <b>Cactus 🌵 :</b> Annoncez. Score doublé si >5 pts ou adversaire a moins.<br>
+    <b>Fin :</b> Éliminé à 100 pts.
+    </p>
+    <div class="mbtn-row"><button class="mbtn" id="m-ok">Compris !</button></div>
+  </div></div>`;
+  qid('m-ok').addEventListener('click',()=>qid('modal-root').innerHTML='');
+});
+
+// ══ HELPERS ══
+const qid = id => document.getElementById(id);
+const show = id => {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const el = document.getElementById('s-'+id) || document.getElementById(id);
+  if (el) el.classList.add('active');
+};
+
+let countdownTimer = null;
+let countdownActive = false;
+function stopCountdown() {
+  clearInterval(countdownTimer);
+  countdownActive = false;
+  const overlay = qid('countdown-overlay');
+  if (overlay) overlay.classList.remove('show');
+}
+function startCountdown(onDone, seconds=3) {
+  stopCountdown();
+  const overlay = qid('countdown-overlay');
+  const numEl = qid('cd-num');
+  let n = seconds;
+  numEl.textContent = n;
+  overlay.classList.add('show');
+  countdownActive = true;
+  countdownTimer = setInterval(() => {
+    n--;
+    numEl.textContent = n;
+    if (n <= 0) { stopCountdown(); onDone(); }
+  }, 1000);
+}
+
+let toastTimer;
+function showToast(msg) {
+  const t = qid('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+function showRevealModal(card, onOk) {
+  const r = isRed(card);
+  const art = faceArt(card.value, card.suit);
+  const midHTML = art?`<div style="line-height:0">${art}</div>`:`<span style="font-size:26px">${card.suit}</span>`;
+  qid('modal-root').innerHTML=`<div class="modal-bg"><div class="modal-box">
+    <h3>🔮 Votre carte</h3><p>Mémorisez-la !</p>
+    <div class="modal-card-wrap">
+      <div style="width:70px;height:100px;background:var(--card-bg);border-radius:9px;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4),0 0 0 4px rgba(212,168,75,.15)">
+        ${midHTML}
+      </div>
+    </div>
+    <div style="color:rgba(255,255,255,.4);font-size:12px;margin-bottom:16px">${card.value}${card.suit} — ${pts(card)} pts</div>
+    <div class="mbtn-row"><button class="mbtn" id="m-ok">Mémorisé →</button></div>
+  </div></div>`;
+  qid('m-ok').addEventListener('click',()=>{qid('modal-root').innerHTML='';if(onOk)onOk();});
+}
+
+function showWrongSnapModal(card, onOk) {
+  const art = faceArt(card.value, card.suit);
+  const midHTML = art?`<div style="line-height:0">${art}</div>`:`<span style="font-size:26px">${card.suit}</span>`;
+  qid('modal-root').innerHTML=`<div class="modal-bg"><div class="modal-box">
+    <h3>❌ Mauvais snap !</h3><p>Vous avez jeté ${card.value}${card.suit} — pénalité !</p>
+    <div class="modal-card-wrap"><div style="width:70px;height:100px;background:var(--card-bg);border-radius:9px;display:flex;align-items:center;justify-content:center;overflow:hidden;">${midHTML}</div></div>
+    <div class="mbtn-row"><button class="mbtn" id="m-ok">Compris</button></div>
+  </div></div>`;
+  qid('m-ok').addEventListener('click',()=>{qid('modal-root').innerHTML='';if(onOk)onOk();});
+}
+
+// ══ CARD BUILDERS (from local version) ══
+
+
+
+
+
+
+
+// ══ SVG GENERATORS ══
+function backSVG(){
+  return `<svg class="card-back-svg" viewBox="0 0 66 94" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="bg" cx="50%" cy="50%" r="70%">
+        <stop offset="0%" stop-color="#2c6e49"/>
+        <stop offset="100%" stop-color="#0f3020"/>
+      </radialGradient>
+      <pattern id="dots" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse">
+        <circle cx="4" cy="4" r="0.6" fill="rgba(255,255,255,0.12)"/>
+      </pattern>
+    </defs>
+    <rect width="66" height="94" rx="9" fill="url(#bg)"/>
+    <rect width="66" height="94" rx="9" fill="url(#dots)"/>
+    <!-- border inner -->
+    <rect x="3" y="3" width="60" height="88" rx="7" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+    <!-- Main cactus -->
+    <g transform="translate(33,52)" fill="#2ecc71" opacity="0.85">
+      <!-- trunk -->
+      <rect x="-3" y="-22" width="6" height="30" rx="3"/>
+      <!-- left arm -->
+      <rect x="-14" y="-16" width="12" height="5" rx="2.5"/>
+      <rect x="-16" y="-24" width="5" height="12" rx="2.5"/>
+      <!-- right arm -->
+      <rect x="2" y="-10" width="12" height="5" rx="2.5"/>
+      <rect x="11" y="-18" width="5" height="12" rx="2.5"/>
+      <!-- pot -->
+      <path d="M-8,8 L8,8 L6,18 L-6,18 Z" fill="#8B6914" opacity="0.9"/>
+      <rect x="-9" y="6" width="18" height="4" rx="2" fill="#a07820"/>
+      <!-- spikes -->
+      <line x1="-5" y1="-18" x2="-8" y2="-20" stroke="#90ee90" stroke-width="0.8" stroke-linecap="round"/>
+      <line x1="-1" y1="-15" x2="-4" y2="-17" stroke="#90ee90" stroke-width="0.8" stroke-linecap="round"/>
+      <line x1="2" y1="-18" x2="5" y2="-20" stroke="#90ee90" stroke-width="0.8" stroke-linecap="round"/>
+      <line x1="-11" y1="-19" x2="-13" y2="-21" stroke="#90ee90" stroke-width="0.8" stroke-linecap="round"/>
+      <line x1="12" y1="-14" x2="15" y2="-16" stroke="#90ee90" stroke-width="0.8" stroke-linecap="round"/>
+      <!-- flower top -->
+      <circle cx="0" cy="-23" r="3.5" fill="#e74c3c" opacity="0.9"/>
+      <circle cx="0" cy="-23" r="1.5" fill="#f39c12"/>
+    </g>
+    <!-- stars / desert sky dots -->
+    <circle cx="10" cy="12" r="0.8" fill="rgba(255,255,255,0.5)"/>
+    <circle cx="55" cy="8" r="0.6" fill="rgba(255,255,255,0.4)"/>
+    <circle cx="18" cy="6" r="0.5" fill="rgba(255,255,255,0.35)"/>
+    <circle cx="50" cy="18" r="0.7" fill="rgba(255,255,255,0.4)"/>
+    <circle cx="8" cy="28" r="0.5" fill="rgba(255,255,255,0.3)"/>
+    <circle cx="58" cy="30" r="0.6" fill="rgba(255,255,255,0.35)"/>
+  </svg>`;
+}
+
+function cardPatternSVG(suit){
+  // Subtle diagonal lines pattern
+  const c = (suit==='♥'||suit==='♦') ? 'rgba(192,57,43,0.045)' : 'rgba(26,26,26,0.045)';
+  return `<svg width="66" height="94" viewBox="0 0 66 94" xmlns="http://www.w3.org/2000/svg">
+    <defs><pattern id="p${suit.charCodeAt(0)}" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="8" stroke="${c}" stroke-width="2"/>
+    </pattern></defs>
+    <rect width="66" height="94" fill="url(#p${suit.charCodeAt(0)})"/>
+    <!-- corner suit pips -->
+    <text x="6" y="12" font-size="7" fill="${c}" opacity="2">${suit}</text>
+    <text x="60" y="87" font-size="7" fill="${c}" opacity="2" transform="rotate(180,60,87)">${suit}</text>
+  </svg>`;
+}
+
+// Face card SVGs (king, queen, jack) as inline art
+function faceArt(value, suit){
+  const red = suit==='♥'||suit==='♦';
+  const fc = red ? '#c0392b' : '#1a1a1a';
+  const accent = red ? '#e74c3c' : '#2c3e50';
+  const gold = '#d4a84b';
+  if(value==='K'){
+    // Use the uploaded king photo if available
+    const kingImg = KING_IMGS[suit];
+    if(kingImg){
+      return `<img src="${kingImg}" style="width:48px;height:64px;object-fit:cover;object-position:center 10%;border-radius:3px;display:block;">`;
+    }
+    return `<svg width="42" height="56" viewBox="0 0 42 56" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="6,22 21,8 36,22 32,14 21,18 10,14" fill="${gold}" opacity="0.9"/>
+      <circle cx="6" cy="20" r="2.5" fill="${gold}"/>
+      <circle cx="21" cy="7" r="2.5" fill="${gold}"/>
+      <circle cx="36" cy="20" r="2.5" fill="${gold}"/>
+      <ellipse cx="21" cy="32" rx="10" ry="12" fill="#fde8c8"/>
+      <ellipse cx="21" cy="40" rx="8" ry="6" fill="#8B6914" opacity="0.6"/>
+      <circle cx="17" cy="30" r="1.5" fill="${fc}"/>
+      <circle cx="25" cy="30" r="1.5" fill="${fc}"/>
+      <path d="M7,44 L35,44 L38,56 L4,56 Z" fill="${accent}" opacity="0.8"/>
+      <text x="21" y="54" text-anchor="middle" font-size="8" fill="${gold}" opacity="0.7">${suit}</text>
+    </svg>`;
+  }
+  if(value==='Q'){
+    const queenImg = QUEEN_IMGS[suit];
+    if(queenImg){
+      return `<img src="${queenImg}" style="width:48px;height:64px;object-fit:cover;object-position:center 10%;border-radius:3px;display:block;">`;
+    }
+    return `<svg width="42" height="56" viewBox="0 0 42 56" xmlns="http://www.w3.org/2000/svg">
+      <path d="M11,20 L16,12 L21,16 L26,12 L31,20 Z" fill="${gold}" opacity="0.9"/>
+      <ellipse cx="21" cy="28" rx="9" ry="10" fill="#fde8c8"/>
+      <circle cx="17.5" cy="27" r="1.3" fill="${fc}"/>
+      <circle cx="24.5" cy="27" r="1.3" fill="${fc}"/>
+      <path d="M9,38 L33,38 L36,56 L6,56 Z" fill="${red?'#e74c3c':'#2c3e50'}" opacity="0.8"/>
+      <text x="21" y="53" text-anchor="middle" font-size="8" fill="${gold}" opacity="0.7">${suit}</text>
+    </svg>`;
+  }
+  if(value==='J'){
+    return `<svg width="42" height="56" viewBox="0 0 42 56" xmlns="http://www.w3.org/2000/svg">
+      <!-- hat -->
+      <rect x="12" y="13" width="18" height="3" rx="1.5" fill="${fc}" opacity="0.9"/>
+      <rect x="15" y="6" width="12" height="9" rx="3" fill="${fc}" opacity="0.85"/>
+      <rect x="17" y="9" width="8" height="3" fill="${gold}" opacity="0.5"/>
+      <!-- face -->
+      <ellipse cx="21" cy="28" rx="9" ry="10" fill="#fde8c8"/>
+      <!-- eyes -->
+      <circle cx="18" cy="27" r="1.2" fill="${fc}"/>
+      <circle cx="24" cy="27" r="1.2" fill="${fc}"/>
+      <!-- smirk -->
+      <path d="M18,32 Q22,35 25,31" fill="none" stroke="${fc}" stroke-width="0.8" stroke-linecap="round"/>
+      <!-- tunic -->
+      <path d="M10,38 L32,38 L34,56 L8,56 Z" fill="${accent}" opacity="0.8"/>
+      <!-- diamond on chest -->
+      <polygon points="21,40 24,44 21,48 18,44" fill="${gold}" opacity="0.7"/>
+      <text x="21" y="55" text-anchor="middle" font-size="7" fill="${gold}" opacity="0.6">${suit}</text>
+    </svg>`;
+  }
+  return null;
+}
+
+// ══ HELPERS ══
+const SUITS=['♠','♥','♦','♣'];
+const VALS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+const SPECIALS=['7','9','J','K'];
+const isRed=c=>c.suit==='♥'||c.suit==='♦';
+const isSp=c=>SPECIALS.includes(c.value);
+const pts=c=>{
+  if(c.value==='9')return isRed(c)?-2:14;
+  return {A:1,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'10':10,J:11,Q:12,K:0}[c.value];
+};
+const lbl=c=>c.value+c.suit;
+let _uid=0;
+const mkDeck=()=>{const d=[];for(const s of SUITS)for(const v of VALS)d.push({suit:s,value:v,uid:_uid++});return d;};
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const firstNonSp=deck=>{for(let i=0;i<deck.length;i++)if(!isSp(deck[i])){const[c]=deck.splice(i,1);return c;}return deck.shift();};
+const show=id=>{document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById('s-'+id).classList.add('active');};
+const qid=id=>document.getElementById(id);
+
+// ══ STATE ══
+let G={};
+const snapCD={};
+let countdownTimer=null,countdownActive=false;
+
+function initGame(names,cc){
+  const deck=shuffle(mkDeck());
+  G={
+    players:names.map((name)=>({name,hand:deck.splice(0,cc)})),
+    deck,discard:[firstNonSp(deck)],
+    cur:Math.floor(Math.random()*names.length),
+    phase:'peek',peekPl:0,peekSel:[],
+    drawn:null,
+    jackP:false,jackSel:[],jackActivated:false,jackQueue:[],jackTimerStep:null,sevenP:false,
+    cactusPl:null,cactusRound:false,
+    totals:names.map(()=>0),
+    round:1,cc,log:[]
+  };
+}
+
+function addLog(msg){
+  G.log.unshift(msg);if(G.log.length>20)G.log.pop();
+  const el=qid('g-log');
+  if(!el)return;
+  el.innerHTML=G.log.slice(0,4).map((l,i)=>`<span style="opacity:${1-i*.22}">${l}</span>`).join(' · ');
+}
+
+// ══ CARD ELEMENT BUILDER ══
+function getFullImg(card){
+  if(card.value==='K'&&KING_IMGS[card.suit]) return KING_IMGS[card.suit];
+  if(card.value==='Q'&&QUEEN_IMGS[card.suit]) return QUEEN_IMGS[card.suit];
+  if(card.value==='J'&&JACK_IMGS[card.suit]) return JACK_IMGS[card.suit];
+  if(card.value==='A'&&ACE_IMGS[card.suit]) return ACE_IMGS[card.suit];
+  if(card.suit==='♠'&&SPADE_IMGS[card.value]) return SPADE_IMGS[card.value];
+  if(card.suit==='♥'&&HEART_IMGS[card.value]) return HEART_IMGS[card.value];
+  if(card.suit==='♣'&&CLUB_IMGS[card.value]) return CLUB_IMGS[card.value];
+  if(card.suit==='♦'&&DIAMOND_IMGS[card.value]) return DIAMOND_IMGS[card.value];
+  return null;
+}
+
+function mkCardEl(card,opts={}){
+  const el=document.createElement('div');
+  el.className='card'+(opts.selected?' selected':'');
+  el.dataset.uid=card?card.uid:'';
+  const inner=document.createElement('div');inner.className='card-inner';
+  if(opts.flipped)inner.style.transform='rotateY(180deg)';
+
+  // Back face
+  const back=document.createElement('div');back.className='card-face-back';
+  back.innerHTML='<img src="'+BACK_IMG+'" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;border-radius:9px;">';
+
+  // Front face
+  const front=document.createElement('div');
+  front.className='card-face-front'+(isRed(card)?' r':'');
+
+  const fullImg=getFullImg(card);
+  if(fullImg){
+    // Full image card — remplace entièrement la face, pas de valeurs par-dessus
+    front.classList.add('imgcard');
+    front.style.cssText='padding:0;overflow:hidden;position:relative;';
+    const img=document.createElement('img');
+    img.src=fullImg;
+    // Recadrer pour enlever les bords verts et ne garder que la carte
+    img.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;border-radius:9px;';
+    front.appendChild(img);
+  }else{
+    // Carte normale : pattern + valeurs + symbole
+    const pattern=document.createElement('div');
+    pattern.className='card-bg-pattern';
+    pattern.innerHTML=cardPatternSVG(card.suit);
+    front.appendChild(pattern);
+
+    const tl=document.createElement('div');tl.className='cv-tl';
+    tl.innerHTML=card.value+'<br>'+card.suit;
+    front.appendChild(tl);
+
+    const mid=document.createElement('div');mid.className='cs-mid';
+    const art=faceArt(card.value,card.suit);
+    if(art){ mid.innerHTML=art; mid.style.lineHeight='0'; }
+    else{ mid.textContent=card.suit; }
+    front.appendChild(mid);
+
+    const br=document.createElement('div');br.className='cv-br';
+    br.innerHTML=card.value+'<br>'+card.suit;
+    front.appendChild(br);
+  }
+
+  inner.appendChild(back);inner.appendChild(front);
+  el.appendChild(inner);
+  // DEBUG: label overlay only on face-up cards (drawn, discard, peek selected)
+  if(window.DEBUG_LABELS&&opts.flipped){
+    const dbgLbl=document.createElement('div');
+    dbgLbl.style.cssText='position:absolute;bottom:2px;left:0;right:0;text-align:center;font-size:9px;font-weight:700;color:white;text-shadow:0 0 3px #000;z-index:10;pointer-events:none;background:rgba(0,0,0,0.6);border-radius:0 0 8px 8px;padding:1px 0;';
+    dbgLbl.textContent=card.value+card.suit;
+    el.appendChild(dbgLbl);
+  }
+  return el;
+}
+
+// Plain front for discard top / drawn card display
+function mkFrontEl(card){
+  const el=mkCardEl(card,{flipped:true});
+  el.style.cursor='default';
+  return el;
+}
+
+// ══ SETUP ══
+let sN=0,sC=0;
+qid('nb-btns').addEventListener('click',e=>{
+  const b=e.target.closest('.cbtn');if(!b)return;
+  document.querySelectorAll('#nb-btns .cbtn').forEach(x=>x.classList.remove('sel'));
+  b.classList.add('sel');sN=+b.dataset.n;buildSetup();
+});
+function buildSetup(){
+  const R={2:[4,8],3:[4,5],4:[4,4],5:[4,4]};
+  const[mn,mx]=R[sN];sC=mn;
+  const ng=qid('name-grid');ng.innerHTML='';
+  for(let i=0;i<sN;i++)ng.innerHTML+=`<input class="ninput" id="pn${i}" value="Joueur ${i+1}" placeholder="Joueur ${i+1}">`;
+  const cb=qid('cc-btns');cb.innerHTML='';
+  for(let c=mn;c<=mx;c++)cb.innerHTML+=`<button class="cbtn cbc${c===mn?' sel':''}" data-c="${c}">${c} cartes</button>`;
+  document.querySelectorAll('.cbc').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('.cbc').forEach(x=>x.classList.remove('sel'));
+    b.classList.add('sel');sC=+b.dataset.c;
+  }));
+  qid('name-panel').style.display='block';
+  qid('btn-start').style.display='block';
+}
+qid('btn-start').addEventListener('click',()=>{
+  const names=Array.from({length:sN},(_,i)=>qid('pn'+i).value||`Joueur ${i+1}`);
+  initGame(names,sC);startPeek();
+});
+
+// ══ PEEK — cartes dos, clic pour retourner ══
+function startPeek(){G.phase='peek';G.peekPl=0;G.peekSel=[];renderPeek();}
+function renderPeek(){
+  show('peek');
+  const p=G.players[G.peekPl];
+  qid('peek-h').textContent=`${p.name} — Retournez 2 cartes`;
+  qid('peek-sub').textContent='Cliquez sur 2 cartes pour les retourner et les mémoriser. Les autres ne doivent pas regarder.';
+  const row=qid('peek-cards');row.innerHTML='';
+  p.hand.forEach((c,i)=>{
+    const sel=G.peekSel.includes(i);
+    // Carte dos par défaut, retournée si sélectionnée
+    const el=mkCardEl(c,{flipped:sel,selected:sel});
+    el.style.animation=`dealIn .3s ${i*.06}s both`;
+    el.style.cursor='pointer';
+    el.addEventListener('click',()=>{
+      if(G.peekSel.includes(i)){
+        // Retourner à dos
+        G.peekSel=G.peekSel.filter(x=>x!==i);
+      }else if(G.peekSel.length<2){
+        G.peekSel.push(i);
+      }
+      renderPeek();
+    });
+    row.appendChild(el);
+  });
+  const btn=qid('btn-peek-ok');
+  btn.classList.toggle('on',G.peekSel.length===2);
+}
+qid('btn-peek-ok').addEventListener('click',()=>{
+  G.peekPl++;G.peekSel=[];
+  if(G.peekPl>=G.players.length){
+    G.phase='draw';addLog(`Partie lancée ! ${G.players[G.cur].name} commence.`);renderGame();
+  }else renderPeek();
+});
+
+// ══ RENDER GAME ══
+function renderGame(){
+  show('game');
+  qid('g-name').textContent=`🎴 ${G.players[G.cur].name}`;
+  qid('g-instr').textContent=phaseInstr();
+  renderDiscard();renderDrawPile();renderActions();renderPlayers();
+}
+function phaseInstr(){
+  if(G.sevenP)return'Cliquez sur une de vos cartes pour la regarder';
+  if(G.jackP){
+    const s=G.jackTimerStep;
+    if(s==='decide') return '🃏 Valet — Snappez ou utilisez le pouvoir (5s)';
+    if(s==='pick1') return '🃏 Choisissez la 1ère carte à échanger';
+    if(s==='pick2') return '🃏 Choisissez la 2ème carte à échanger';
+    return '🃏 Valet en cours...';
+  }
+  if(G.phase==='drawn')return'Défaussez ou échangez la carte piochée';
+  if(G.phase==='exchange')return'Cliquez sur une de vos cartes à remplacer — ou sur la défausse pour annuler';
+  return'Piochez ou prenez la défausse';
+}
+
+function renderDiscard(){
+  const slot=qid('discard-slot');slot.innerHTML='';
+  const top=G.discard[G.discard.length-1];
+  if(!top){
+    // Défausse vide temporairement (carte prise) — afficher emplacement vide
+    const empty=document.createElement('div');
+    empty.style.cssText='width:65px;height:94px;border-radius:9px;border:2px dashed rgba(255,255,255,0.2);opacity:0.5;';
+    slot.appendChild(empty);
+    return;
+  }
+  const el=mkFrontEl(top);el.id='discard-card';
+  const noTake=['7','J'];
+  if(G.phase==='draw'&&!noTake.includes(top.value)){
+    el.style.cursor='pointer';el.addEventListener('click',takeDiscard);
+  }
+  // En phase exchange : cliquer sur la défausse annule l'échange et défausse directement
+  if(G.phase==='exchange'){
+    el.style.cursor='pointer';
+    el.title='Annuler — jeter cette carte directement';
+    el.style.boxShadow='0 0 0 2px rgba(212,168,75,0.5)';
+    el.addEventListener('click',()=>{
+      const c=G.drawn;G.drawn=null;G.discard.push(c);
+      addLog(G.players[G.cur].name+' défausse '+lbl(c)+'.');
+      const hasSpecial=checkSpecial(c);
+      renderGame();
+      if(!hasSpecial) startCountdown(()=>endTurn());
+    });
+  }
+  slot.appendChild(el);
+}
+
+function renderDrawPile(){
+  qid('draw-count').textContent=G.deck.length+' cartes';
+  const dw=qid('draw-wrap');
+  if(G.phase==='draw'){dw.style.cursor='pointer';dw.onclick=doDraw;}
+  else{dw.style.cursor='default';dw.onclick=null;}
+}
+
+function renderActions(){
+  const area=qid('action-area');area.innerHTML='';
+  if(G.drawn&&G.phase==='drawn'){
+    const lbl2=document.createElement('div');lbl2.className='plabel';lbl2.textContent='Carte piochée';area.appendChild(lbl2);
+    const cf=mkFrontEl(G.drawn);cf.id='drawn-card-el';area.appendChild(cf);
+    const db=document.createElement('button');db.className='abtn';db.textContent='🗑 Défausser';db.onclick=discardDrawn;
+    const eb=document.createElement('button');eb.className='abtn gold';eb.textContent='🔄 Échanger';eb.onclick=()=>{G.phase='exchange';renderGame();};
+    area.appendChild(db);area.appendChild(eb);
+  }else if(G.jackP){
+    const pn=document.createElement('div');pn.className='power-note';
+    if(!G.jackActivated){
+      pn.innerHTML='🃏 <b>Valet</b> — Vous pouvez snapper normalement ou utiliser le pouvoir';
+      area.appendChild(pn);
+      const useBtn=document.createElement('button');useBtn.className='abtn gold';useBtn.textContent='⚡ Utiliser le pouvoir';
+      useBtn.onclick=()=>{G.jackActivated=true;G.jackSel=[];renderGame();};area.appendChild(useBtn);
+    }else{
+      if(G.jackSel.length===0) pn.innerHTML='🃏 Cliquez sur 2 cartes (2 joueurs différents)';
+      else if(G.jackSel.length===1) pn.innerHTML='🃏 Choisissez la 2ème carte (autre joueur)<br><small style="color:rgba(255,255,255,.5)">'+G.players[G.jackSel[0].p].name+' #'+(G.jackSel[0].i+1)+' sélectionné</small>';
+      else pn.innerHTML='🃏 Prêt à échanger<br><small style="color:rgba(255,255,255,.5)">'+G.players[G.jackSel[0].p].name+' #'+(G.jackSel[0].i+1)+' ↔ '+G.players[G.jackSel[1].p].name+' #'+(G.jackSel[1].i+1)+'</small>';
+      area.appendChild(pn);
+      if(G.jackSel.length===2){
+        const cb=document.createElement('button');cb.className='abtn gold';cb.textContent='✅ Confirmer l\'échange';cb.onclick=doJackSwap;area.appendChild(cb);
+      }
+    }
+    const sk=document.createElement('button');sk.className='abtn';sk.textContent='⏭ Ignorer le pouvoir';
+    sk.onclick=()=>{G.jackP=false;G.jackSel=[];G.jackStep=1;G.jackActivated=false;G.phase='draw';endTurn();};area.appendChild(sk);
+  }else if(G.sevenP){
+    const pn=document.createElement('div');pn.className='power-note';pn.innerHTML='🔮 <b>7</b> — Cliquez sur une de vos cartes';area.appendChild(pn);
+    const sk=document.createElement('button');sk.className='abtn';sk.textContent='⏭ Ignorer';
+    sk.onclick=()=>{G.sevenP=false;G.phase='draw';startCountdown(()=>endTurn());};area.appendChild(sk);
+  }
+}
+
+function renderPlayers(){
+  const area=qid('players-area');area.innerHTML='';
+  G.players.forEach((pl,pi)=>{
+    const isActive=pi===G.cur;
+    const row=document.createElement('div');
+    row.className='prow'+(isActive?' active':'');
+    row.innerHTML=`<div class="prow-header">
+      <div class="prow-name">${isActive?'<div class="adot"></div>':''}
+        ${pl.name}<span class="cbadge">${pl.hand.length}🃏</span>
+        ${G.cactusRound&&pi===G.cactusPl?'<span style="color:#2ecc71;font-size:11px">🌵</span>':''}
+      </div>
+      <span class="pscore">${G.totals[pi]} pts</span>
+    </div>`;
+    const hand=document.createElement('div');hand.className='phand';hand.id=`hand-${pi}`;
+    const top=G.discard[G.discard.length-1];
+    pl.hand.filter(Boolean).forEach((c,ci)=>{
+      const inJack=G.jackSel.some(s=>s.p===pi&&s.i===ci);
+      const el=mkCardEl(c,{flipped:false,selected:inJack});
+      el.dataset.pi=pi;el.dataset.ci=ci;
+      el.addEventListener('click',()=>onCardClick(pi,ci,el,c));
+      hand.appendChild(el);
+    });
+    row.appendChild(hand);area.appendChild(row);
+  });
+}
+
+// ══ COUNTDOWN (3s avant changement de joueur) ══
+function stopCountdown(){
+  clearInterval(countdownTimer);
+  countdownActive=false;
+  const overlay=qid('countdown-overlay');
+  if(overlay){
+    overlay.classList.remove('show');
+    overlay.querySelector('.countdown-pill')?.classList.remove('urgent');
+    const numEl=qid('cd-num');
+    if(numEl)numEl.classList.remove('urgent');
+  }
+}
+
+function startCountdown(onDone, seconds=3, label=''){
+  stopCountdown();
+  const overlay=qid('countdown-overlay');
+  const numEl=qid('cd-num');
+  const textEl=qid('cd-text');
+  const pill=overlay?.querySelector('.countdown-pill');
+  if(textEl&&label) textEl.textContent=label;
+  else if(textEl) textEl.textContent='suivant dans';
+  let n=seconds;
+  numEl.textContent=n;
+  numEl.classList.remove('urgent');
+  pill?.classList.remove('urgent');
+  overlay.classList.add('show');
+  countdownActive=true;
+
+  countdownTimer=setInterval(()=>{
+    n--;
+    numEl.textContent=n;
+    if(n<=3){
+      numEl.classList.add('urgent');
+      pill?.classList.add('urgent');
+    }
+    if(n<=0){
+      stopCountdown();
+      onDone();
+    }
+  },1000);
+}
+
+// ══ FLY ANIMATION ══
+function getRect(el){return el?el.getBoundingClientRect():null;}
+function flyCard(srcEl,dstEl,opts={},onDone){
+  if(!srcEl||!dstEl){if(onDone)onDone();return;}
+  const layer=qid('fly-layer');
+  const fromR=getRect(srcEl);const toR=getRect(dstEl);
+  const fly=document.createElement('div');
+  fly.className='fly-card';
+  fly.style.cssText=`left:${fromR.left}px;top:${fromR.top}px;width:${fromR.width}px;height:${fromR.height}px;`;
+  const clone=srcEl.cloneNode(true);
+  clone.style.cssText='position:static;width:100%;height:100%;transition:none!important;animation:none!important;transform:none';
+  fly.appendChild(clone);
+  layer.appendChild(fly);
+  const dur=opts.dur||360;
+  // If we want to reveal: flip clone mid-flight
+  if(opts.revealCard){
+    const inner=clone.querySelector('.card-inner');
+    if(inner){
+      setTimeout(()=>{if(inner)inner.style.transform='rotateY(180deg)';},dur/2);
+    }
+  }
+  requestAnimationFrame(()=>{
+    fly.style.transition=`left ${dur}ms cubic-bezier(.4,0,.2,1),top ${dur}ms cubic-bezier(.4,0,.2,1),opacity ${dur}ms ease`;
+    fly.style.left=toR.left+'px';fly.style.top=toR.top+'px';
+    setTimeout(()=>{if(fly.parentNode)fly.parentNode.removeChild(fly);if(onDone)onDone();},dur+60);
+  });
+}
+
+// ══ INTERACTIONS ══
+function doDraw(){
+  if(G.phase!=='draw')return;
+  reshuffleIfNeeded();
+  if(G.deck.length===0){addLog('⚠️ Pioche vide.');return;}
+  G.drawn=G.deck.shift();G.phase='drawn';
+  addLog(`${G.players[G.cur].name} pioche.`);
+  renderGame();
+  setTimeout(()=>{
+    const src=qid('draw-top');const dst=qid('drawn-card-el');
+    if(src&&dst){dst.style.opacity='0';flyCard(src,dst,{dur:340,revealCard:G.drawn},()=>dst.style.opacity='1');}
+  },30);
+}
+
+function takeDiscard(){
+  if(G.phase!=='draw')return;
+  // Capturer position + clone AVANT de modifier l'état (le render vide la défausse)
+  const src=qid('discard-card');
+  const srcRect=src?src.getBoundingClientRect():null;
+  const layer=qid('fly-layer');
+  let flyEl=null;
+  if(src&&srcRect){
+    flyEl=src.cloneNode(true);
+    flyEl.style.cssText='position:absolute;left:'+srcRect.left+'px;top:'+srcRect.top+'px;width:'+srcRect.width+'px;height:'+srcRect.height+'px;pointer-events:none;z-index:500;border-radius:9px;overflow:hidden;';
+    layer.appendChild(flyEl);
+  }
+  G.drawn=G.discard.pop();G.phase='drawn';
+  addLog(G.players[G.cur].name+' prend la défausse : '+lbl(G.drawn)+'.');
+  renderGame();
+  setTimeout(()=>{
+    const dst=qid('drawn-card-el');
+    if(flyEl&&dst){
+      dst.style.opacity='0';
+      const dstRect=dst.getBoundingClientRect();
+      flyEl.style.transition='left 300ms cubic-bezier(.4,0,.2,1),top 300ms cubic-bezier(.4,0,.2,1)';
+      flyEl.style.left=dstRect.left+'px';flyEl.style.top=dstRect.top+'px';
+      setTimeout(()=>{
+        if(flyEl.parentNode)flyEl.parentNode.removeChild(flyEl);
+        if(dst)dst.style.opacity='1';
+      },340);
+    }
+  },20);
+}
+
+function discardDrawn(){
+  const c=G.drawn;
+  const srcEl=qid('drawn-card-el');
+  const dstEl=qid('discard-card');
+  G.drawn=null;G.discard.push(c);
+  addLog(`${G.players[G.cur].name} défausse ${lbl(c)}.`);
+  const hasSpecial=checkSpecial(c);
+  if(srcEl&&dstEl){
+    flyCard(srcEl,dstEl,{dur:320},()=>{
+      renderGame();
+      // Ne lancer le countdown que si pas de pouvoir spécial
+      if(!hasSpecial) startCountdown(()=>endTurn());
+    });
+  }else{
+    renderGame();
+    if(!hasSpecial) startCountdown(()=>endTurn());
+  }
+  renderGame();
+}
+
+function onCardClick(pi,ci,el,card){
+  // SEVEN — joueur actif clique sur une de ses cartes pour la regarder
+  if(G.sevenP&&pi===G.cur){
+    showRevealModal(card,()=>{G.sevenP=false;G.phase='draw';startCountdown(()=>endTurn());});return;
+  }
+
+  // JACK activé - pick1 ou pick2
+  if(G.jackP&&G.jackActivated){
+    const step=G.jackTimerStep;
+    if(step==='pick1'){
+      // Any card from any player
+      G.jackSel=[{p:pi,i:ci}];
+      jackPick2Timer(); // transitions to pick2
+      return;
+    }else if(step==='pick2'){
+      // Must be different player
+      const sel=G.jackSel[0];
+      if(pi===sel.p&&ci===sel.i){
+        // Deselect
+        G.jackSel=[];G.jackTimerStep='pick1';
+        stopCountdown();jackPick2Timer();
+        return;
+      }
+      if(pi===sel.p){showToast('⚠️ Choisissez un joueur différent !');return;}
+      G.jackSel=[sel,{p:pi,i:ci}];
+      renderGame();return;
+    }
+  }
+
+  // EXCHANGE — joueur actif échange la carte piochée avec une de ses cartes
+  if(G.phase==='exchange'&&pi===G.cur){
+    if(!G.drawn){G.phase='draw';renderGame();return;} // sécurité: drawn déjà null
+    const old=G.players[pi].hand[ci];
+    const dstEl=qid('discard-card');
+    G.players[pi].hand[ci]=G.drawn;G.drawn=null;G.discard.push(old);
+    addLog(G.players[pi].name+' échange → défausse '+lbl(old)+'.');
+    const hasSpecial=checkSpecial(old);
+    if(el&&dstEl){
+      flyCard(el,dstEl,{dur:350,revealCard:old},()=>{
+        renderGame();
+        if(!hasSpecial) startCountdown(()=>endTurn());
+      });
+    }else{
+      renderGame();
+      if(!hasSpecial) startCountdown(()=>endTurn());
+    }
+    renderGame();return;
+  }
+
+  // SNAP — joueur actif sur ses propres cartes
+  // Pendant phase jack decide: snap autorisé (mais si jack snappé → nouveau timer)
+  const snapOk=['draw','drawn'];
+  if(G.phase==='jack'&&G.jackTimerStep==='decide') snapOk.push('jack');
+  if(snapOk.includes(G.phase)&&pi===G.cur){
+    doSnap(pi,ci,el,card);
+  }
+}
+
+function doSnap(pi,ci,el,card){
+  const now=Date.now();
+  if(snapCD[pi]&&now-snapCD[pi]<900)return;
+  snapCD[pi]=now;
+  const top=G.discard[G.discard.length-1];
+  if(!top)return; // défausse vide, pas de snap possible
+  // Capturer le rect de destination AVANT tout changement d'état ou de DOM
+  const dstEl=qid('discard-card');
+  const dstRect=dstEl?dstEl.getBoundingClientRect():null;
+  const srcRect=el?el.getBoundingClientRect():null;
+  // Snap: même valeur ET même couleur (rouge/noir) pour éviter 9♠↔9♥
+  const sameColor=(c1,c2)=>(c1.suit==='♥'||c1.suit==='♦')===(c2.suit==='♥'||c2.suit==='♦');
+  if(card.value===top.value&&sameColor(card,top)){
+    // Bon snap — animer via clone manuel pour éviter les soucis de DOM
+    G.players[pi].hand.splice(ci,1);
+    G.discard.push(card);
+    addLog('⚡ '+G.players[pi].name+' snap '+lbl(card)+' !');
+    showToast('✅ '+G.players[pi].name+' — Snap ! '+lbl(card));
+    // Si un valet est snappé pendant jack-decide → on reste en phase decide (même valet, même état)
+    if(card.value==='J'&&G.jackP&&G.jackTimerStep==='decide'){
+      addLog('🃏 Valet snappé — toujours en attente de décision.');
+      renderGame();
+    }
+    if(srcRect&&dstRect){
+      const layer=qid('fly-layer');
+      const flyEl=el.cloneNode(true);
+      // Forcer face visible (flip)
+      const inner=flyEl.querySelector('.card-inner');
+      if(inner)inner.style.transform='rotateY(180deg)';
+      flyEl.style.cssText='position:absolute;left:'+srcRect.left+'px;top:'+srcRect.top+'px;width:'+srcRect.width+'px;height:'+srcRect.height+'px;pointer-events:none;z-index:500;border-radius:9px;overflow:hidden;transition:none;';
+      layer.appendChild(flyEl);
+      renderGame(); // re-render maintenant (supprime la carte de la main)
+      requestAnimationFrame(()=>{
+        flyEl.style.transition='left 360ms cubic-bezier(.4,0,.2,1),top 360ms cubic-bezier(.4,0,.2,1)';
+        flyEl.style.left=dstRect.left+'px';
+        flyEl.style.top=dstRect.top+'px';
+        setTimeout(()=>{ if(flyEl.parentNode)flyEl.parentNode.removeChild(flyEl); renderGame(); },400);
+      });
+    }else{
+      renderGame();
+    }
+  }else{
+    // Mauvais snap — montrer la carte puis pénalité
+    addLog('❌ '+G.players[pi].name+' rate son snap ('+lbl(card)+') !');
+    showWrongSnapModal(card,()=>{
+      const penalty=G.deck.length>0?G.deck.shift():null;
+      if(penalty)G.players[pi].hand.push(penalty);
+      renderGame();
+    });
+  }
+}
+
+// doJackSwap replaced by doJackSwapNow
+
+function checkSpecial(card){
+  if(!card||typeof card.value==='undefined') return false;
+  const v=String(card.value);
+  if(v==='7'){G.sevenP=true;G.phase='seven';addLog('🔮 Pouvoir du 7 — regardez une de vos cartes.');return true;}
+  if(v==='J'){G.jackP=true;G.jackSel=[];G.jackStep=1;G.jackActivated=false;G.phase='jack';addLog('🃏 Pouvoir du Valet — échange de cartes disponible.');return true;}
+  return false;
+}
+
+// ══ JACK POWER SYSTEM ══
+function processNextJack(){
+  if(!G.jackQueue||G.jackQueue.length===0){
+    G.jackP=false;G.jackActivated=false;G.jackSel=[];G.jackTimerStep=null;
+    G.phase='draw';
+    startCountdown(()=>endTurn());
+    return;
+  }
+  const nextJack=G.jackQueue[0];
+  G.jackP=true;
+  G.jackActivated=false;
+  G.jackSel=[];
+  G.jackTimerStep='decide';
+  G.phase='jack';
+  addLog('🃏 Valet de '+G.players[nextJack.player].name+' — utiliser le pouvoir ?');
+  renderGame();
+}
+
+function jackActivatePower(){
+  G.jackActivated=true;
+  G.jackTimerStep='pick1';
+  G.jackSel=[];
+  addLog('🃏 Choisissez la 1ère carte à échanger.');
+  renderGame();
+}
+
+function jackPick2Timer(){
+  G.jackTimerStep='pick2';
+  addLog('🃏 Choisissez la 2ème carte à échanger.');
+  renderGame();
+}
+
+function doJackSwapNow(){
+  if(G.jackSel.length<2){G.jackQueue.shift();processNextJack();return;}
+  const[a,b]=G.jackSel;
+  if(a.p===b.p){
+    addLog('⚠️ Même joueur — échange annulé.');
+    G.jackQueue.shift();processNextJack();return;
+  }
+  const tmp=G.players[a.p].hand[a.i];
+  G.players[a.p].hand[a.i]=G.players[b.p].hand[b.i];
+  G.players[b.p].hand[b.i]=tmp;
+  addLog('🔄 '+G.players[a.p].name+' #'+(a.i+1)+' ↔ '+G.players[b.p].name+' #'+(b.i+1));
+  // Animate
+  const elA=qid('hand-'+a.p)?.children[a.i];
+  const elB=qid('hand-'+b.p)?.children[b.i];
+  if(elA&&elB){flyCard(elA,elB,{dur:400});flyCard(elB,elA,{dur:400});}
+  G.jackQueue.shift();
+  setTimeout(()=>processNextJack(),420);
+}
+
+// ══ CACTUS ══
+function doCactus(afterCB){
+  if(G.cactusRound){showToast('🌵 Cactus déjà annoncé !');if(afterCB)afterCB();return;}
+  showConfirmModal('🌵 Cactus !',
+    `<strong>${G.players[G.cur].name}</strong> annonce Cactus !<br>Les autres jouent un dernier tour.<br><br><em style="font-size:12px;color:rgba(255,255,255,.4)">Si score > 5 pts ou qu'un joueur a moins → score doublé !</em>`,
+    'Confirmer',()=>{
+      addLog(`🌵 CACTUS ! ${G.players[G.cur].name}`);
+      G.cactusPl=G.cur;G.cactusRound=true;
+      if(afterCB)afterCB();else endTurn();
+    },afterCB);
+}
+qid('btn-cactus').addEventListener('click',()=>{
+  // Accepter pendant la phase draw ET pendant le countdown (qui est aussi en phase draw)
+  if(G.phase!=='draw'&&!countdownActive)return;
+  if(countdownActive){
+    // Stopper le countdown pour éviter le double endTurn
+    clearInterval(countdownTimer);
+    qid('countdown-overlay').classList.remove('show');
+    countdownActive=false;
+    // Cactus remplace la fin du countdown — on endTurn après confirmation
+    doCactus(()=>endTurn());
+  }else{
+    doCactus(null);
+  }
+});
+
+// ══ TURN END ══
+function endTurn(){
+  if(G.cactusRound){
+    const next=(G.cur+1)%G.players.length;
+    if(next===G.cactusPl){endRound();return;}
+    G.cur=next;
+  }else{
+    G.cur=(G.cur+1)%G.players.length;
+    if(G.players.some(p=>p.hand.length===0)){endRound();return;}
+  }
+  G.phase='draw';G.drawn=null;renderGame();
+}
+
+function reshuffleIfNeeded(){
+  if(G.deck.length===0){
+    if(G.discard.length<=1){addLog('⚠️ Plus de cartes disponibles.');return;}
+    const top=G.discard.pop();
+    G.deck=shuffle([...G.discard]);
+    G.discard=[top];
+    addLog('🔄 Pioche reconstituée depuis la défausse.');
+  }
+}
+
+// ══ ROUND END ══
+function endRound(){
+  const cp=G.cactusPl;
+  // Guard: filter null cards from hands before scoring
+  G.players.forEach(pl=>{pl.hand=pl.hand.filter(Boolean);});
+  const rawScores=G.players.map(pl=>pl.hand.reduce((a,c)=>a+pts(c),0));
+  let finalScores=[...rawScores];
+  if(cp!==null){
+    const cpScore=rawScores[cp];
+    const othersMin=Math.min(...rawScores.filter((_,i)=>i!==cp));
+    if(cpScore>5||othersMin<cpScore){
+      finalScores[cp]=cpScore*2;
+      addLog(`⚠️ ${G.players[cp].name} score doublé ! (${cpScore}→${finalScores[cp]})`);
+    }
+  }
+  G.players.forEach((_,i)=>G.totals[i]+=finalScores[i]);
+  G._rawScores=rawScores;G._finalScores=finalScores;
+  renderScore();
+}
+
+// ══ SCORE ══
+function renderScore(){
+  show('score');
+  qid('sc-title').textContent=`Manche ${G.round} — Résultats`;
+  const medals=['🥇','🥈','🥉','4e','5e'];
+  const rows=G.players.map((pl,i)=>({name:pl.name,raw:G._rawScores[i],final:G._finalScores[i],total:G.totals[i],hand:pl.hand,doubled:G._rawScores[i]!==G._finalScores[i]})).sort((a,b)=>a.final-b.final);
+  qid('sc-rows').innerHTML=rows.map((r,rank)=>`
+    <div class="sc-row">
+      <div>
+        <div class="sc-name">${medals[rank]} ${r.name}${r.doubled?' <span style="color:#e74c3c;font-size:11px">×2 🌵</span>':''}</div>
+        <div class="sc-tags">${r.hand.map(c=>`<span class="sc-tag">${lbl(c)}(${pts(c)})</span>`).join('')||'<span class="sc-tag" style="color:#2ecc71">Pas de carte !</span>'}</div>
+      </div>
+      <div class="sc-pts">
+        <div class="sc-r">${r.final} pts${r.doubled?`<span style="font-size:11px;color:rgba(255,255,255,.4)"> (${r.raw}×2)</span>`:''}</div>
+        <div class="sc-t">Total : ${r.total}</div>
+      </div>
+    </div>`).join('');
+}
+qid('btn-newround').addEventListener('click',()=>{
+  if(G.totals.some(s=>s>=100)){renderFinal();return;}
+  G.round++;
+  const deck=shuffle(mkDeck());
+  G.players.forEach(pl=>{pl.hand=deck.splice(0,G.cc);});
+  G.deck=deck;G.discard=[firstNonSp(G.deck)];
+  G.cur=(G.cur+1)%G.players.length;
+  Object.assign(G,{phase:'peek',peekPl:0,peekSel:[],drawn:null,jackP:false,jackSel:[],jackActivated:false,jackQueue:[],jackTimerStep:null,sevenP:false,cactusPl:null,cactusRound:false,log:[]});
+  addLog(`Manche ${G.round} !`);startPeek();
+});
+qid('btn-endgame').addEventListener('click',renderFinal);
+
+function renderFinal(){
+  show('final');
+  const sorted=G.players.map((pl,i)=>({name:pl.name,total:G.totals[i]})).sort((a,b)=>a.total-b.total);
+  const medals=['🥇','🥈','🥉','4e','5e'];
+  qid('fin-rows').innerHTML=sorted.map((r,rank)=>`
+    <div class="sc-row">
+      <span style="font-size:15px">${medals[rank]} <strong>${r.name}</strong></span>
+      <span style="font-size:18px;font-weight:700;color:var(--gold-light)">${r.total} pts</span>
+    </div>`).join('')+`<p style="color:rgba(255,255,255,.4);font-size:12px;margin-top:12px;text-align:center">🏆 ${sorted[0].name} — ${sorted[0].total} pts</p>`;
+}
+qid('btn-newgame').addEventListener('click',()=>show('setup'));
+
+// ══ MODALS ══
+function showRevealModal(card,onOk){
+  const r=isRed(card);const fc=r?'var(--red)':'var(--black)';
+  const fullImg=getFullImg(card);
+  const art=faceArt(card.value,card.suit);
+  const midHTML=fullImg
+    ? `<img src="${fullImg}" style="width:100%;height:100%;display:block;margin:-4%;">`
+    : art ? `<div style="line-height:0">${art}</div>` : `<span style="font-size:26px">${card.suit}</span>`;
+  const cardInnerStyle=fullImg
+    ? 'width:70px;height:100px;border-radius:9px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4),0 0 0 4px rgba(212,168,75,.15);display:flex;align-items:center;justify-content:center;position:relative;'
+    : `width:70px;height:100px;background:var(--card-bg);border-radius:9px;border:2px solid var(--gold);position:relative;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(0,0,0,.4),0 0 0 4px rgba(212,168,75,.15);color:${fc}`;
+  qid('modal-root').innerHTML=`<div class="modal-bg"><div class="modal-box">
+    <h3>🔮 Votre carte</h3><p>Mémorisez-la !</p>
+    <div class="modal-card-wrap">
+      <div style="${cardInnerStyle}">
+        ${fullImg ? '' : `<div style="position:absolute;top:5px;left:7px;font-size:11px;font-weight:800;line-height:1.1">${card.value}<br>${card.suit}</div>`}
+        ${midHTML}
+        ${fullImg ? '' : `<div style="position:absolute;bottom:5px;right:7px;font-size:11px;font-weight:800;line-height:1.1;transform:rotate(180deg)">${card.value}<br>${card.suit}</div>`}
+      </div>
+    </div>
+    <div style="color:rgba(255,255,255,.4);font-size:12px;margin-bottom:16px">${pts(card)} point${Math.abs(pts(card))!==1?'s':''}</div>
+    <div class="mbtn-row"><button class="mbtn" id="m-ok">Mémorisé →</button></div>
+  </div></div>`;
+  qid('m-ok').addEventListener('click',()=>{qid('modal-root').innerHTML='';onOk();});
+}
+
+function showWrongSnapModal(card,onOk){
+  const r=isRed(card);const fc=r?'var(--red)':'var(--black)';
+  const fullImg2=getFullImg(card);
+  const art=faceArt(card.value,card.suit);
+  const midHTML=fullImg2
+    ? `<img src="${fullImg2}" style="width:100%;height:100%;display:block;margin:-4%;">`
+    : art ? `<div style="line-height:0">${art}</div>` : `<span style="font-size:26px">${card.suit}</span>`;
+  const cardInnerStyle2=fullImg2
+    ? 'width:70px;height:100px;border-radius:9px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4),0 0 0 4px rgba(231,76,60,.4);display:flex;align-items:center;justify-content:center;position:relative;'
+    : `width:70px;height:100px;background:var(--card-bg);border-radius:9px;border:2px solid #e74c3c;position:relative;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(0,0,0,.4);color:${fc}`;
+  qid('modal-root').innerHTML=`<div class="modal-bg"><div class="modal-box">
+    <h3>❌ Mauvais snap !</h3>
+    <p>Vous avez jeté cette carte :</p>
+    <div class="modal-card-wrap">
+      <div style="${cardInnerStyle2}">
+        ${fullImg2 ? '' : `<div style="position:absolute;top:5px;left:7px;font-size:11px;font-weight:800;line-height:1.1">${card.value}<br>${card.suit}</div>`}
+        ${midHTML}
+        ${fullImg2 ? '' : `<div style="position:absolute;bottom:5px;right:7px;font-size:11px;font-weight:800;line-height:1.1;transform:rotate(180deg)">${card.value}<br>${card.suit}</div>`}
+      </div>
+    </div>
+    <p style="margin-top:8px">Elle ne correspond pas à la défausse.<br>Vous recevez une pénalité.</p>
+    <div class="mbtn-row"><button class="mbtn" id="m-ok">Compris</button></div>
+  </div></div>`;
+  qid('m-ok').addEventListener('click',()=>{qid('modal-root').innerHTML='';onOk();});
+}
+
+function showConfirmModal(title,body,confirmLabel,onOk,onCancel){
+  qid('modal-root').innerHTML=`<div class="modal-bg"><div class="modal-box">
+    <h3>${title}</h3><p>${body}</p>
+    <div class="mbtn-row">
+      <button class="mbtn" id="m-confirm">${confirmLabel}</button>
+      <button class="mbtn sec" id="m-cancel">Annuler</button>
+    </div>
+  </div></div>`;
+  qid('m-confirm').addEventListener('click',()=>{qid('modal-root').innerHTML='';onOk();});
+  qid('m-cancel').addEventListener('click',()=>{qid('modal-root').innerHTML='';if(onCancel)onCancel();});
+}
+
+qid('btn-rules').addEventListener('click',()=>{
+  qid('modal-root').innerHTML=`<div class="modal-bg"><div class="modal-box">
+    <h3>📖 Règles</h3>
+    <p style="text-align:left;font-size:12px;line-height:1.9">
+    <b>Tour :</b> Pioche ou prend la défausse (sauf 7/Valet). Défausse ou échange avec une de ses cartes.<br>
+    <b>Snap ⚡ :</b> Cliquez sur une carte dos quand sa valeur = la défausse. Mauvais snap → carte révélée + pénalité.<br>
+    <b>7</b> → Regardez une de vos cartes<br>
+    <b>Valet</b> → Échangez 2 cartes (sans les regarder)<br>
+    <b>Points :</b> A=1 · 2–8=valeur · ♠♣9=14 · ♥♦9=−2 · 10=10 · V=11 · D=12 · R=0<br>
+    <b>Cactus 🌵 :</b> En début de tour ou dans les 3s après une défausse. Score doublé si >5 pts ou si un adversaire a moins.<br>
+    <b>Fin :</b> Éliminé à 100 pts.
+    </p>
+    <div class="mbtn-row"><button class="mbtn" id="m-ok">Compris !</button></div>
+  </div></div>`;
+  qid('m-ok').addEventListener('click',()=>qid('modal-root').innerHTML='');
+});
+
+// ══ TOAST ══
+let toastTimer;
+function showToast(msg){
+  const t=qid('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+// Init draw-wrap HTML with proper SVG backs
+document.addEventListener('DOMContentLoaded',()=>{
+  document.body.style.backgroundImage='url('+TABLE_BG+')';
+  document.body.style.backgroundSize='cover';
+  document.body.style.backgroundPosition='center';
+  document.body.style.backgroundAttachment='fixed';
+  const dw=qid('draw-wrap');
+  dw.innerHTML='';
+  for(let i=0;i<3;i++){
+    const c=document.createElement('div');c.className='card';
+    if(i===2)c.id='draw-top';
+    c.innerHTML=`<div class="card-inner"><div class="card-face-back"><img src="${BACK_IMG}" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;border-radius:9px;"></div><div class="card-face-front"></div></div>`;
+    dw.appendChild(c);
+  }
+});
+
+
+// Init
+document.addEventListener('DOMContentLoaded', () => {
+  document.body.style.backgroundImage = 'url(' + TABLE_BG + ')';
+  document.body.style.backgroundSize = 'cover';
+  document.body.style.backgroundPosition = 'center';
+  document.body.style.backgroundAttachment = 'fixed';
+});
+</script>
+</body>
+</html>
