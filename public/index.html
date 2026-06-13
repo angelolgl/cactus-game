@@ -252,6 +252,27 @@ body{font-family:'Inter',sans-serif;background:#0f3020;color:white;font-size:14p
   min-height:20px;
 }
 
+
+/* ── MOBILE RESPONSIVE ── */
+@media (max-width: 600px) {
+  body { font-size: 13px; }
+  .g-header { padding: 8px 10px; flex-wrap: wrap; gap: 6px; }
+  .g-title { font-size: 16px; }
+  .gbtn { font-size: 11px; padding: 5px 8px; }
+  .table-zone { flex-wrap: wrap; gap: 10px; padding: 10px; }
+  .card { width: 52px !important; height: 74px !important; }
+  .phand { gap: 4px; flex-wrap: wrap; }
+  .prow { padding: 8px; }
+  .peek-cards .card { width: 60px !important; height: 85px !important; }
+  .lobby-box { max-width: 95vw; padding: 18px; }
+  .action-area { width: 100%; }
+  .abtn { font-size: 13px; }
+}
+@media (max-width: 400px) {
+  .card { width: 44px !important; height: 62px !important; }
+  .peek-cards .card { width: 50px !important; height: 70px !important; }
+}
+
 </style>
 </head>
 <body>
@@ -277,39 +298,27 @@ body{font-family:'Inter',sans-serif;background:#0f3020;color:white;font-size:14p
     <input class="ninput" id="player-name" placeholder="Votre prénom" maxlength="20" style="margin-bottom:12px">
     <div style="display:flex;gap:10px;margin-bottom:12px">
       <input class="ninput" id="room-code" placeholder="Code (ex: 1234)" maxlength="4" inputmode="numeric" style="text-align:center;font-size:18px;letter-spacing:.1em">
-      <button class="start-btn" style="padding:0 16px;font-size:14px" onclick="joinRoom()">Rejoindre</button>
+      <button class="start-btn" style="padding:0 16px;font-size:14px;white-space:nowrap" onclick="joinRoom()">Rejoindre</button>
     </div>
     <div style="color:rgba(255,255,255,.3);font-size:12px;margin:8px 0">— ou —</div>
-    <button class="start-btn" onclick="showCreate()">Créer une partie</button>
+    <button class="start-btn" onclick="createRoom()">Créer une partie</button>
     <div class="error-msg" id="lobby-error"></div>
-  </div>
-  <div class="lobby-box" id="lobby-create" style="display:none">
-    <h2>Nouvelle partie</h2>
-    <div style="margin-bottom:14px">
-      <div class="slabel">Cartes par joueur</div>
-      <div class="row-btns" id="lobby-cc-btns" style="justify-content:center">
-        <button class="cbtn cbc sel" data-c="4">4</button>
-        <button class="cbtn cbc" data-c="5">5</button>
-        <button class="cbtn cbc" data-c="6">6</button>
-        <button class="cbtn cbc" data-c="7">7</button>
-        <button class="cbtn cbc" data-c="8">8</button>
-      </div>
-    </div>
-    <button class="start-btn" onclick="createRoom()">Créer →</button>
-    <div style="margin-top:10px"><button class="cbtn" onclick="hideCreate()" style="width:100%">← Retour</button></div>
-    <div class="error-msg" id="create-error"></div>
   </div>
   <div class="lobby-box" id="lobby-waiting" style="display:none">
     <h2>Salle d'attente</h2>
     <div style="font-family:'Playfair Display',serif;font-size:42px;color:var(--gold-light);letter-spacing:.15em;text-align:center;text-shadow:0 2px 8px rgba(0,0,0,.5);margin:12px 0" id="lobby-code-display">----</div>
-    <p style="color:rgba(255,255,255,.4);font-size:12px;text-align:center">Partagez ce code avec vos amis</p>
-    <div style="display:flex;flex-direction:column;gap:8px;margin:16px 0;min-height:60px" id="lobby-players-list"></div>
-    <button class="start-btn" id="btn-start-game" style="display:none" onclick="startGame()">Lancer la partie →</button>
-    <div style="color:rgba(255,255,255,.4);font-size:13px;text-align:center;margin-top:8px" id="waiting-msg">En attente d'autres joueurs...</div>
+    <p style="color:rgba(255,255,255,.4);font-size:12px;text-align:center">Partagez ce code</p>
+    <div style="display:flex;flex-direction:column;gap:8px;margin:16px 0;min-height:50px" id="lobby-players-list"></div>
+    <div id="host-controls" style="display:none">
+      <div class="slabel" style="margin-bottom:8px">Cartes par joueur</div>
+      <div class="row-btns" id="lobby-cc-btns" style="justify-content:center;flex-wrap:wrap;gap:6px;margin-bottom:14px"></div>
+      <button class="start-btn" id="btn-start-game" onclick="startGame()">Lancer la partie →</button>
+    </div>
+    <div style="color:rgba(255,255,255,.4);font-size:13px;text-align:center;margin-top:8px" id="waiting-msg">En attente du lancement par l'hôte...</div>
   </div>
 </div>
 
-<!-- PEEK -->
+<!-- PEEK<!-- PEEK -->
 <div id="s-peek" class="screen">
   <div class="peek-box">
     <h2 id="peek-h">Mémorisez 2 cartes</h2>
@@ -792,7 +801,7 @@ function showWrongSnapModal(card, onOk) {
 }
 
 // ══ CLIENT STATE ══
-let socket, myIndex = -1, myRoom = '', selectedCC = 4, G = null, peekSel = [];
+let socket, myIndex = -1, myRoom = '', G = null, peekSel = [];
 
 // ══ SOCKET ══
 function initSocket() {
@@ -810,53 +819,86 @@ function initSocket() {
 }
 
 // ══ LOBBY ══
-document.querySelectorAll('#lobby-cc-btns .cbc').forEach(b => {
-  b.addEventListener('click', () => {
-    document.querySelectorAll('#lobby-cc-btns .cbc').forEach(x => x.classList.remove('sel'));
-    b.classList.add('sel'); selectedCC = +b.dataset.c;
-  });
-});
 
 function getName() { return qid('player-name').value.trim() || 'Joueur'; }
-function showCreate() { qid('lobby-main').style.display='none'; qid('lobby-create').style.display='block'; }
-function hideCreate() { qid('lobby-create').style.display='none'; qid('lobby-main').style.display='block'; }
+
+let lobbyPlayers = [], isHost = false;
 
 function createRoom() {
-  const errEl = qid('create-error');
+  const errEl = qid('lobby-error');
   errEl.textContent = 'Connexion...';
   initSocket();
-  const go = () => { errEl.textContent = ''; socket.emit('createRoom', {name:getName(), cardCount:selectedCC}); };
+  const go = () => { errEl.textContent=''; socket.emit('createRoom', {name:getName()}); };
   if (socket.connected) go();
-  else {
-    socket.once('connect', go);
-    socket.once('connect_error', () => { errEl.textContent = 'Impossible de se connecter au serveur'; });
-  }
+  else { socket.once('connect', go); socket.once('connect_error', ()=>errEl.textContent='Connexion impossible'); }
 }
 
 function joinRoom() {
   const code = qid('room-code').value.trim();
   if (!code) { qid('lobby-error').textContent='Entrez un code'; return; }
+  const errEl = qid('lobby-error');
+  errEl.textContent = 'Connexion...';
   initSocket();
-  const go = () => socket.emit('joinRoom', {code, name:getName()});
-  socket.connected ? go() : socket.once('connect', go);
+  const go = () => { errEl.textContent=''; socket.emit('joinRoom', {code, name:getName()}); };
+  if (socket.connected) go();
+  else { socket.once('connect', go); socket.once('connect_error', ()=>errEl.textContent='Connexion impossible'); }
 }
 
-function showWaiting(code, isHost) {
-  qid('lobby-main').style.display='none'; qid('lobby-create').style.display='none';
+function showWaiting(code, host) {
+  isHost = host;
+  qid('lobby-main').style.display='none';
   qid('lobby-waiting').style.display='block';
   qid('lobby-code-display').textContent = code;
-  qid('btn-start-game').style.display = isHost ? 'block' : 'none';
+  qid('host-controls').style.display = host ? 'block' : 'none';
+  qid('waiting-msg').style.display = host ? 'none' : 'block';
 }
 
+let selectedCC = 4;
 function updateLobbyPlayers(players) {
+  lobbyPlayers = players;
   qid('lobby-players-list').innerHTML = players.map((name,i) =>
     `<div style="background:rgba(255,255,255,.08);border-radius:8px;padding:8px 14px;font-size:14px;display:flex;align-items:center;gap:8px">
       <span>${i+1}.</span><strong>${name}</strong>
       ${i===0?'<span style="margin-left:auto;font-size:11px;color:var(--gold-light)">Hôte</span>':''}
     </div>`).join('');
+  // Update card count options based on player count (host only)
+  if (isHost) updateCardCountOptions(players.length);
 }
 
-function startGame() { socket.emit('startGame', {code:myRoom}); }
+function updateCardCountOptions(n) {
+  let min=4, max=4;
+  if (n===2) { min=4; max=8; }
+  else if (n===3) { min=4; max=5; }
+  else { min=4; max=4; }
+  const btns = qid('lobby-cc-btns');
+  btns.innerHTML = '';
+  for (let c=min; c<=max; c++) {
+    const b = document.createElement('button');
+    b.className = 'cbtn cbc' + (c===min?' sel':'');
+    b.textContent = c;
+    b.onclick = () => {
+      document.querySelectorAll('#lobby-cc-btns .cbc').forEach(x=>x.classList.remove('sel'));
+      b.classList.add('sel'); selectedCC = c;
+    };
+    btns.appendChild(b);
+  }
+  selectedCC = min;
+  // Disable start if less than 2 players
+  qid('btn-start-game').disabled = n < 2;
+  qid('btn-start-game').style.opacity = n < 2 ? '0.5' : '1';
+  qid('btn-start-game').textContent = n < 2 ? 'En attente de joueurs...' : 'Lancer la partie →';
+}
+
+function startGame() {
+  if (lobbyPlayers.length < 2) return;
+  socket.emit('startGame', {code:myRoom, cardCount:selectedCC});
+}
+
+qid('btn-peek-ok').addEventListener('click', () => {
+  socket.emit('peekDone', {code:myRoom});
+  show('game');
+});
+
 
 // ══ PEEK ══
 function renderPeek(hand) {
@@ -872,11 +914,6 @@ function renderPeek(hand) {
     row.appendChild(el);
   });
 }
-
-qid('btn-peek-ok').addEventListener('click', () => {
-  socket.emit('peekDone', {code:myRoom});
-  show('game');
-});
 
 // ══ GAME UPDATE ══
 function updateGame(state) {
