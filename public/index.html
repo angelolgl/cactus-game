@@ -365,7 +365,17 @@ let peekSel = [];
 
 // ══ SOCKET INIT ══
 function initSocket() {
+  if (socket && socket.connected) return; // already connected
   socket = io();
+
+  socket.on('connect', () => {
+    console.log('Socket connected:', socket.id);
+  });
+
+  socket.on('connect_error', (err) => {
+    console.error('Connection error:', err);
+    document.getElementById('lobby-error').textContent = 'Erreur de connexion au serveur';
+  });
 
   socket.on('roomCreated', ({code, playerIndex}) => {
     myIndex = playerIndex;
@@ -439,14 +449,18 @@ function getName() {
 
 function createRoom() {
   initSocket();
-  socket.emit('createRoom', { name: getName(), cardCount: selectedCC });
+  const doCreate = () => socket.emit('createRoom', { name: getName(), cardCount: selectedCC });
+  if (socket.connected) doCreate();
+  else socket.once('connect', doCreate);
 }
 
 function joinRoom() {
   const code = document.getElementById('room-code').value.trim().toUpperCase();
   if (!code) { document.getElementById('lobby-error').textContent = 'Entrez un code'; return; }
   initSocket();
-  socket.emit('joinRoom', { code, name: getName() });
+  const doJoin = () => socket.emit('joinRoom', { code, name: getName() });
+  if (socket.connected) doJoin();
+  else socket.once('connect', doJoin);
 }
 
 function showWaiting(code, isHost) {
