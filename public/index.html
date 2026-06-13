@@ -392,6 +392,114 @@ const lbl   = c => c.value+c.suit;
 let _uid = 0;
 
 // ══ CARD BUILDERS ══
+
+function getFullImg(card){
+  if(card.value==='K'&&KING_IMGS[card.suit]) return KING_IMGS[card.suit];
+  if(card.value==='Q'&&QUEEN_IMGS[card.suit]) return QUEEN_IMGS[card.suit];
+  if(card.value==='J'&&JACK_IMGS[card.suit]) return JACK_IMGS[card.suit];
+  if(card.value==='A'&&ACE_IMGS[card.suit]) return ACE_IMGS[card.suit];
+  if(card.suit==='♠'&&SPADE_IMGS[card.value]) return SPADE_IMGS[card.value];
+  if(card.suit==='♥'&&HEART_IMGS[card.value]) return HEART_IMGS[card.value];
+  if(card.suit==='♣'&&CLUB_IMGS[card.value]) return CLUB_IMGS[card.value];
+  if(card.suit==='♦'&&DIAMOND_IMGS[card.value]) return DIAMOND_IMGS[card.value];
+  return null;
+}
+
+function mkCardEl(card,opts={}){
+  const el=document.createElement('div');
+  el.className='card'+(opts.selected?' selected':'');
+  el.dataset.uid=card?card.uid:'';
+  const inner=document.createElement('div');inner.className='card-inner';
+  if(opts.flipped)inner.style.transform='rotateY(180deg)';
+
+  // Back face
+  const back=document.createElement('div');back.className='card-face-back';
+  back.innerHTML='<img src="'+BACK_IMG+'" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;border-radius:9px;">';
+
+  // Front face
+  const front=document.createElement('div');
+  front.className='card-face-front'+(isRed(card)?' r':'');
+
+  const fullImg=getFullImg(card);
+  if(fullImg){
+    // Full image card — remplace entièrement la face, pas de valeurs par-dessus
+    front.classList.add('imgcard');
+    front.style.cssText='padding:0;overflow:hidden;position:relative;';
+    const img=document.createElement('img');
+    img.src=fullImg;
+    // Recadrer pour enlever les bords verts et ne garder que la carte
+    img.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;border-radius:9px;';
+    front.appendChild(img);
+  }else{
+    // Carte normale : pattern + valeurs + symbole
+    const pattern=document.createElement('div');
+    pattern.className='card-bg-pattern';
+    pattern.innerHTML=cardPatternSVG(card.suit);
+    front.appendChild(pattern);
+
+    const tl=document.createElement('div');tl.className='cv-tl';
+    tl.innerHTML=card.value+'<br>'+card.suit;
+    front.appendChild(tl);
+
+    const mid=document.createElement('div');mid.className='cs-mid';
+    const art=faceArt(card.value,card.suit);
+    if(art){ mid.innerHTML=art; mid.style.lineHeight='0'; }
+    else{ mid.textContent=card.suit; }
+    front.appendChild(mid);
+
+    const br=document.createElement('div');br.className='cv-br';
+    br.innerHTML=card.value+'<br>'+card.suit;
+    front.appendChild(br);
+  }
+
+  inner.appendChild(back);inner.appendChild(front);
+  el.appendChild(inner);
+  // DEBUG: label overlay only on face-up cards (drawn, discard, peek selected)
+  if(window.DEBUG_LABELS&&opts.flipped){
+    const dbgLbl=document.createElement('div');
+    dbgLbl.style.cssText='position:absolute;bottom:2px;left:0;right:0;text-align:center;font-size:9px;font-weight:700;color:white;text-shadow:0 0 3px #000;z-index:10;pointer-events:none;background:rgba(0,0,0,0.6);border-radius:0 0 8px 8px;padding:1px 0;';
+    dbgLbl.textContent=card.value+card.suit;
+    el.appendChild(dbgLbl);
+  }
+  return el;
+}
+
+// Plain front for discard top / drawn card display
+
+function mkFrontEl(card){
+  const el=mkCardEl(card,{flipped:true});
+  el.style.cursor='default';
+  return el;
+}
+
+function getRect(el){return el?el.getBoundingClientRect():null;}
+
+function flyCard(srcEl,dstEl,opts={},onDone){
+  if(!srcEl||!dstEl){if(onDone)onDone();return;}
+  const layer=qid('fly-layer');
+  const fromR=getRect(srcEl);const toR=getRect(dstEl);
+  const fly=document.createElement('div');
+  fly.className='fly-card';
+  fly.style.cssText=`left:${fromR.left}px;top:${fromR.top}px;width:${fromR.width}px;height:${fromR.height}px;`;
+  const clone=srcEl.cloneNode(true);
+  clone.style.cssText='position:static;width:100%;height:100%;transition:none!important;animation:none!important;transform:none';
+  fly.appendChild(clone);
+  layer.appendChild(fly);
+  const dur=opts.dur||360;
+  // If we want to reveal: flip clone mid-flight
+  if(opts.revealCard){
+    const inner=clone.querySelector('.card-inner');
+    if(inner){
+      setTimeout(()=>{if(inner)inner.style.transform='rotateY(180deg)';},dur/2);
+    }
+  }
+  requestAnimationFrame(()=>{
+    fly.style.transition=`left ${dur}ms cubic-bezier(.4,0,.2,1),top ${dur}ms cubic-bezier(.4,0,.2,1),opacity ${dur}ms ease`;
+    fly.style.left=toR.left+'px';fly.style.top=toR.top+'px';
+    setTimeout(()=>{if(fly.parentNode)fly.parentNode.removeChild(fly);if(onDone)onDone();},dur+60);
+  });
+}
+
 function backSVG(){
   return `<svg class="card-back-svg" viewBox="0 0 66 94" xmlns="http://www.w3.org/2000/svg">
     <defs>
