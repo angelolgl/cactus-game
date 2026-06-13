@@ -2,10 +2,9 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>🌵 Cactus</title>
 <style>
-
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap');
 :root{
   --felt:#1a5c35;--felt-dark:#0d3520;--felt-light:#236b40;
@@ -220,18 +219,6 @@ body{font-family:'Inter',sans-serif;background:var(--felt-dark);color:white;font
 
 @keyframes dealIn{from{opacity:0;transform:translateY(-30px) scale(.75) rotate(-6deg)}to{opacity:1;transform:none}}
 @keyframes penaltyIn{from{transform:translateX(30px) scale(.7);opacity:0}to{transform:none;opacity:1}}
-
-
-/* ── LOBBY ── */
-#s-lobby{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:24px;overflow-y:auto}
-.lobby-box{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:24px;width:100%;max-width:440px;text-align:center}
-.lobby-box h2{font-family:'Playfair Display',serif;font-size:22px;color:var(--gold-light);margin-bottom:16px}
-.lobby-code{font-family:'Playfair Display',serif;font-size:42px;color:var(--gold-light);letter-spacing:.15em;text-shadow:0 2px 8px rgba(0,0,0,.5);margin:12px 0}
-.lobby-players{display:flex;flex-direction:column;gap:8px;margin:16px 0;min-height:60px}
-.lobby-player{background:rgba(255,255,255,.08);border-radius:8px;padding:8px 14px;font-size:14px;display:flex;align-items:center;gap:8px}
-.lobby-player.host::after{content:'👑';margin-left:auto}
-.error-msg{color:#e74c3c;font-size:13px;margin-top:8px;min-height:20px}
-.waiting-msg{color:rgba(255,255,255,.4);font-size:13px;margin-top:8px}
 </style>
 </head>
 <body>
@@ -256,15 +243,13 @@ body{font-family:'Inter',sans-serif;background:var(--felt-dark);color:white;font
     <h2>Rejoindre ou créer</h2>
     <input class="ninput" id="player-name" placeholder="Votre prénom" maxlength="20" style="margin-bottom:12px">
     <div style="display:flex;gap:10px;margin-bottom:12px">
-      <input class="ninput" id="room-code" placeholder="Code (ex: AB12)" maxlength="4" style="text-transform:uppercase;text-align:center;font-size:18px;letter-spacing:.1em">
+      <input class="ninput" id="room-code" placeholder="Code (ex: 1234)" maxlength="4" inputmode="numeric" style="text-align:center;font-size:18px;letter-spacing:.1em">
       <button class="start-btn" style="padding:0 16px;font-size:14px" onclick="joinRoom()">Rejoindre</button>
     </div>
     <div style="color:rgba(255,255,255,.3);font-size:12px;margin:8px 0">— ou —</div>
     <button class="start-btn" onclick="showCreate()">Créer une partie</button>
     <div class="error-msg" id="lobby-error"></div>
   </div>
-  
-  <!-- Create room panel -->
   <div class="lobby-box" id="lobby-create" style="display:none">
     <h2>Nouvelle partie</h2>
     <div style="margin-bottom:14px">
@@ -281,15 +266,13 @@ body{font-family:'Inter',sans-serif;background:var(--felt-dark);color:white;font
     <div style="margin-top:10px"><button class="cbtn" onclick="hideCreate()" style="width:100%">← Retour</button></div>
     <div class="error-msg" id="create-error"></div>
   </div>
-  
-  <!-- Waiting room -->
   <div class="lobby-box" id="lobby-waiting" style="display:none">
     <h2>Salle d'attente</h2>
-    <div class="lobby-code" id="lobby-code-display">----</div>
-    <p style="color:rgba(255,255,255,.4);font-size:12px">Partagez ce code avec vos amis</p>
-    <div class="lobby-players" id="lobby-players-list"></div>
+    <div style="font-family:'Playfair Display',serif;font-size:42px;color:var(--gold-light);letter-spacing:.15em;text-align:center;text-shadow:0 2px 8px rgba(0,0,0,.5);margin:12px 0" id="lobby-code-display">----</div>
+    <p style="color:rgba(255,255,255,.4);font-size:12px;text-align:center">Partagez ce code avec vos amis</p>
+    <div style="display:flex;flex-direction:column;gap:8px;margin:16px 0;min-height:60px" id="lobby-players-list"></div>
     <button class="start-btn" id="btn-start-game" style="display:none" onclick="startGame()">Lancer la partie →</button>
-    <div class="waiting-msg" id="waiting-msg">En attente d'autres joueurs...</div>
+    <div style="color:rgba(255,255,255,.4);font-size:13px;text-align:center;margin-top:8px" id="waiting-msg">En attente d'autres joueurs...</div>
   </div>
 </div>
 
@@ -318,7 +301,6 @@ body{font-family:'Inter',sans-serif;background:var(--felt-dark);color:white;font
     <div><div class="g-playername" id="g-name">—</div><div class="g-instruction" id="g-instr">En attente...</div></div>
   </div>
   <div class="g-log" id="g-log"></div>
-  <div class="power-banner" id="power-banner"></div>
   <div class="table-zone">
     <div class="pile-wrap">
       <div class="plabel">Pioche</div>
@@ -339,7 +321,7 @@ body{font-family:'Inter',sans-serif;background:var(--felt-dark);color:white;font
   <div style="font-size:44px;text-align:center">🏆</div>
   <div class="sc-card"><h2 id="sc-title">Fin de manche</h2><div id="sc-rows"></div></div>
   <div class="sc-btns">
-    <button class="sc-btn" id="btn-newround">Nouvelle manche →</button>
+    <button class="sc-btn" id="btn-newround" style="display:none">Nouvelle manche →</button>
     <button class="sc-btn sec" id="btn-endgame">Terminer</button>
   </div>
 </div>
@@ -348,490 +330,28 @@ body{font-family:'Inter',sans-serif;background:var(--felt-dark);color:white;font
 <div id="s-final" class="screen">
   <div style="font-size:56px;text-align:center">🌵🏆🌵</div>
   <div class="sc-card"><h2>Fin de partie !</h2><div id="fin-rows"></div></div>
-  <button class="sc-btn" id="btn-newgame">Nouvelle partie →</button>
+  <button class="sc-btn" onclick="location.reload()">Nouvelle partie →</button>
 </div>
 
 <script src="/images1.js"></script>
 <script src="/images2.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script>
-// ══ CLIENT STATE ══
-let socket;
-let myIndex = -1;
-let myRoom = '';
-let selectedCardCount = 4;
-let G = null; // received from server
-let peekSel = [];
+// ══ CONSTANTS & UTILS ══
+const SUITS = ['♠','♥','♦','♣'];
+const VALS  = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+const SPECIALS = ['7','9','J','K'];
+const SPECIAL_NO_TAKE = ['7','J'];
+const snapCD = {};
+let toastTimer, countdownTimer, countdownActive = false;
+let sN = 4;
+const isRed = c => c.suit==='♥'||c.suit==='♦';
+const isSp  = c => SPECIALS.includes(c.value);
+const pts   = c => { if(c.value==='9')return isRed(c)?-2:14; return {A:1,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'10':10,J:11,Q:12,K:0}[c.value]??5; };
+const lbl   = c => c.value+c.suit;
+let _uid = 0;
 
-// ══ SOCKET INIT ══
-function initSocket() {
-  if (socket && socket.connected) return; // already connected
-  socket = io();
-
-  socket.on('connect', () => {
-    console.log('Socket connected:', socket.id);
-  });
-
-  socket.on('connect_error', (err) => {
-    console.error('Connection error:', err);
-    document.getElementById('lobby-error').textContent = 'Erreur de connexion au serveur';
-  });
-
-  socket.on('roomCreated', ({code, playerIndex}) => {
-    myIndex = playerIndex;
-    myRoom = code;
-    showWaiting(code, true);
-  });
-
-  socket.on('roomJoined', ({code, playerIndex}) => {
-    myIndex = playerIndex;
-    myRoom = code;
-    showWaiting(code, false);
-  });
-
-  socket.on('lobbyUpdate', ({players, host}) => {
-    updateLobbyPlayers(players, host);
-  });
-
-  socket.on('gameStarted', () => {
-    peekSel = [];
-    show('peek');
-  });
-
-  socket.on('gameState', (state) => {
-    G = state;
-    updateGame(state);
-  });
-
-  socket.on('revealCard', ({card, reason}) => {
-    showRevealModal(card, () => {});
-  });
-
-  socket.on('wrongSnap', ({playerIndex, card}) => {
-    if (playerIndex === myIndex) {
-      showWrongSnapModal(card, () => {});
-    }
-  });
-
-  socket.on('error', (msg) => {
-    showToast('⚠️ ' + msg);
-    document.getElementById('lobby-error').textContent = msg;
-    document.getElementById('create-error').textContent = msg;
-  });
-}
-
-// ══ LOBBY ══
-let selectedCC = 4;
-document.getElementById('lobby-cc-btns')?.querySelectorAll('.cbc').forEach(b => {
-  b.addEventListener('click', () => {
-    document.querySelectorAll('#lobby-cc-btns .cbc').forEach(x => x.classList.remove('sel'));
-    b.classList.add('sel');
-    selectedCC = +b.dataset.c;
-  });
-});
-
-document.getElementById('room-code').addEventListener('input', e => {
-  e.target.value = e.target.value.toUpperCase();
-});
-
-function showCreate() {
-  document.getElementById('lobby-main').style.display = 'none';
-  document.getElementById('lobby-create').style.display = 'block';
-}
-function hideCreate() {
-  document.getElementById('lobby-create').style.display = 'none';
-  document.getElementById('lobby-main').style.display = 'block';
-}
-
-function getName() {
-  return document.getElementById('player-name').value.trim() || 'Joueur';
-}
-
-function createRoom() {
-  initSocket();
-  const doCreate = () => socket.emit('createRoom', { name: getName(), cardCount: selectedCC });
-  if (socket.connected) doCreate();
-  else socket.once('connect', doCreate);
-}
-
-function joinRoom() {
-  const code = document.getElementById('room-code').value.trim().toUpperCase();
-  if (!code) { document.getElementById('lobby-error').textContent = 'Entrez un code'; return; }
-  initSocket();
-  const doJoin = () => socket.emit('joinRoom', { code, name: getName() });
-  if (socket.connected) doJoin();
-  else socket.once('connect', doJoin);
-}
-
-function showWaiting(code, isHost) {
-  document.getElementById('lobby-main').style.display = 'none';
-  document.getElementById('lobby-create').style.display = 'none';
-  document.getElementById('lobby-waiting').style.display = 'block';
-  document.getElementById('lobby-code-display').textContent = code;
-  document.getElementById('btn-start-game').style.display = isHost ? 'block' : 'none';
-}
-
-function updateLobbyPlayers(players, host) {
-  const list = document.getElementById('lobby-players-list');
-  list.innerHTML = players.map((name, i) => {
-    const isHost = i === 0;
-    return `<div class="lobby-player${isHost?' host':''}">
-      <span>${i+1}.</span><strong>${name}</strong>
-      ${isHost?'<span style="margin-left:auto;font-size:11px;color:var(--gold-light)">Hôte</span>':''}
-    </div>`;
-  }).join('');
-}
-
-function startGame() {
-  socket.emit('startGame', { code: myRoom });
-}
-
-// ══ PEEK ══
-function renderPeek(hand) {
-  const row = document.getElementById('peek-cards');
-  row.innerHTML = '';
-  hand.forEach((c, i) => {
-    const sel = peekSel.includes(i);
-    const el = mkCardEl(c, {flipped: sel, selected: sel});
-    el.addEventListener('click', () => {
-      if (peekSel.includes(i)) peekSel = peekSel.filter(x => x !== i);
-      else if (peekSel.length < 2) peekSel.push(i);
-      renderPeek(hand);
-    });
-    row.appendChild(el);
-  });
-  document.getElementById('btn-peek-ok').classList.toggle('on', peekSel.length === 2);
-}
-
-document.getElementById('btn-peek-ok').addEventListener('click', () => {
-  socket.emit('peekDone', { code: myRoom });
-  show('game');
-});
-
-// ══ GAME RENDER ══
-function updateGame(state) {
-  if (!state) return;
-  G = state;
-  const isMyTurn = state.cur === myIndex;
-  const me = state.players[myIndex];
-
-  // Update header
-  const turnPlayer = state.players[state.cur];
-  document.getElementById('g-name').textContent = isMyTurn ? '🎴 Votre tour' : `🎴 Tour de ${turnPlayer.name}`;
-  document.getElementById('g-instr').textContent = getInstruction(state, isMyTurn);
-
-  // Render log
-  const logEl = document.getElementById('g-log');
-  logEl.innerHTML = (state.log||[]).slice(0,4).map((l,i)=>
-    `<span style="opacity:${1-i*.22}">${l}</span>`).join(' · ');
-
-  renderDiscard(state, isMyTurn);
-  renderDrawPile(state, isMyTurn);
-  renderActions(state, isMyTurn);
-  renderPlayers(state);
-
-  // Handle peek if needed
-  if (state.phase === 'peek' && me?.hand) {
-    renderPeek(me.hand);
-    show('peek');
-    return;
-  }
-  if (state.phase === 'score') { renderScore(state); return; }
-  show('game');
-}
-
-function getInstruction(state, isMyTurn) {
-  if (!isMyTurn) return `Tour de ${state.players[state.cur].name}...`;
-  if (state.sevenP) return 'Cliquez sur une de vos cartes pour la regarder';
-  if (state.jackP) {
-    const s = state.jackTimerStep;
-    if (s==='decide') return '🃏 Utiliser le pouvoir ou ignorer';
-    if (s==='pick1') return '🃏 Choisissez la 1ère carte';
-    if (s==='pick2') return '🃏 Choisissez la 2ème carte';
-  }
-  if (state.phase==='drawn') return 'Défaussez ou échangez';
-  if (state.phase==='exchange') return 'Cliquez sur une de vos cartes';
-  return 'Piochez ou prenez la défausse';
-}
-
-function renderDiscard(state, isMyTurn) {
-  const slot = document.getElementById('discard-slot');
-  slot.innerHTML = '';
-  if (state.discardEmpty || !state.discard) {
-    const empty = document.createElement('div');
-    empty.style.cssText = 'width:65px;height:94px;border-radius:9px;border:2px dashed rgba(255,255,255,.2);opacity:.5';
-    slot.appendChild(empty);
-    return;
-  }
-  const top = state.discard;
-  const el = mkFrontEl(top);
-  el.id = 'discard-card';
-  const noTake = ['7','J'];
-  if (isMyTurn && state.phase === 'draw' && !noTake.includes(top.value)) {
-    el.style.cursor = 'pointer';
-    el.addEventListener('click', () => socket.emit('takeDiscard', { code: myRoom }));
-  } else if (isMyTurn && state.phase === 'exchange') {
-    el.style.cursor = 'pointer';
-    el.style.boxShadow = '0 0 0 2px rgba(212,168,75,.5)';
-    el.addEventListener('click', () => socket.emit('cancelExchange', { code: myRoom }));
-  }
-  slot.appendChild(el);
-}
-
-function renderDrawPile(state, isMyTurn) {
-  document.getElementById('draw-count').textContent = state.deckCount + ' cartes';
-  const dw = document.getElementById('draw-wrap');
-  if (!dw.children.length) {
-    dw.innerHTML = '';
-    for (let i = 0; i < 3; i++) {
-      const c = document.createElement('div'); c.className = 'card';
-      if (i === 2) c.id = 'draw-top';
-      c.innerHTML = `<div class="card-inner"><div class="card-face-back"><img src="${BACK_IMG}" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;border-radius:9px;"></div><div class="card-face-front"></div></div>`;
-      dw.appendChild(c);
-    }
-  }
-  if (isMyTurn && state.phase === 'draw') {
-    dw.style.cursor = 'pointer';
-    dw.onclick = () => socket.emit('draw', { code: myRoom });
-  } else {
-    dw.style.cursor = 'default';
-    dw.onclick = null;
-  }
-}
-
-function renderActions(state, isMyTurn) {
-  const area = document.getElementById('action-area');
-  area.innerHTML = '';
-
-  if (state.drawn && state.phase === 'drawn' && isMyTurn) {
-    const lbl2 = document.createElement('div'); lbl2.className='plabel'; lbl2.textContent='Carte piochée';
-    area.appendChild(lbl2);
-    const cf = mkFrontEl(state.drawn); cf.id='drawn-card-el'; area.appendChild(cf);
-    const db = document.createElement('button'); db.className='abtn'; db.textContent='🗑 Défausser';
-    db.onclick = () => socket.emit('discardDrawn', { code: myRoom });
-    const eb = document.createElement('button'); eb.className='abtn gold'; eb.textContent='🔄 Échanger';
-    eb.onclick = () => { G.phase='exchange'; renderActions(state, isMyTurn); };
-    area.appendChild(db); area.appendChild(eb);
-  } else if (state.sevenP && isMyTurn) {
-    const pn = document.createElement('div'); pn.className='power-note';
-    pn.innerHTML='🔮 <b>7</b> — Cliquez sur une de vos cartes'; area.appendChild(pn);
-    const sk = document.createElement('button'); sk.className='abtn'; sk.textContent='⏭ Ignorer';
-    sk.onclick = () => socket.emit('sevenSkip', { code: myRoom });
-    area.appendChild(sk);
-  } else if (state.jackP) {
-    const s = state.jackTimerStep;
-    const pn = document.createElement('div'); pn.className='power-note';
-    const jackOwnerName = state.jackOwner !== null ? state.players[state.jackOwner]?.name : '?';
-    const isJackOwner = state.jackOwner === myIndex;
-    if (s==='decide') {
-      pn.innerHTML=`🃏 <b>Valet</b> de <b>${jackOwnerName}</b>`;
-      area.appendChild(pn);
-      if (isJackOwner) {
-        const useBtn = document.createElement('button'); useBtn.className='abtn gold';
-        useBtn.textContent='⚡ Utiliser le pouvoir';
-        useBtn.onclick = () => socket.emit('jackActivate', { code: myRoom });
-        area.appendChild(useBtn);
-        const sk = document.createElement('button'); sk.className='abtn'; sk.textContent='⏭ Ignorer';
-        sk.onclick = () => socket.emit('jackIgnore', { code: myRoom });
-        area.appendChild(sk);
-      }
-    } else if (s==='pick1'||s==='pick2') {
-      if (s==='pick1') pn.innerHTML='🃏 Choisissez la 1ère carte';
-      else {
-        const sel = state.jackSel[0];
-        pn.innerHTML=`🃏 Choisissez la 2ème carte<br><small style="color:rgba(255,255,255,.5)">${sel?state.players[sel.p].name+' #'+(sel.i+1):''}</small>`;
-      }
-      area.appendChild(pn);
-      if (isJackOwner && s==='pick2' && state.jackSel.length===2) {
-        const cb = document.createElement('button'); cb.className='abtn gold';
-        cb.textContent='✅ Confirmer';
-        cb.onclick = () => socket.emit('jackConfirm', { code: myRoom });
-        area.appendChild(cb);
-      }
-      if (isJackOwner) {
-        const sk = document.createElement('button'); sk.className='abtn'; sk.textContent='⏭ Annuler';
-        sk.onclick = () => socket.emit('jackIgnore', { code: myRoom });
-        area.appendChild(sk);
-      }
-    }
-  }
-}
-
-function renderPlayers(state) {
-  const area = document.getElementById('players-area');
-  area.innerHTML = '';
-  state.players.forEach((pl, pi) => {
-    const isActive = pi === state.cur;
-    const isMe = pi === myIndex;
-    const row = document.createElement('div');
-    row.className = 'prow' + (isActive?' active':'');
-    row.innerHTML = `<div class="prow-header">
-      <div class="prow-name">${isActive?'<div class="adot"></div>':''}
-        ${isMe?'<span style="color:var(--gold-light)">Vous</span>':pl.name}
-        <span class="cbadge">${pl.cardCount}🃏</span>
-        ${state.cactusRound&&pi===state.cactusPl?'<span style="color:#2ecc71;font-size:11px">🌵</span>':''}
-      </div>
-      <span class="pscore">${state.totals?.[pi]||0} pts</span>
-    </div>`;
-    const hand = document.createElement('div'); hand.className='phand'; hand.id=`hand-${pi}`;
-    if (pl.hand) {
-      pl.hand.forEach((c, ci) => {
-        const inJack = state.jackSel?.some(s=>s.p===pi&&s.i===ci);
-        const isRevealed = !c.hidden;
-        const el = isRevealed ? mkCardEl(c,{flipped:true,selected:inJack}) : mkCardEl({value:'?',suit:'?',uid:-1},{flipped:false,selected:inJack});
-        el.addEventListener('click', () => onCardClick(pi, ci, c, state));
-        hand.appendChild(el);
-      });
-    }
-    row.appendChild(hand); area.appendChild(row);
-  });
-}
-
-function onCardClick(pi, ci, card, state) {
-  if (!G) return;
-  const isMe = pi === myIndex;
-  const isMyTurn = G.cur === myIndex;
-  const isJackOwner = G.jackOwner === myIndex;
-
-  // SEVEN: look at own card
-  if (G.sevenP && isMyTurn && isMe) {
-    socket.emit('sevenLook', { code: myRoom, cardIndex: ci });
-    return;
-  }
-
-  // JACK pick
-  if (G.jackP && G.jackActivated && isJackOwner) {
-    socket.emit('jackPick', { code: myRoom, playerIndex: pi, cardIndex: ci });
-    return;
-  }
-
-  // EXCHANGE: click own card
-  if (G.phase === 'exchange' && isMyTurn && isMe) {
-    socket.emit('exchange', { code: myRoom, cardIndex: ci });
-    return;
-  }
-
-  // SNAP: own cards only
-  const snapPhases = ['draw','drawn'];
-  if (G.phase==='jack'&&G.jackTimerStep==='decide') snapPhases.push('jack');
-  if (snapPhases.includes(G.phase) && isMe) {
-    socket.emit('snap', { code: myRoom, cardIndex: ci });
-  }
-}
-
-// ── Score ──
-function renderScore(state) {
-  show('score');
-  document.getElementById('sc-title').textContent = `Manche ${state.round} — Résultats`;
-  // Will be populated from server data
-  document.getElementById('sc-rows').innerHTML = '<p style="color:rgba(255,255,255,.5);text-align:center">Résultats reçus du serveur</p>';
-  document.getElementById('btn-newround').style.display = myIndex === 0 ? 'block' : 'none';
-}
-
-document.getElementById('btn-newround')?.addEventListener('click', () => {
-  socket.emit('nextRound', { code: myRoom });
-});
-document.getElementById('btn-endgame')?.addEventListener('click', () => show('final'));
-document.getElementById('btn-newgame')?.addEventListener('click', () => { show('s-lobby'); location.reload(); });
-
-// ── Cactus ──
-document.getElementById('btn-cactus')?.addEventListener('click', () => {
-  if (!G || G.phase !== 'draw' || G.cur !== myIndex) return;
-  socket.emit('cactus', { code: myRoom });
-});
-
-// ── Rules ──
-document.getElementById('btn-rules')?.addEventListener('click', () => {
-  qid('modal-root').innerHTML=`<div class="modal-bg"><div class="modal-box">
-    <h3>📖 Règles</h3>
-    <p style="text-align:left;font-size:12px;line-height:1.9">
-    <b>Tour :</b> Pioche ou prend la défausse (sauf 7/Valet). Défausse ou échange.<br>
-    <b>Snap ⚡ :</b> Cliquez sur une de vos cartes pour snap la défausse.<br>
-    <b>7</b> → Regardez une de vos cartes<br>
-    <b>Valet</b> → Échangez 2 cartes entre joueurs différents<br>
-    <b>Points :</b> A=1 · 2–8=valeur · ♠♣9=14 · ♥♦9=−2 · 10=10 · V=11 · D=12 · R=0<br>
-    <b>Cactus 🌵 :</b> Annoncez. Score doublé si >5 pts ou adversaire a moins.<br>
-    <b>Fin :</b> Éliminé à 100 pts.
-    </p>
-    <div class="mbtn-row"><button class="mbtn" id="m-ok">Compris !</button></div>
-  </div></div>`;
-  qid('m-ok').addEventListener('click',()=>qid('modal-root').innerHTML='');
-});
-
-// ══ HELPERS ══
-const qid = id => document.getElementById(id);
-const show = id => {
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  const el = document.getElementById('s-'+id) || document.getElementById(id);
-  if (el) el.classList.add('active');
-};
-
-let countdownTimer = null;
-let countdownActive = false;
-function stopCountdown() {
-  clearInterval(countdownTimer);
-  countdownActive = false;
-  const overlay = qid('countdown-overlay');
-  if (overlay) overlay.classList.remove('show');
-}
-function startCountdown(onDone, seconds=3) {
-  stopCountdown();
-  const overlay = qid('countdown-overlay');
-  const numEl = qid('cd-num');
-  let n = seconds;
-  numEl.textContent = n;
-  overlay.classList.add('show');
-  countdownActive = true;
-  countdownTimer = setInterval(() => {
-    n--;
-    numEl.textContent = n;
-    if (n <= 0) { stopCountdown(); onDone(); }
-  }, 1000);
-}
-
-let toastTimer;
-function showToast(msg) {
-  const t = qid('toast'); t.textContent=msg; t.classList.add('show');
-  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2800);
-}
-
-function showRevealModal(card, onOk) {
-  const r = isRed(card);
-  const art = faceArt(card.value, card.suit);
-  const midHTML = art?`<div style="line-height:0">${art}</div>`:`<span style="font-size:26px">${card.suit}</span>`;
-  qid('modal-root').innerHTML=`<div class="modal-bg"><div class="modal-box">
-    <h3>🔮 Votre carte</h3><p>Mémorisez-la !</p>
-    <div class="modal-card-wrap">
-      <div style="width:70px;height:100px;background:var(--card-bg);border-radius:9px;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4),0 0 0 4px rgba(212,168,75,.15)">
-        ${midHTML}
-      </div>
-    </div>
-    <div style="color:rgba(255,255,255,.4);font-size:12px;margin-bottom:16px">${card.value}${card.suit} — ${pts(card)} pts</div>
-    <div class="mbtn-row"><button class="mbtn" id="m-ok">Mémorisé →</button></div>
-  </div></div>`;
-  qid('m-ok').addEventListener('click',()=>{qid('modal-root').innerHTML='';if(onOk)onOk();});
-}
-
-function showWrongSnapModal(card, onOk) {
-  const art = faceArt(card.value, card.suit);
-  const midHTML = art?`<div style="line-height:0">${art}</div>`:`<span style="font-size:26px">${card.suit}</span>`;
-  qid('modal-root').innerHTML=`<div class="modal-bg"><div class="modal-box">
-    <h3>❌ Mauvais snap !</h3><p>Vous avez jeté ${card.value}${card.suit} — pénalité !</p>
-    <div class="modal-card-wrap"><div style="width:70px;height:100px;background:var(--card-bg);border-radius:9px;display:flex;align-items:center;justify-content:center;overflow:hidden;">${midHTML}</div></div>
-    <div class="mbtn-row"><button class="mbtn" id="m-ok">Compris</button></div>
-  </div></div>`;
-  qid('m-ok').addEventListener('click',()=>{qid('modal-root').innerHTML='';if(onOk)onOk();});
-}
-
-// ══ CARD BUILDERS (from local version) ══
-
-
-
-
-
-
-
-// ══ SVG GENERATORS ══
+// ══ CARD BUILDERS ══
 function backSVG(){
   return `<svg class="card-back-svg" viewBox="0 0 66 94" xmlns="http://www.w3.org/2000/svg">
     <defs>
@@ -957,500 +477,10 @@ function faceArt(value, suit){
 }
 
 // ══ HELPERS ══
-const SUITS=['♠','♥','♦','♣'];
-const VALS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
-const SPECIALS=['7','9','J','K'];
-const isRed=c=>c.suit==='♥'||c.suit==='♦';
-const isSp=c=>SPECIALS.includes(c.value);
-const pts=c=>{
-  if(c.value==='9')return isRed(c)?-2:14;
-  return {A:1,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'10':10,J:11,Q:12,K:0}[c.value];
-};
-const lbl=c=>c.value+c.suit;
-let _uid=0;
-const mkDeck=()=>{const d=[];for(const s of SUITS)for(const v of VALS)d.push({suit:s,value:v,uid:_uid++});return d;};
 const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
 const firstNonSp=deck=>{for(let i=0;i<deck.length;i++)if(!isSp(deck[i])){const[c]=deck.splice(i,1);return c;}return deck.shift();};
-const show=id=>{document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById('s-'+id).classList.add('active');};
-const qid=id=>document.getElementById(id);
 
-// ══ STATE ══
-let G={};
-const snapCD={};
-let countdownTimer=null,countdownActive=false;
-
-function initGame(names,cc){
-  const deck=shuffle(mkDeck());
-  G={
-    players:names.map((name)=>({name,hand:deck.splice(0,cc)})),
-    deck,discard:[firstNonSp(deck)],
-    cur:Math.floor(Math.random()*names.length),
-    phase:'peek',peekPl:0,peekSel:[],
-    drawn:null,
-    jackP:false,jackSel:[],jackActivated:false,jackQueue:[],jackTimerStep:null,sevenP:false,
-    cactusPl:null,cactusRound:false,
-    totals:names.map(()=>0),
-    round:1,cc,log:[]
-  };
-}
-
-function addLog(msg){
-  G.log.unshift(msg);if(G.log.length>20)G.log.pop();
-  const el=qid('g-log');
-  if(!el)return;
-  el.innerHTML=G.log.slice(0,4).map((l,i)=>`<span style="opacity:${1-i*.22}">${l}</span>`).join(' · ');
-}
-
-// ══ CARD ELEMENT BUILDER ══
-function getFullImg(card){
-  if(card.value==='K'&&KING_IMGS[card.suit]) return KING_IMGS[card.suit];
-  if(card.value==='Q'&&QUEEN_IMGS[card.suit]) return QUEEN_IMGS[card.suit];
-  if(card.value==='J'&&JACK_IMGS[card.suit]) return JACK_IMGS[card.suit];
-  if(card.value==='A'&&ACE_IMGS[card.suit]) return ACE_IMGS[card.suit];
-  if(card.suit==='♠'&&SPADE_IMGS[card.value]) return SPADE_IMGS[card.value];
-  if(card.suit==='♥'&&HEART_IMGS[card.value]) return HEART_IMGS[card.value];
-  if(card.suit==='♣'&&CLUB_IMGS[card.value]) return CLUB_IMGS[card.value];
-  if(card.suit==='♦'&&DIAMOND_IMGS[card.value]) return DIAMOND_IMGS[card.value];
-  return null;
-}
-
-function mkCardEl(card,opts={}){
-  const el=document.createElement('div');
-  el.className='card'+(opts.selected?' selected':'');
-  el.dataset.uid=card?card.uid:'';
-  const inner=document.createElement('div');inner.className='card-inner';
-  if(opts.flipped)inner.style.transform='rotateY(180deg)';
-
-  // Back face
-  const back=document.createElement('div');back.className='card-face-back';
-  back.innerHTML='<img src="'+BACK_IMG+'" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;border-radius:9px;">';
-
-  // Front face
-  const front=document.createElement('div');
-  front.className='card-face-front'+(isRed(card)?' r':'');
-
-  const fullImg=getFullImg(card);
-  if(fullImg){
-    // Full image card — remplace entièrement la face, pas de valeurs par-dessus
-    front.classList.add('imgcard');
-    front.style.cssText='padding:0;overflow:hidden;position:relative;';
-    const img=document.createElement('img');
-    img.src=fullImg;
-    // Recadrer pour enlever les bords verts et ne garder que la carte
-    img.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;border-radius:9px;';
-    front.appendChild(img);
-  }else{
-    // Carte normale : pattern + valeurs + symbole
-    const pattern=document.createElement('div');
-    pattern.className='card-bg-pattern';
-    pattern.innerHTML=cardPatternSVG(card.suit);
-    front.appendChild(pattern);
-
-    const tl=document.createElement('div');tl.className='cv-tl';
-    tl.innerHTML=card.value+'<br>'+card.suit;
-    front.appendChild(tl);
-
-    const mid=document.createElement('div');mid.className='cs-mid';
-    const art=faceArt(card.value,card.suit);
-    if(art){ mid.innerHTML=art; mid.style.lineHeight='0'; }
-    else{ mid.textContent=card.suit; }
-    front.appendChild(mid);
-
-    const br=document.createElement('div');br.className='cv-br';
-    br.innerHTML=card.value+'<br>'+card.suit;
-    front.appendChild(br);
-  }
-
-  inner.appendChild(back);inner.appendChild(front);
-  el.appendChild(inner);
-  // DEBUG: label overlay only on face-up cards (drawn, discard, peek selected)
-  if(window.DEBUG_LABELS&&opts.flipped){
-    const dbgLbl=document.createElement('div');
-    dbgLbl.style.cssText='position:absolute;bottom:2px;left:0;right:0;text-align:center;font-size:9px;font-weight:700;color:white;text-shadow:0 0 3px #000;z-index:10;pointer-events:none;background:rgba(0,0,0,0.6);border-radius:0 0 8px 8px;padding:1px 0;';
-    dbgLbl.textContent=card.value+card.suit;
-    el.appendChild(dbgLbl);
-  }
-  return el;
-}
-
-// Plain front for discard top / drawn card display
-function mkFrontEl(card){
-  const el=mkCardEl(card,{flipped:true});
-  el.style.cursor='default';
-  return el;
-}
-
-// ══ SETUP ══
-let sN=0,sC=0;
-qid('nb-btns').addEventListener('click',e=>{
-  const b=e.target.closest('.cbtn');if(!b)return;
-  document.querySelectorAll('#nb-btns .cbtn').forEach(x=>x.classList.remove('sel'));
-  b.classList.add('sel');sN=+b.dataset.n;buildSetup();
-});
-function buildSetup(){
-  const R={2:[4,8],3:[4,5],4:[4,4],5:[4,4]};
-  const[mn,mx]=R[sN];sC=mn;
-  const ng=qid('name-grid');ng.innerHTML='';
-  for(let i=0;i<sN;i++)ng.innerHTML+=`<input class="ninput" id="pn${i}" value="Joueur ${i+1}" placeholder="Joueur ${i+1}">`;
-  const cb=qid('cc-btns');cb.innerHTML='';
-  for(let c=mn;c<=mx;c++)cb.innerHTML+=`<button class="cbtn cbc${c===mn?' sel':''}" data-c="${c}">${c} cartes</button>`;
-  document.querySelectorAll('.cbc').forEach(b=>b.addEventListener('click',()=>{
-    document.querySelectorAll('.cbc').forEach(x=>x.classList.remove('sel'));
-    b.classList.add('sel');sC=+b.dataset.c;
-  }));
-  qid('name-panel').style.display='block';
-  qid('btn-start').style.display='block';
-}
-qid('btn-start').addEventListener('click',()=>{
-  const names=Array.from({length:sN},(_,i)=>qid('pn'+i).value||`Joueur ${i+1}`);
-  initGame(names,sC);startPeek();
-});
-
-// ══ PEEK — cartes dos, clic pour retourner ══
-function startPeek(){G.phase='peek';G.peekPl=0;G.peekSel=[];renderPeek();}
-function renderPeek(){
-  show('peek');
-  const p=G.players[G.peekPl];
-  qid('peek-h').textContent=`${p.name} — Retournez 2 cartes`;
-  qid('peek-sub').textContent='Cliquez sur 2 cartes pour les retourner et les mémoriser. Les autres ne doivent pas regarder.';
-  const row=qid('peek-cards');row.innerHTML='';
-  p.hand.forEach((c,i)=>{
-    const sel=G.peekSel.includes(i);
-    // Carte dos par défaut, retournée si sélectionnée
-    const el=mkCardEl(c,{flipped:sel,selected:sel});
-    el.style.animation=`dealIn .3s ${i*.06}s both`;
-    el.style.cursor='pointer';
-    el.addEventListener('click',()=>{
-      if(G.peekSel.includes(i)){
-        // Retourner à dos
-        G.peekSel=G.peekSel.filter(x=>x!==i);
-      }else if(G.peekSel.length<2){
-        G.peekSel.push(i);
-      }
-      renderPeek();
-    });
-    row.appendChild(el);
-  });
-  const btn=qid('btn-peek-ok');
-  btn.classList.toggle('on',G.peekSel.length===2);
-}
-qid('btn-peek-ok').addEventListener('click',()=>{
-  G.peekPl++;G.peekSel=[];
-  if(G.peekPl>=G.players.length){
-    G.phase='draw';addLog(`Partie lancée ! ${G.players[G.cur].name} commence.`);renderGame();
-  }else renderPeek();
-});
-
-// ══ RENDER GAME ══
-function renderGame(){
-  show('game');
-  qid('g-name').textContent=`🎴 ${G.players[G.cur].name}`;
-  qid('g-instr').textContent=phaseInstr();
-  renderDiscard();renderDrawPile();renderActions();renderPlayers();
-}
-function phaseInstr(){
-  if(G.sevenP)return'Cliquez sur une de vos cartes pour la regarder';
-  if(G.jackP){
-    const s=G.jackTimerStep;
-    if(s==='decide') return '🃏 Valet — Snappez ou utilisez le pouvoir (5s)';
-    if(s==='pick1') return '🃏 Choisissez la 1ère carte à échanger';
-    if(s==='pick2') return '🃏 Choisissez la 2ème carte à échanger';
-    return '🃏 Valet en cours...';
-  }
-  if(G.phase==='drawn')return'Défaussez ou échangez la carte piochée';
-  if(G.phase==='exchange')return'Cliquez sur une de vos cartes à remplacer — ou sur la défausse pour annuler';
-  return'Piochez ou prenez la défausse';
-}
-
-function renderDiscard(){
-  const slot=qid('discard-slot');slot.innerHTML='';
-  const top=G.discard[G.discard.length-1];
-  if(!top){
-    // Défausse vide temporairement (carte prise) — afficher emplacement vide
-    const empty=document.createElement('div');
-    empty.style.cssText='width:65px;height:94px;border-radius:9px;border:2px dashed rgba(255,255,255,0.2);opacity:0.5;';
-    slot.appendChild(empty);
-    return;
-  }
-  const el=mkFrontEl(top);el.id='discard-card';
-  const noTake=['7','J'];
-  if(G.phase==='draw'&&!noTake.includes(top.value)){
-    el.style.cursor='pointer';el.addEventListener('click',takeDiscard);
-  }
-  // En phase exchange : cliquer sur la défausse annule l'échange et défausse directement
-  if(G.phase==='exchange'){
-    el.style.cursor='pointer';
-    el.title='Annuler — jeter cette carte directement';
-    el.style.boxShadow='0 0 0 2px rgba(212,168,75,0.5)';
-    el.addEventListener('click',()=>{
-      const c=G.drawn;G.drawn=null;G.discard.push(c);
-      addLog(G.players[G.cur].name+' défausse '+lbl(c)+'.');
-      const hasSpecial=checkSpecial(c);
-      renderGame();
-      if(!hasSpecial) startCountdown(()=>endTurn());
-    });
-  }
-  slot.appendChild(el);
-}
-
-function renderDrawPile(){
-  qid('draw-count').textContent=G.deck.length+' cartes';
-  const dw=qid('draw-wrap');
-  if(G.phase==='draw'){dw.style.cursor='pointer';dw.onclick=doDraw;}
-  else{dw.style.cursor='default';dw.onclick=null;}
-}
-
-function renderActions(){
-  const area=qid('action-area');area.innerHTML='';
-  if(G.drawn&&G.phase==='drawn'){
-    const lbl2=document.createElement('div');lbl2.className='plabel';lbl2.textContent='Carte piochée';area.appendChild(lbl2);
-    const cf=mkFrontEl(G.drawn);cf.id='drawn-card-el';area.appendChild(cf);
-    const db=document.createElement('button');db.className='abtn';db.textContent='🗑 Défausser';db.onclick=discardDrawn;
-    const eb=document.createElement('button');eb.className='abtn gold';eb.textContent='🔄 Échanger';eb.onclick=()=>{G.phase='exchange';renderGame();};
-    area.appendChild(db);area.appendChild(eb);
-  }else if(G.jackP){
-    const pn=document.createElement('div');pn.className='power-note';
-    if(!G.jackActivated){
-      pn.innerHTML='🃏 <b>Valet</b> — Vous pouvez snapper normalement ou utiliser le pouvoir';
-      area.appendChild(pn);
-      const useBtn=document.createElement('button');useBtn.className='abtn gold';useBtn.textContent='⚡ Utiliser le pouvoir';
-      useBtn.onclick=()=>{G.jackActivated=true;G.jackSel=[];renderGame();};area.appendChild(useBtn);
-    }else{
-      if(G.jackSel.length===0) pn.innerHTML='🃏 Cliquez sur 2 cartes (2 joueurs différents)';
-      else if(G.jackSel.length===1) pn.innerHTML='🃏 Choisissez la 2ème carte (autre joueur)<br><small style="color:rgba(255,255,255,.5)">'+G.players[G.jackSel[0].p].name+' #'+(G.jackSel[0].i+1)+' sélectionné</small>';
-      else pn.innerHTML='🃏 Prêt à échanger<br><small style="color:rgba(255,255,255,.5)">'+G.players[G.jackSel[0].p].name+' #'+(G.jackSel[0].i+1)+' ↔ '+G.players[G.jackSel[1].p].name+' #'+(G.jackSel[1].i+1)+'</small>';
-      area.appendChild(pn);
-      if(G.jackSel.length===2){
-        const cb=document.createElement('button');cb.className='abtn gold';cb.textContent='✅ Confirmer l\'échange';cb.onclick=doJackSwap;area.appendChild(cb);
-      }
-    }
-    const sk=document.createElement('button');sk.className='abtn';sk.textContent='⏭ Ignorer le pouvoir';
-    sk.onclick=()=>{G.jackP=false;G.jackSel=[];G.jackStep=1;G.jackActivated=false;G.phase='draw';endTurn();};area.appendChild(sk);
-  }else if(G.sevenP){
-    const pn=document.createElement('div');pn.className='power-note';pn.innerHTML='🔮 <b>7</b> — Cliquez sur une de vos cartes';area.appendChild(pn);
-    const sk=document.createElement('button');sk.className='abtn';sk.textContent='⏭ Ignorer';
-    sk.onclick=()=>{G.sevenP=false;G.phase='draw';startCountdown(()=>endTurn());};area.appendChild(sk);
-  }
-}
-
-function renderPlayers(){
-  const area=qid('players-area');area.innerHTML='';
-  G.players.forEach((pl,pi)=>{
-    const isActive=pi===G.cur;
-    const row=document.createElement('div');
-    row.className='prow'+(isActive?' active':'');
-    row.innerHTML=`<div class="prow-header">
-      <div class="prow-name">${isActive?'<div class="adot"></div>':''}
-        ${pl.name}<span class="cbadge">${pl.hand.length}🃏</span>
-        ${G.cactusRound&&pi===G.cactusPl?'<span style="color:#2ecc71;font-size:11px">🌵</span>':''}
-      </div>
-      <span class="pscore">${G.totals[pi]} pts</span>
-    </div>`;
-    const hand=document.createElement('div');hand.className='phand';hand.id=`hand-${pi}`;
-    const top=G.discard[G.discard.length-1];
-    pl.hand.filter(Boolean).forEach((c,ci)=>{
-      const inJack=G.jackSel.some(s=>s.p===pi&&s.i===ci);
-      const el=mkCardEl(c,{flipped:false,selected:inJack});
-      el.dataset.pi=pi;el.dataset.ci=ci;
-      el.addEventListener('click',()=>onCardClick(pi,ci,el,c));
-      hand.appendChild(el);
-    });
-    row.appendChild(hand);area.appendChild(row);
-  });
-}
-
-// ══ COUNTDOWN (3s avant changement de joueur) ══
-function stopCountdown(){
-  clearInterval(countdownTimer);
-  countdownActive=false;
-  const overlay=qid('countdown-overlay');
-  if(overlay){
-    overlay.classList.remove('show');
-    overlay.querySelector('.countdown-pill')?.classList.remove('urgent');
-    const numEl=qid('cd-num');
-    if(numEl)numEl.classList.remove('urgent');
-  }
-}
-
-function startCountdown(onDone, seconds=3, label=''){
-  stopCountdown();
-  const overlay=qid('countdown-overlay');
-  const numEl=qid('cd-num');
-  const textEl=qid('cd-text');
-  const pill=overlay?.querySelector('.countdown-pill');
-  if(textEl&&label) textEl.textContent=label;
-  else if(textEl) textEl.textContent='suivant dans';
-  let n=seconds;
-  numEl.textContent=n;
-  numEl.classList.remove('urgent');
-  pill?.classList.remove('urgent');
-  overlay.classList.add('show');
-  countdownActive=true;
-
-  countdownTimer=setInterval(()=>{
-    n--;
-    numEl.textContent=n;
-    if(n<=3){
-      numEl.classList.add('urgent');
-      pill?.classList.add('urgent');
-    }
-    if(n<=0){
-      stopCountdown();
-      onDone();
-    }
-  },1000);
-}
-
-// ══ FLY ANIMATION ══
-function getRect(el){return el?el.getBoundingClientRect():null;}
-function flyCard(srcEl,dstEl,opts={},onDone){
-  if(!srcEl||!dstEl){if(onDone)onDone();return;}
-  const layer=qid('fly-layer');
-  const fromR=getRect(srcEl);const toR=getRect(dstEl);
-  const fly=document.createElement('div');
-  fly.className='fly-card';
-  fly.style.cssText=`left:${fromR.left}px;top:${fromR.top}px;width:${fromR.width}px;height:${fromR.height}px;`;
-  const clone=srcEl.cloneNode(true);
-  clone.style.cssText='position:static;width:100%;height:100%;transition:none!important;animation:none!important;transform:none';
-  fly.appendChild(clone);
-  layer.appendChild(fly);
-  const dur=opts.dur||360;
-  // If we want to reveal: flip clone mid-flight
-  if(opts.revealCard){
-    const inner=clone.querySelector('.card-inner');
-    if(inner){
-      setTimeout(()=>{if(inner)inner.style.transform='rotateY(180deg)';},dur/2);
-    }
-  }
-  requestAnimationFrame(()=>{
-    fly.style.transition=`left ${dur}ms cubic-bezier(.4,0,.2,1),top ${dur}ms cubic-bezier(.4,0,.2,1),opacity ${dur}ms ease`;
-    fly.style.left=toR.left+'px';fly.style.top=toR.top+'px';
-    setTimeout(()=>{if(fly.parentNode)fly.parentNode.removeChild(fly);if(onDone)onDone();},dur+60);
-  });
-}
-
-// ══ INTERACTIONS ══
-function doDraw(){
-  if(G.phase!=='draw')return;
-  reshuffleIfNeeded();
-  if(G.deck.length===0){addLog('⚠️ Pioche vide.');return;}
-  G.drawn=G.deck.shift();G.phase='drawn';
-  addLog(`${G.players[G.cur].name} pioche.`);
-  renderGame();
-  setTimeout(()=>{
-    const src=qid('draw-top');const dst=qid('drawn-card-el');
-    if(src&&dst){dst.style.opacity='0';flyCard(src,dst,{dur:340,revealCard:G.drawn},()=>dst.style.opacity='1');}
-  },30);
-}
-
-function takeDiscard(){
-  if(G.phase!=='draw')return;
-  // Capturer position + clone AVANT de modifier l'état (le render vide la défausse)
-  const src=qid('discard-card');
-  const srcRect=src?src.getBoundingClientRect():null;
-  const layer=qid('fly-layer');
-  let flyEl=null;
-  if(src&&srcRect){
-    flyEl=src.cloneNode(true);
-    flyEl.style.cssText='position:absolute;left:'+srcRect.left+'px;top:'+srcRect.top+'px;width:'+srcRect.width+'px;height:'+srcRect.height+'px;pointer-events:none;z-index:500;border-radius:9px;overflow:hidden;';
-    layer.appendChild(flyEl);
-  }
-  G.drawn=G.discard.pop();G.phase='drawn';
-  addLog(G.players[G.cur].name+' prend la défausse : '+lbl(G.drawn)+'.');
-  renderGame();
-  setTimeout(()=>{
-    const dst=qid('drawn-card-el');
-    if(flyEl&&dst){
-      dst.style.opacity='0';
-      const dstRect=dst.getBoundingClientRect();
-      flyEl.style.transition='left 300ms cubic-bezier(.4,0,.2,1),top 300ms cubic-bezier(.4,0,.2,1)';
-      flyEl.style.left=dstRect.left+'px';flyEl.style.top=dstRect.top+'px';
-      setTimeout(()=>{
-        if(flyEl.parentNode)flyEl.parentNode.removeChild(flyEl);
-        if(dst)dst.style.opacity='1';
-      },340);
-    }
-  },20);
-}
-
-function discardDrawn(){
-  const c=G.drawn;
-  const srcEl=qid('drawn-card-el');
-  const dstEl=qid('discard-card');
-  G.drawn=null;G.discard.push(c);
-  addLog(`${G.players[G.cur].name} défausse ${lbl(c)}.`);
-  const hasSpecial=checkSpecial(c);
-  if(srcEl&&dstEl){
-    flyCard(srcEl,dstEl,{dur:320},()=>{
-      renderGame();
-      // Ne lancer le countdown que si pas de pouvoir spécial
-      if(!hasSpecial) startCountdown(()=>endTurn());
-    });
-  }else{
-    renderGame();
-    if(!hasSpecial) startCountdown(()=>endTurn());
-  }
-  renderGame();
-}
-
-function onCardClick(pi,ci,el,card){
-  // SEVEN — joueur actif clique sur une de ses cartes pour la regarder
-  if(G.sevenP&&pi===G.cur){
-    showRevealModal(card,()=>{G.sevenP=false;G.phase='draw';startCountdown(()=>endTurn());});return;
-  }
-
-  // JACK activé - pick1 ou pick2
-  if(G.jackP&&G.jackActivated){
-    const step=G.jackTimerStep;
-    if(step==='pick1'){
-      // Any card from any player
-      G.jackSel=[{p:pi,i:ci}];
-      jackPick2Timer(); // transitions to pick2
-      return;
-    }else if(step==='pick2'){
-      // Must be different player
-      const sel=G.jackSel[0];
-      if(pi===sel.p&&ci===sel.i){
-        // Deselect
-        G.jackSel=[];G.jackTimerStep='pick1';
-        stopCountdown();jackPick2Timer();
-        return;
-      }
-      if(pi===sel.p){showToast('⚠️ Choisissez un joueur différent !');return;}
-      G.jackSel=[sel,{p:pi,i:ci}];
-      renderGame();return;
-    }
-  }
-
-  // EXCHANGE — joueur actif échange la carte piochée avec une de ses cartes
-  if(G.phase==='exchange'&&pi===G.cur){
-    if(!G.drawn){G.phase='draw';renderGame();return;} // sécurité: drawn déjà null
-    const old=G.players[pi].hand[ci];
-    const dstEl=qid('discard-card');
-    G.players[pi].hand[ci]=G.drawn;G.drawn=null;G.discard.push(old);
-    addLog(G.players[pi].name+' échange → défausse '+lbl(old)+'.');
-    const hasSpecial=checkSpecial(old);
-    if(el&&dstEl){
-      flyCard(el,dstEl,{dur:350,revealCard:old},()=>{
-        renderGame();
-        if(!hasSpecial) startCountdown(()=>endTurn());
-      });
-    }else{
-      renderGame();
-      if(!hasSpecial) startCountdown(()=>endTurn());
-    }
-    renderGame();return;
-  }
-
-  // SNAP — joueur actif sur ses propres cartes
-  // Pendant phase jack decide: snap autorisé (mais si jack snappé → nouveau timer)
-  const snapOk=['draw','drawn'];
-  if(G.phase==='jack'&&G.jackTimerStep==='decide') snapOk.push('jack');
-  if(snapOk.includes(G.phase)&&pi===G.cur){
-    doSnap(pi,ci,el,card);
-  }
-}
-
+// ══ SNAP & JACK ══
 function doSnap(pi,ci,el,card){
   const now=Date.now();
   if(snapCD[pi]&&now-snapCD[pi]<900)return;
@@ -1502,9 +532,6 @@ function doSnap(pi,ci,el,card){
     });
   }
 }
-
-// doJackSwap replaced by doJackSwapNow
-
 function checkSpecial(card){
   if(!card||typeof card.value==='undefined') return false;
   const v=String(card.value);
@@ -1564,228 +591,350 @@ function doJackSwapNow(){
   setTimeout(()=>processNextJack(),420);
 }
 
-// ══ CACTUS ══
-function doCactus(afterCB){
-  if(G.cactusRound){showToast('🌵 Cactus déjà annoncé !');if(afterCB)afterCB();return;}
-  showConfirmModal('🌵 Cactus !',
-    `<strong>${G.players[G.cur].name}</strong> annonce Cactus !<br>Les autres jouent un dernier tour.<br><br><em style="font-size:12px;color:rgba(255,255,255,.4)">Si score > 5 pts ou qu'un joueur a moins → score doublé !</em>`,
-    'Confirmer',()=>{
-      addLog(`🌵 CACTUS ! ${G.players[G.cur].name}`);
-      G.cactusPl=G.cur;G.cactusRound=true;
-      if(afterCB)afterCB();else endTurn();
-    },afterCB);
+// ══ UI HELPERS ══
+
+function showToast(msg) {
+  const t = qid('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
 }
-qid('btn-cactus').addEventListener('click',()=>{
-  // Accepter pendant la phase draw ET pendant le countdown (qui est aussi en phase draw)
-  if(G.phase!=='draw'&&!countdownActive)return;
-  if(countdownActive){
-    // Stopper le countdown pour éviter le double endTurn
-    clearInterval(countdownTimer);
-    qid('countdown-overlay').classList.remove('show');
-    countdownActive=false;
-    // Cactus remplace la fin du countdown — on endTurn après confirmation
-    doCactus(()=>endTurn());
-  }else{
-    doCactus(null);
-  }
+
+function stopCountdown() {
+  clearInterval(countdownTimer); countdownActive = false;
+  qid('countdown-overlay')?.classList.remove('show');
+}
+
+function startCountdown(onDone, seconds=3) {
+  stopCountdown();
+  const numEl = qid('cd-num');
+  let n = seconds;
+  numEl.textContent = n;
+  qid('countdown-overlay').classList.add('show');
+  countdownActive = true;
+  countdownTimer = setInterval(() => {
+    n--; numEl.textContent = n;
+    if (n <= 0) { stopCountdown(); onDone(); }
+  }, 1000);
+}
+
+function showRevealModal(card, onOk) {
+  const art = faceArt(card.value, card.suit);
+  const mid = art ? `<div style="line-height:0">${art}</div>` : `<span style="font-size:26px">${card.suit}</span>`;
+  qid('modal-root').innerHTML = `<div class="modal-bg"><div class="modal-box">
+    <h3>🔮 Votre carte</h3><p>Mémorisez-la !</p>
+    <div class="modal-card-wrap">
+      <div style="width:70px;height:100px;background:var(--card-bg);border-radius:9px;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4)">
+        ${mid}
+      </div>
+    </div>
+    <div style="color:rgba(255,255,255,.4);font-size:12px;margin-bottom:16px">${card.value}${card.suit} — ${pts(card)} pts</div>
+    <div class="mbtn-row"><button class="mbtn" id="m-ok">Mémorisé →</button></div>
+  </div></div>`;
+  qid('m-ok').addEventListener('click', () => { qid('modal-root').innerHTML=''; if(onOk) onOk(); });
+}
+
+function showWrongSnapModal(card, onOk) {
+  const art = faceArt(card.value, card.suit);
+  const mid = art ? `<div style="line-height:0">${art}</div>` : `<span style="font-size:26px">${card.suit}</span>`;
+  qid('modal-root').innerHTML = `<div class="modal-bg"><div class="modal-box">
+    <h3>❌ Mauvais snap !</h3><p>Vous avez joué ${card.value}${card.suit} — pénalité !</p>
+    <div class="modal-card-wrap"><div style="width:70px;height:100px;background:var(--card-bg);border-radius:9px;display:flex;align-items:center;justify-content:center;overflow:hidden;">${mid}</div></div>
+    <div class="mbtn-row"><button class="mbtn" id="m-ok">Compris</button></div>
+  </div></div>`;
+  qid('m-ok').addEventListener('click', () => { qid('modal-root').innerHTML=''; if(onOk) onOk(); });
+}
+
+// ══ CLIENT STATE ══
+let socket, myIndex = -1, myRoom = '', selectedCC = 4, G = null, peekSel = [];
+
+// ══ SOCKET ══
+function initSocket() {
+  if (socket && socket.connected) return;
+  socket = io();
+  socket.on('connect_error', () => { qid('lobby-error').textContent = 'Erreur de connexion'; });
+  socket.on('roomCreated', ({code, playerIndex}) => { myIndex=playerIndex; myRoom=code; showWaiting(code,true); });
+  socket.on('roomJoined',  ({code, playerIndex}) => { myIndex=playerIndex; myRoom=code; showWaiting(code,false); });
+  socket.on('lobbyUpdate', ({players}) => { updateLobbyPlayers(players); });
+  socket.on('gameStarted', () => { peekSel=[]; show('peek'); });
+  socket.on('gameState',   (state) => { G=state; updateGame(state); });
+  socket.on('revealCard',  ({card}) => { showRevealModal(card, () => {}); });
+  socket.on('wrongSnap',   ({playerIndex, card}) => { if(playerIndex===myIndex) showWrongSnapModal(card, ()=>{}); });
+  socket.on('error',       (msg) => { showToast('⚠️ '+msg); qid('lobby-error').textContent=msg; });
+}
+
+// ══ LOBBY ══
+document.querySelectorAll('#lobby-cc-btns .cbc').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#lobby-cc-btns .cbc').forEach(x => x.classList.remove('sel'));
+    b.classList.add('sel'); selectedCC = +b.dataset.c;
+  });
 });
 
-// ══ TURN END ══
-function endTurn(){
-  if(G.cactusRound){
-    const next=(G.cur+1)%G.players.length;
-    if(next===G.cactusPl){endRound();return;}
-    G.cur=next;
-  }else{
-    G.cur=(G.cur+1)%G.players.length;
-    if(G.players.some(p=>p.hand.length===0)){endRound();return;}
-  }
-  G.phase='draw';G.drawn=null;renderGame();
+function getName() { return qid('player-name').value.trim() || 'Joueur'; }
+function showCreate() { qid('lobby-main').style.display='none'; qid('lobby-create').style.display='block'; }
+function hideCreate() { qid('lobby-create').style.display='none'; qid('lobby-main').style.display='block'; }
+
+function createRoom() {
+  initSocket();
+  const go = () => socket.emit('createRoom', {name:getName(), cardCount:selectedCC});
+  socket.connected ? go() : socket.once('connect', go);
 }
 
-function reshuffleIfNeeded(){
-  if(G.deck.length===0){
-    if(G.discard.length<=1){addLog('⚠️ Plus de cartes disponibles.');return;}
-    const top=G.discard.pop();
-    G.deck=shuffle([...G.discard]);
-    G.discard=[top];
-    addLog('🔄 Pioche reconstituée depuis la défausse.');
-  }
+function joinRoom() {
+  const code = qid('room-code').value.trim();
+  if (!code) { qid('lobby-error').textContent='Entrez un code'; return; }
+  initSocket();
+  const go = () => socket.emit('joinRoom', {code, name:getName()});
+  socket.connected ? go() : socket.once('connect', go);
 }
 
-// ══ ROUND END ══
-function endRound(){
-  const cp=G.cactusPl;
-  // Guard: filter null cards from hands before scoring
-  G.players.forEach(pl=>{pl.hand=pl.hand.filter(Boolean);});
-  const rawScores=G.players.map(pl=>pl.hand.reduce((a,c)=>a+pts(c),0));
-  let finalScores=[...rawScores];
-  if(cp!==null){
-    const cpScore=rawScores[cp];
-    const othersMin=Math.min(...rawScores.filter((_,i)=>i!==cp));
-    if(cpScore>5||othersMin<cpScore){
-      finalScores[cp]=cpScore*2;
-      addLog(`⚠️ ${G.players[cp].name} score doublé ! (${cpScore}→${finalScores[cp]})`);
+function showWaiting(code, isHost) {
+  qid('lobby-main').style.display='none'; qid('lobby-create').style.display='none';
+  qid('lobby-waiting').style.display='block';
+  qid('lobby-code-display').textContent = code;
+  qid('btn-start-game').style.display = isHost ? 'block' : 'none';
+}
+
+function updateLobbyPlayers(players) {
+  qid('lobby-players-list').innerHTML = players.map((name,i) =>
+    `<div style="background:rgba(255,255,255,.08);border-radius:8px;padding:8px 14px;font-size:14px;display:flex;align-items:center;gap:8px">
+      <span>${i+1}.</span><strong>${name}</strong>
+      ${i===0?'<span style="margin-left:auto;font-size:11px;color:var(--gold-light)">Hôte</span>':''}
+    </div>`).join('');
+}
+
+function startGame() { socket.emit('startGame', {code:myRoom}); }
+
+// ══ PEEK ══
+function renderPeek(hand) {
+  const row = qid('peek-cards'); row.innerHTML = '';
+  hand.forEach((c, i) => {
+    const sel = peekSel.includes(i);
+    const el = mkCardEl(c, {flipped:sel, selected:sel});
+    el.addEventListener('click', () => {
+      if (peekSel.includes(i)) peekSel = peekSel.filter(x=>x!==i);
+      else if (peekSel.length < 2) peekSel.push(i);
+      renderPeek(hand);
+    });
+    row.appendChild(el);
+  });
+}
+
+qid('btn-peek-ok').addEventListener('click', () => {
+  socket.emit('peekDone', {code:myRoom});
+  show('game');
+});
+
+// ══ GAME UPDATE ══
+function updateGame(state) {
+  if (!state) return;
+  G = state;
+  const isMyTurn = state.cur === myIndex;
+
+  qid('g-name').textContent = isMyTurn ? '🎴 Votre tour' : `🎴 ${state.players[state.cur]?.name}`;
+  qid('g-instr').textContent = getInstruction(state, isMyTurn);
+  qid('g-log').innerHTML = (state.log||[]).slice(0,4).map((l,i)=>
+    `<span style="opacity:${1-i*.22}">${l}</span>`).join(' · ');
+
+  if (state.phase==='peek' && state.players[myIndex]?.hand) {
+    renderPeek(state.players[myIndex].hand.filter(c=>!c.hidden));
+    show('peek'); return;
+  }
+  if (state.phase==='score') { renderScore(state); return; }
+  
+  renderDiscard(state, isMyTurn);
+  renderDrawPile(state, isMyTurn);
+  renderActions(state, isMyTurn);
+  renderPlayers(state);
+  show('game');
+}
+
+function getInstruction(state, isMyTurn) {
+  if (!isMyTurn) return `Tour de ${state.players[state.cur]?.name}...`;
+  if (state.sevenP) return 'Cliquez sur une de vos cartes pour la regarder';
+  if (state.jackP) {
+    const s = state.jackTimerStep;
+    if (s==='decide') return '🃏 Utiliser le pouvoir ou ignorer';
+    if (s==='pick1') return '🃏 Choisissez la 1ère carte';
+    if (s==='pick2') return '🃏 Choisissez la 2ème carte';
+  }
+  if (state.phase==='drawn') return 'Défaussez ou échangez';
+  if (state.phase==='exchange') return 'Cliquez sur une de vos cartes';
+  return 'Piochez ou prenez la défausse';
+}
+
+function renderDiscard(state, isMyTurn) {
+  const slot = qid('discard-slot'); slot.innerHTML='';
+  if (!state.discard) {
+    slot.innerHTML='<div style="width:65px;height:94px;border-radius:9px;border:2px dashed rgba(255,255,255,.2);opacity:.5"></div>';
+    return;
+  }
+  const el = mkFrontEl(state.discard); el.id='discard-card';
+  const noTake=['7','J'];
+  if (isMyTurn && state.phase==='draw' && !noTake.includes(state.discard.value)) {
+    el.style.cursor='pointer';
+    el.addEventListener('click', () => socket.emit('takeDiscard', {code:myRoom}));
+  } else if (isMyTurn && state.phase==='exchange') {
+    el.style.cursor='pointer'; el.style.boxShadow='0 0 0 2px rgba(212,168,75,.5)';
+    el.addEventListener('click', () => socket.emit('cancelExchange', {code:myRoom}));
+  }
+  slot.appendChild(el);
+}
+
+function renderDrawPile(state, isMyTurn) {
+  qid('draw-count').textContent = state.deckCount + ' cartes';
+  const dw = qid('draw-wrap');
+  if (!dw.querySelector('#draw-top')) {
+    dw.innerHTML='';
+    for (let i=0;i<3;i++) {
+      const c=document.createElement('div'); c.className='card';
+      if(i===2) c.id='draw-top';
+      c.innerHTML=`<div class="card-inner"><div class="card-face-back"><img src="${BACK_IMG}" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;border-radius:9px;"></div><div class="card-face-front"></div></div>`;
+      dw.appendChild(c);
     }
   }
-  G.players.forEach((_,i)=>G.totals[i]+=finalScores[i]);
-  G._rawScores=rawScores;G._finalScores=finalScores;
-  renderScore();
+  dw.style.cursor = (isMyTurn && state.phase==='draw') ? 'pointer' : 'default';
+  dw.onclick = (isMyTurn && state.phase==='draw') ? () => socket.emit('draw', {code:myRoom}) : null;
+}
+
+function renderActions(state, isMyTurn) {
+  const area = qid('action-area'); area.innerHTML='';
+  const isJackOwner = state.jackOwner === myIndex;
+
+  if (state.drawn && state.phase==='drawn' && isMyTurn) {
+    const lbl2=document.createElement('div'); lbl2.className='plabel'; lbl2.textContent='Carte piochée'; area.appendChild(lbl2);
+    const cf=mkFrontEl(state.drawn); cf.id='drawn-card-el'; area.appendChild(cf);
+    const db=document.createElement('button'); db.className='abtn'; db.textContent='🗑 Défausser';
+    db.onclick=()=>socket.emit('discardDrawn',{code:myRoom});
+    const eb=document.createElement('button'); eb.className='abtn gold'; eb.textContent='🔄 Échanger';
+    eb.onclick=()=>{G._localExchange=true; renderActions(Object.assign({},state,{phase:'exchange'}),true);};
+    area.appendChild(db); area.appendChild(eb);
+  } else if (state.drawn && G?._localExchange && isMyTurn) {
+    const lbl2=document.createElement('div'); lbl2.className='plabel'; lbl2.textContent='Cliquez sur une carte'; area.appendChild(lbl2);
+    const cf=mkFrontEl(state.drawn); cf.id='drawn-card-el'; area.appendChild(cf);
+  } else if (state.sevenP && isMyTurn) {
+    const pn=document.createElement('div'); pn.className='power-note';
+    pn.innerHTML='🔮 <b>7</b> — Cliquez sur une de vos cartes'; area.appendChild(pn);
+    const sk=document.createElement('button'); sk.className='abtn'; sk.textContent='⏭ Ignorer';
+    sk.onclick=()=>socket.emit('sevenSkip',{code:myRoom}); area.appendChild(sk);
+  } else if (state.jackP) {
+    const s=state.jackTimerStep;
+    const ownerName=state.jackOwner!==null?state.players[state.jackOwner]?.name:'?';
+    const pn=document.createElement('div'); pn.className='power-note';
+    if (s==='decide') {
+      pn.innerHTML=`🃏 <b>Valet</b> de <b>${ownerName}</b>`;
+      area.appendChild(pn);
+      if (isJackOwner) {
+        const ub=document.createElement('button'); ub.className='abtn gold'; ub.textContent='⚡ Utiliser le pouvoir';
+        ub.onclick=()=>socket.emit('jackActivate',{code:myRoom}); area.appendChild(ub);
+      }
+    } else {
+      const sel=state.jackSel?.[0];
+      pn.innerHTML=s==='pick1'?'🃏 Choisissez la 1ère carte':`🃏 Choisissez la 2ème carte<br><small style="opacity:.5">${sel?state.players[sel.p]?.name+' #'+(sel.i+1):''}</small>`;
+      area.appendChild(pn);
+      if (isJackOwner && s==='pick2' && state.jackSel?.length===2) {
+        const cb=document.createElement('button'); cb.className='abtn gold'; cb.textContent='✅ Confirmer';
+        cb.onclick=()=>socket.emit('jackConfirm',{code:myRoom}); area.appendChild(cb);
+      }
+    }
+    if (isJackOwner) {
+      const sk=document.createElement('button'); sk.className='abtn'; sk.textContent='⏭ Ignorer';
+      sk.onclick=()=>socket.emit('jackIgnore',{code:myRoom}); area.appendChild(sk);
+    }
+  }
+}
+
+function renderPlayers(state) {
+  const area=qid('players-area'); area.innerHTML='';
+  state.players.forEach((pl,pi) => {
+    const isActive=pi===state.cur, isMe=pi===myIndex;
+    const row=document.createElement('div'); row.className='prow'+(isActive?' active':'');
+    row.innerHTML=`<div class="prow-header">
+      <div class="prow-name">${isActive?'<div class="adot"></div>':''}
+        ${isMe?'<span style="color:var(--gold-light)">Vous</span>':pl.name}
+        <span class="cbadge">${pl.cardCount}🃏</span>
+        ${state.cactusRound&&pi===state.cactusPl?'<span style="color:#2ecc71;font-size:11px"> 🌵</span>':''}
+      </div>
+      <span class="pscore">${state.totals?.[pi]||0} pts</span>
+    </div>`;
+    const hand=document.createElement('div'); hand.className='phand'; hand.id=`hand-${pi}`;
+    if (pl.hand) {
+      pl.hand.forEach((c,ci) => {
+        if (!c) return;
+        const inJack=state.jackSel?.some(s=>s.p===pi&&s.i===ci);
+        const el = c.hidden ? mkCardEl({value:'?',suit:'?',uid:-pi*100-ci},{flipped:false,selected:inJack})
+                            : mkCardEl(c,{flipped:true,selected:inJack});
+        el.addEventListener('click', ()=>onCardClick(pi,ci,c,state));
+        hand.appendChild(el);
+      });
+    }
+    row.appendChild(hand); area.appendChild(row);
+  });
+}
+
+function onCardClick(pi, ci, card, state) {
+  if (!G || !socket) return;
+  const isMe = pi===myIndex, isMyTurn = G.cur===myIndex, isJackOwner = G.jackOwner===myIndex;
+  
+  if (G.sevenP && isMyTurn && isMe)
+    return socket.emit('sevenLook', {code:myRoom, cardIndex:ci});
+  
+  if (G.jackP && G.jackActivated && isJackOwner)
+    return socket.emit('jackPick', {code:myRoom, playerIndex:pi, cardIndex:ci});
+  
+  if ((G.phase==='exchange'||G._localExchange) && isMyTurn && isMe) {
+    G._localExchange=false;
+    return socket.emit('exchange', {code:myRoom, cardIndex:ci});
+  }
+  
+  const snapPhases=['draw','drawn'];
+  if (G.phase==='jack' && G.jackTimerStep==='decide') snapPhases.push('jack');
+  if (snapPhases.includes(G.phase) && isMe)
+    socket.emit('snap', {code:myRoom, cardIndex:ci});
 }
 
 // ══ SCORE ══
-function renderScore(){
+function renderScore(state) {
   show('score');
-  qid('sc-title').textContent=`Manche ${G.round} — Résultats`;
-  const medals=['🥇','🥈','🥉','4e','5e'];
-  const rows=G.players.map((pl,i)=>({name:pl.name,raw:G._rawScores[i],final:G._finalScores[i],total:G.totals[i],hand:pl.hand,doubled:G._rawScores[i]!==G._finalScores[i]})).sort((a,b)=>a.final-b.final);
-  qid('sc-rows').innerHTML=rows.map((r,rank)=>`
-    <div class="sc-row">
-      <div>
-        <div class="sc-name">${medals[rank]} ${r.name}${r.doubled?' <span style="color:#e74c3c;font-size:11px">×2 🌵</span>':''}</div>
-        <div class="sc-tags">${r.hand.map(c=>`<span class="sc-tag">${lbl(c)}(${pts(c)})</span>`).join('')||'<span class="sc-tag" style="color:#2ecc71">Pas de carte !</span>'}</div>
-      </div>
-      <div class="sc-pts">
-        <div class="sc-r">${r.final} pts${r.doubled?`<span style="font-size:11px;color:rgba(255,255,255,.4)"> (${r.raw}×2)</span>`:''}</div>
-        <div class="sc-t">Total : ${r.total}</div>
-      </div>
-    </div>`).join('');
+  qid('sc-title').textContent=`Manche ${state.round} — Résultats`;
+  const raw=state._rawScores||[], fin=state._finalScores||[];
+  qid('sc-rows').innerHTML=state.players.map((p,i)=>{
+    const doubled=fin[i]&&raw[i]&&fin[i]>raw[i];
+    return `<div class="sc-row">
+      <span>${p.name}</span>
+      <span>${raw[i]||0} pts${doubled?` × 2 = <b>${fin[i]}</b>`:''} → Total: ${state.totals?.[i]||0}</span>
+    </div>`;
+  }).join('');
+  qid('btn-newround').style.display = myIndex===0 ? 'block' : 'none';
+  const elim = state.totals?.some(t=>t>=100);
+  if (elim) qid('btn-newround').style.display='none';
 }
-qid('btn-newround').addEventListener('click',()=>{
-  if(G.totals.some(s=>s>=100)){renderFinal();return;}
-  G.round++;
-  const deck=shuffle(mkDeck());
-  G.players.forEach(pl=>{pl.hand=deck.splice(0,G.cc);});
-  G.deck=deck;G.discard=[firstNonSp(G.deck)];
-  G.cur=(G.cur+1)%G.players.length;
-  Object.assign(G,{phase:'peek',peekPl:0,peekSel:[],drawn:null,jackP:false,jackSel:[],jackActivated:false,jackQueue:[],jackTimerStep:null,sevenP:false,cactusPl:null,cactusRound:false,log:[]});
-  addLog(`Manche ${G.round} !`);startPeek();
+
+qid('btn-newround').addEventListener('click', ()=>socket.emit('nextRound',{code:myRoom}));
+qid('btn-endgame').addEventListener('click', ()=>show('final'));
+qid('btn-cactus').addEventListener('click', ()=>{
+  if (G?.phase==='draw'&&G.cur===myIndex) socket.emit('cactus',{code:myRoom});
 });
-qid('btn-endgame').addEventListener('click',renderFinal);
-
-function renderFinal(){
-  show('final');
-  const sorted=G.players.map((pl,i)=>({name:pl.name,total:G.totals[i]})).sort((a,b)=>a.total-b.total);
-  const medals=['🥇','🥈','🥉','4e','5e'];
-  qid('fin-rows').innerHTML=sorted.map((r,rank)=>`
-    <div class="sc-row">
-      <span style="font-size:15px">${medals[rank]} <strong>${r.name}</strong></span>
-      <span style="font-size:18px;font-weight:700;color:var(--gold-light)">${r.total} pts</span>
-    </div>`).join('')+`<p style="color:rgba(255,255,255,.4);font-size:12px;margin-top:12px;text-align:center">🏆 ${sorted[0].name} — ${sorted[0].total} pts</p>`;
-}
-qid('btn-newgame').addEventListener('click',()=>show('setup'));
-
-// ══ MODALS ══
-function showRevealModal(card,onOk){
-  const r=isRed(card);const fc=r?'var(--red)':'var(--black)';
-  const fullImg=getFullImg(card);
-  const art=faceArt(card.value,card.suit);
-  const midHTML=fullImg
-    ? `<img src="${fullImg}" style="width:100%;height:100%;display:block;margin:-4%;">`
-    : art ? `<div style="line-height:0">${art}</div>` : `<span style="font-size:26px">${card.suit}</span>`;
-  const cardInnerStyle=fullImg
-    ? 'width:70px;height:100px;border-radius:9px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4),0 0 0 4px rgba(212,168,75,.15);display:flex;align-items:center;justify-content:center;position:relative;'
-    : `width:70px;height:100px;background:var(--card-bg);border-radius:9px;border:2px solid var(--gold);position:relative;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(0,0,0,.4),0 0 0 4px rgba(212,168,75,.15);color:${fc}`;
-  qid('modal-root').innerHTML=`<div class="modal-bg"><div class="modal-box">
-    <h3>🔮 Votre carte</h3><p>Mémorisez-la !</p>
-    <div class="modal-card-wrap">
-      <div style="${cardInnerStyle}">
-        ${fullImg ? '' : `<div style="position:absolute;top:5px;left:7px;font-size:11px;font-weight:800;line-height:1.1">${card.value}<br>${card.suit}</div>`}
-        ${midHTML}
-        ${fullImg ? '' : `<div style="position:absolute;bottom:5px;right:7px;font-size:11px;font-weight:800;line-height:1.1;transform:rotate(180deg)">${card.value}<br>${card.suit}</div>`}
-      </div>
-    </div>
-    <div style="color:rgba(255,255,255,.4);font-size:12px;margin-bottom:16px">${pts(card)} point${Math.abs(pts(card))!==1?'s':''}</div>
-    <div class="mbtn-row"><button class="mbtn" id="m-ok">Mémorisé →</button></div>
-  </div></div>`;
-  qid('m-ok').addEventListener('click',()=>{qid('modal-root').innerHTML='';onOk();});
-}
-
-function showWrongSnapModal(card,onOk){
-  const r=isRed(card);const fc=r?'var(--red)':'var(--black)';
-  const fullImg2=getFullImg(card);
-  const art=faceArt(card.value,card.suit);
-  const midHTML=fullImg2
-    ? `<img src="${fullImg2}" style="width:100%;height:100%;display:block;margin:-4%;">`
-    : art ? `<div style="line-height:0">${art}</div>` : `<span style="font-size:26px">${card.suit}</span>`;
-  const cardInnerStyle2=fullImg2
-    ? 'width:70px;height:100px;border-radius:9px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4),0 0 0 4px rgba(231,76,60,.4);display:flex;align-items:center;justify-content:center;position:relative;'
-    : `width:70px;height:100px;background:var(--card-bg);border-radius:9px;border:2px solid #e74c3c;position:relative;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(0,0,0,.4);color:${fc}`;
-  qid('modal-root').innerHTML=`<div class="modal-bg"><div class="modal-box">
-    <h3>❌ Mauvais snap !</h3>
-    <p>Vous avez jeté cette carte :</p>
-    <div class="modal-card-wrap">
-      <div style="${cardInnerStyle2}">
-        ${fullImg2 ? '' : `<div style="position:absolute;top:5px;left:7px;font-size:11px;font-weight:800;line-height:1.1">${card.value}<br>${card.suit}</div>`}
-        ${midHTML}
-        ${fullImg2 ? '' : `<div style="position:absolute;bottom:5px;right:7px;font-size:11px;font-weight:800;line-height:1.1;transform:rotate(180deg)">${card.value}<br>${card.suit}</div>`}
-      </div>
-    </div>
-    <p style="margin-top:8px">Elle ne correspond pas à la défausse.<br>Vous recevez une pénalité.</p>
-    <div class="mbtn-row"><button class="mbtn" id="m-ok">Compris</button></div>
-  </div></div>`;
-  qid('m-ok').addEventListener('click',()=>{qid('modal-root').innerHTML='';onOk();});
-}
-
-function showConfirmModal(title,body,confirmLabel,onOk,onCancel){
-  qid('modal-root').innerHTML=`<div class="modal-bg"><div class="modal-box">
-    <h3>${title}</h3><p>${body}</p>
-    <div class="mbtn-row">
-      <button class="mbtn" id="m-confirm">${confirmLabel}</button>
-      <button class="mbtn sec" id="m-cancel">Annuler</button>
-    </div>
-  </div></div>`;
-  qid('m-confirm').addEventListener('click',()=>{qid('modal-root').innerHTML='';onOk();});
-  qid('m-cancel').addEventListener('click',()=>{qid('modal-root').innerHTML='';if(onCancel)onCancel();});
-}
-
-qid('btn-rules').addEventListener('click',()=>{
+qid('btn-rules').addEventListener('click', ()=>{
   qid('modal-root').innerHTML=`<div class="modal-bg"><div class="modal-box">
     <h3>📖 Règles</h3>
     <p style="text-align:left;font-size:12px;line-height:1.9">
-    <b>Tour :</b> Pioche ou prend la défausse (sauf 7/Valet). Défausse ou échange avec une de ses cartes.<br>
-    <b>Snap ⚡ :</b> Cliquez sur une carte dos quand sa valeur = la défausse. Mauvais snap → carte révélée + pénalité.<br>
+    <b>Tour :</b> Pioche ou prend la défausse (sauf 7/Valet). Défausse ou échange.<br>
+    <b>Snap ⚡ :</b> Cliquez sur une carte pour snap la défausse (même valeur, même couleur).<br>
     <b>7</b> → Regardez une de vos cartes<br>
-    <b>Valet</b> → Échangez 2 cartes (sans les regarder)<br>
-    <b>Points :</b> A=1 · 2–8=valeur · ♠♣9=14 · ♥♦9=−2 · 10=10 · V=11 · D=12 · R=0<br>
-    <b>Cactus 🌵 :</b> En début de tour ou dans les 3s après une défausse. Score doublé si >5 pts ou si un adversaire a moins.<br>
+    <b>Valet</b> → Échangez 2 cartes entre joueurs différents<br>
+    <b>Points :</b> A=1 · 2-8=valeur · ♠♣9=14 · ♥♦9=−2 · 10=10 · V=11 · D=12 · R=0<br>
+    <b>Cactus 🌵 :</b> Annoncez. Score doublé si >5pts ou adversaire a moins.<br>
     <b>Fin :</b> Éliminé à 100 pts.
     </p>
-    <div class="mbtn-row"><button class="mbtn" id="m-ok">Compris !</button></div>
+    <div class="mbtn-row"><button class="mbtn" onclick="qid('modal-root').innerHTML=''">Compris !</button></div>
   </div></div>`;
-  qid('m-ok').addEventListener('click',()=>qid('modal-root').innerHTML='');
 });
 
-// ══ TOAST ══
-let toastTimer;
-function showToast(msg){
-  const t=qid('toast');t.textContent=msg;t.classList.add('show');
-  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2800);
-}
-
-// Init draw-wrap HTML with proper SVG backs
-document.addEventListener('DOMContentLoaded',()=>{
+document.addEventListener('DOMContentLoaded', ()=>{
   document.body.style.backgroundImage='url('+TABLE_BG+')';
   document.body.style.backgroundSize='cover';
   document.body.style.backgroundPosition='center';
   document.body.style.backgroundAttachment='fixed';
-  const dw=qid('draw-wrap');
-  dw.innerHTML='';
-  for(let i=0;i<3;i++){
-    const c=document.createElement('div');c.className='card';
-    if(i===2)c.id='draw-top';
-    c.innerHTML=`<div class="card-inner"><div class="card-face-back"><img src="${BACK_IMG}" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;border-radius:9px;"></div><div class="card-face-front"></div></div>`;
-    dw.appendChild(c);
-  }
-});
-
-
-// Init
-document.addEventListener('DOMContentLoaded', () => {
-  document.body.style.backgroundImage = 'url(' + TABLE_BG + ')';
-  document.body.style.backgroundSize = 'cover';
-  document.body.style.backgroundPosition = 'center';
-  document.body.style.backgroundAttachment = 'fixed';
 });
 </script>
 </body>
