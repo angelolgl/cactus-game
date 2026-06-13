@@ -131,10 +131,10 @@ io.on('connection', socket => {
   console.log('connect', socket.id);
 
   // ── Lobby ──
-  socket.on('createRoom', ({ name, cardCount }) => {
+  socket.on('createRoom', ({ name }) => {
     const code = makeCode();
     rooms[code] = {
-      code, cardCount,
+      code, cardCount: 4,
       players: [{ socketId: socket.id, name, hand: [], ready: false }],
       host: socket.id,
       started: false,
@@ -143,31 +143,40 @@ io.on('connection', socket => {
     };
     socket.join(code);
     socket.emit('roomCreated', { code, playerIndex: 0 });
+    io.to(code).emit('lobbyUpdate', { players: rooms[code].players.map(p => p.name), host: 0 });
     console.log(`Room ${code} created by ${name}`);
   });
 
   socket.on('joinRoom', ({ code, name }) => {
-    code = code.toUpperCase();
+    code = String(code).trim();
     const room = rooms[code];
     if (!room) { socket.emit('error', 'Partie introuvable'); return; }
     if (room.started) { socket.emit('error', 'Partie déjà commencée'); return; }
-    if (room.players.length >= 5) { socket.emit('error', 'Partie pleine'); return; }
+    if (room.players.length >= 5) { socket.emit('error', 'Partie pleine (5 max)'); return; }
     const pi = room.players.length;
     room.players.push({ socketId: socket.id, name, hand: [], ready: false });
     socket.join(code);
     socket.emit('roomJoined', { code, playerIndex: pi });
-    io.to(code).emit('lobbyUpdate', { players: room.players.map(p => p.name), host: room.host });
+    io.to(code).emit('lobbyUpdate', { players: room.players.map(p => p.name), host: 0 });
     console.log(`${name} joined ${code}`);
   });
 
-  socket.on('startGame', ({ code }) => {
+  socket.on('startGame', ({ code, cardCount }) => {
     const room = rooms[code];
     if (!room || room.host !== socket.id) return;
     if (room.players.length < 2) { socket.emit('error', 'Minimum 2 joueurs'); return; }
+    // Validate card count based on player count
+    const n = room.players.length;
+    let cc = cardCount || 4;
+    if (n === 2) cc = Math.max(4, Math.min(8, cc));
+    else if (n === 3) cc = Math.max(4, Math.min(5, cc));
+    else cc = 4; // 4-5 players
+    room.cardCount = cc;
     room.started = true;
     initGame(room);
     io.to(code).emit('gameStarted');
     broadcastRoom(code);
+    console.log(`Game ${code} started: ${n} players, ${cc} cards`);
   });
 
   // ── Peek ──
