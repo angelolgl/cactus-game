@@ -14,7 +14,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
-body{font-family:'Inter',sans-serif;background:var(--felt-dark);color:white;font-size:14px;position:relative}
+body{font-family:'Inter',sans-serif;background:#0f3020;color:white;font-size:14px;position:relative}
 .screen{position:fixed;inset:0;display:none;z-index:1}
 .screen.active{display:flex}
 
@@ -219,6 +219,39 @@ body{font-family:'Inter',sans-serif;background:var(--felt-dark);color:white;font
 
 @keyframes dealIn{from{opacity:0;transform:translateY(-30px) scale(.75) rotate(-6deg)}to{opacity:1;transform:none}}
 @keyframes penaltyIn{from{transform:translateX(30px) scale(.7);opacity:0}to{transform:none;opacity:1}}
+
+/* ── LOBBY ── */
+#s-lobby{
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:20px;
+  padding:24px;
+  overflow-y:auto;
+  background:var(--felt-dark);
+}
+.lobby-box{
+  background:rgba(0,0,0,.4);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:18px;
+  padding:24px;
+  width:100%;
+  max-width:420px;
+  text-align:center;
+}
+.lobby-box h2{
+  font-family:'Playfair Display',serif;
+  font-size:20px;
+  color:var(--gold-light);
+  margin-bottom:16px;
+}
+.error-msg{
+  color:#e74c3c;
+  font-size:13px;
+  margin-top:8px;
+  min-height:20px;
+}
+
 </style>
 </head>
 <body>
@@ -337,6 +370,13 @@ body{font-family:'Inter',sans-serif;background:var(--felt-dark);color:white;font
 <script src="/images2.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script>
+// ══ DOM HELPERS (must be first) ══
+const qid = id => document.getElementById(id);
+const show = id => {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  (document.getElementById('s-'+id)||document.getElementById(id))?.classList.add('active');
+};
+
 // ══ CONSTANTS & UTILS ══
 const SUITS = ['♠','♥','♦','♣'];
 const VALS  = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
@@ -674,9 +714,15 @@ function showCreate() { qid('lobby-main').style.display='none'; qid('lobby-creat
 function hideCreate() { qid('lobby-create').style.display='none'; qid('lobby-main').style.display='block'; }
 
 function createRoom() {
+  const errEl = qid('create-error');
+  errEl.textContent = 'Connexion...';
   initSocket();
-  const go = () => socket.emit('createRoom', {name:getName(), cardCount:selectedCC});
-  socket.connected ? go() : socket.once('connect', go);
+  const go = () => { errEl.textContent = ''; socket.emit('createRoom', {name:getName(), cardCount:selectedCC}); };
+  if (socket.connected) go();
+  else {
+    socket.once('connect', go);
+    socket.once('connect_error', () => { errEl.textContent = 'Impossible de se connecter au serveur'; });
+  }
 }
 
 function joinRoom() {
@@ -931,10 +977,12 @@ qid('btn-rules').addEventListener('click', ()=>{
 });
 
 document.addEventListener('DOMContentLoaded', ()=>{
-  document.body.style.backgroundImage='url('+TABLE_BG+')';
-  document.body.style.backgroundSize='cover';
-  document.body.style.backgroundPosition='center';
-  document.body.style.backgroundAttachment='fixed';
+  if (typeof TABLE_BG !== 'undefined') {
+    document.body.style.backgroundImage='url('+TABLE_BG+')';
+    document.body.style.backgroundSize='cover';
+    document.body.style.backgroundPosition='center';
+    document.body.style.backgroundAttachment='fixed';
+  }
 });
 </script>
 </body>
