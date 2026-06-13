@@ -15,7 +15,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 const rooms = {}; // roomCode → gameState
 
 function makeCode() {
-  return Math.random().toString(36).substring(2, 6).toUpperCase();
+  return String(Math.floor(1000 + Math.random() * 9000));
 }
 
 // ── Card utils ──
