@@ -811,7 +811,7 @@ function initSocket() {
   socket.on('roomCreated', ({code, playerIndex}) => { myIndex=playerIndex; myRoom=code; showWaiting(code,true); });
   socket.on('roomJoined',  ({code, playerIndex}) => { myIndex=playerIndex; myRoom=code; showWaiting(code,false); });
   socket.on('lobbyUpdate', ({players}) => { updateLobbyPlayers(players); });
-  socket.on('gameStarted', () => { peekSel=[]; show('peek'); });
+  socket.on('gameStarted', () => { peekedCards=[]; peekRevealed=[]; window._peekRendered=false; show('peek'); });
   socket.on('gameState',   (state) => { G=state; updateGame(state); });
   socket.on('revealCard',  ({card}) => { showRevealModal(card, () => {}); });
   socket.on('wrongSnap',   ({playerIndex, card}) => { if(playerIndex===myIndex) showWrongSnapModal(card, ()=>{}); });
@@ -896,23 +896,57 @@ function startGame() {
 
 qid('btn-peek-ok').addEventListener('click', () => {
   socket.emit('peekDone', {code:myRoom});
-  show('game');
+  qid('peek-h').textContent = 'En attente des autres joueurs...';
+  qid('btn-peek-ok').style.display = 'none';
+  qid('peek-cards').innerHTML = '';
 });
 
 
 // ══ PEEK ══
+let peekRevealed = [];   // indices currently showing (during 3s)
+let peekedCards = [];    // indices already memorized (max 2)
+let peekHand = [];
+
 function renderPeek(hand) {
+  peekHand = hand;
   const row = qid('peek-cards'); row.innerHTML = '';
   hand.forEach((c, i) => {
-    const sel = peekSel.includes(i);
-    const el = mkCardEl(c, {flipped:sel, selected:sel});
-    el.addEventListener('click', () => {
-      if (peekSel.includes(i)) peekSel = peekSel.filter(x=>x!==i);
-      else if (peekSel.length < 2) peekSel.push(i);
-      renderPeek(hand);
-    });
+    const isRevealed = peekRevealed.includes(i);
+    const el = mkCardEl(c, {flipped: isRevealed});
+    if (peekedCards.includes(i) && !isRevealed) {
+      el.style.opacity = '0.5'; // already seen
+    }
+    el.addEventListener('click', () => peekCard(i));
     row.appendChild(el);
   });
+  // Update instruction
+  const remaining = 2 - peekedCards.length;
+  const h = qid('peek-h');
+  const ok = qid('btn-peek-ok');
+  if (remaining > 0) {
+    h.textContent = `Cliquez sur ${remaining} carte${remaining>1?'s':''}`;
+    ok.style.display = 'none';
+  } else {
+    h.textContent = 'Cartes mémorisées !';
+    ok.style.display = 'block';
+    ok.classList.add('on');
+  }
+}
+
+function peekCard(i) {
+  // Can't peek if already memorized 2, or this card is currently revealed, or already peeked
+  if (peekedCards.length >= 2) return;
+  if (peekRevealed.includes(i)) return;
+  if (peekedCards.includes(i)) return;
+  // Reveal it
+  peekRevealed.push(i);
+  peekedCards.push(i);
+  renderPeek(peekHand);
+  // Auto-hide after 3 seconds
+  setTimeout(() => {
+    peekRevealed = peekRevealed.filter(x => x !== i);
+    renderPeek(peekHand);
+  }, 3000);
 }
 
 // ══ GAME UPDATE ══
@@ -927,8 +961,15 @@ function updateGame(state) {
     `<span style="opacity:${1-i*.22}">${l}</span>`).join(' · ');
 
   if (state.phase==='peek' && state.players[myIndex]?.hand) {
-    renderPeek(state.players[myIndex].hand.filter(c=>!c.hidden));
-    show('peek'); return;
+    show('peek');
+    // Only render once when entering peek (avoid resetting the 3s timers)
+    if (!window._peekRendered) {
+      window._peekRendered = true;
+      renderPeek(state.players[myIndex].hand.filter(c=>!c.hidden));
+    }
+    return;
+  } else {
+    window._peekRendered = false;
   }
   if (state.phase==='score') { renderScore(state); return; }
   
