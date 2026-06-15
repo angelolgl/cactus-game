@@ -62,6 +62,7 @@ function initGame(room) {
   room.cur     = Math.floor(Math.random() * room.players.length);
   room.phase   = 'peek';
   room.peekDone = 0;
+  room.peekedPlayers = new Set();
   room.drawn   = null;
   room.sevenP  = false;
   room.jackP   = false;
@@ -185,12 +186,28 @@ io.on('connection', socket => {
     if (!room) return;
     const pi = room.players.findIndex(p => p.socketId === socket.id);
     if (pi < 0) return;
-    room.peekDone = (room.peekDone || 0) + 1;
-    if (room.peekDone >= room.players.length) {
-      room.phase = 'draw';
-      addLog(room, `Partie lancée ! ${room.players[room.cur].name} commence.`);
+    if (!room.peekedPlayers) room.peekedPlayers = new Set();
+    room.peekedPlayers.add(pi);
+    if (room.peekedPlayers.size >= room.players.length && room.phase === 'peek') {
+      // All players done - show countdown then start
+      room.phase = 'countdown';
+      addLog(room, 'Tous les joueurs sont prêts !');
+      broadcastRoom(code);
+      let cd = 3;
+      const timer = setInterval(() => {
+        room.countdownValue = cd;
+        io.to(code).emit('startCountdown', { value: cd });
+        cd--;
+        if (cd < 0) {
+          clearInterval(timer);
+          room.phase = 'draw';
+          addLog(room, `Partie lancée ! ${room.players[room.cur].name} commence.`);
+          broadcastRoom(code);
+        }
+      }, 1000);
+    } else {
+      broadcastRoom(code);
     }
-    broadcastRoom(code);
   });
 
   // ── Draw ──
