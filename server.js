@@ -325,9 +325,8 @@ io.on('connection', socket => {
     const top = room.discard[room.discard.length - 1];
     if (!card || !top) return;
 
-    const sameColor = (c1, c2) => (c1.suit==='♥'||c1.suit==='♦') === (c2.suit==='♥'||c2.suit==='♦');
-
-    if (card.value === top.value && sameColor(card, top)) {
+    // Snap rule: same VALUE only (color does not matter)
+    if (card.value === top.value) {
       // Good snap
       room.players[pi].hand.splice(cardIndex, 1);
       room.discard.push(card);
