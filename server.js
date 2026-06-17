@@ -14,6 +14,18 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ── Rooms storage ──
 const rooms = {}; // roomCode → gameState
 
+// Resolve player index, refreshing socketId on reconnect
+function resolvePlayer(room, socket, playerIndex) {
+  let pi = room.players.findIndex(p => p.socketId === socket.id);
+  if (pi < 0 && typeof playerIndex === 'number' && room.players[playerIndex]) {
+    pi = playerIndex;
+    room.players[pi].socketId = socket.id;
+    socket.join(room.code);
+  }
+  return pi;
+}
+
+
 function makeCode() {
   return String(Math.floor(1000 + Math.random() * 9000));
 }
@@ -181,13 +193,20 @@ io.on('connection', socket => {
   });
 
   // ── Peek ──
-  socket.on('peekDone', ({ code }) => {
+  socket.on('peekDone', ({ code, playerIndex }) => {
     const room = rooms[code];
     if (!room) return;
-    const pi = room.players.findIndex(p => p.socketId === socket.id);
+    let pi = room.players.findIndex(p => p.socketId === socket.id);
+    // Fallback: use playerIndex sent by client (handles reconnections)
+    if (pi < 0 && typeof playerIndex === 'number') {
+      pi = playerIndex;
+      // Update the stale socketId
+      if (room.players[pi]) room.players[pi].socketId = socket.id;
+    }
     if (pi < 0) return;
     if (!room.peekedPlayers) room.peekedPlayers = new Set();
     room.peekedPlayers.add(pi);
+    console.log(`Peek done: player ${pi}, total ${room.peekedPlayers.size}/${room.players.length}`);
     if (room.peekedPlayers.size >= room.players.length && room.phase === 'peek') {
       // All players done - show countdown then start
       room.phase = 'countdown';
@@ -211,10 +230,10 @@ io.on('connection', socket => {
   });
 
   // ── Draw ──
-  socket.on('draw', ({ code }) => {
+  socket.on('draw', ({ code, playerIndex }) => {
     const room = rooms[code];
     if (!room || room.phase !== 'draw') return;
-    const pi = room.players.findIndex(p => p.socketId === socket.id);
+    const pi = resolvePlayer(room, socket, playerIndex);
     if (pi !== room.cur) return;
     reshuffleIfNeeded(room);
     if (room.deck.length === 0) return;
@@ -225,10 +244,10 @@ io.on('connection', socket => {
   });
 
   // ── Take discard ──
-  socket.on('takeDiscard', ({ code }) => {
+  socket.on('takeDiscard', ({ code, playerIndex }) => {
     const room = rooms[code];
     if (!room || room.phase !== 'draw') return;
-    const pi = room.players.findIndex(p => p.socketId === socket.id);
+    const pi = resolvePlayer(room, socket, playerIndex);
     if (pi !== room.cur) return;
     const top = room.discard[room.discard.length - 1];
     if (!top || ['7','J'].includes(top.value)) return;
@@ -239,10 +258,10 @@ io.on('connection', socket => {
   });
 
   // ── Discard drawn ──
-  socket.on('discardDrawn', ({ code }) => {
+  socket.on('discardDrawn', ({ code, playerIndex }) => {
     const room = rooms[code];
     if (!room || room.phase !== 'drawn') return;
-    const pi = room.players.findIndex(p => p.socketId === socket.id);
+    const pi = resolvePlayer(room, socket, playerIndex);
     if (pi !== room.cur) return;
     const c = room.drawn;
     room.drawn = null;
@@ -256,10 +275,10 @@ io.on('connection', socket => {
   });
 
   // ── Exchange drawn with hand card ──
-  socket.on('exchange', ({ code, cardIndex }) => {
+  socket.on('exchange', ({ code, cardIndex, playerIndex }) => {
     const room = rooms[code];
     if (!room || !['drawn','exchange'].includes(room.phase)) return;
-    const pi = room.players.findIndex(p => p.socketId === socket.id);
+    const pi = resolvePlayer(room, socket, playerIndex);
     if (pi !== room.cur) return;
     if (!room.drawn) return;
     const old = room.players[pi].hand[cardIndex];
@@ -276,10 +295,10 @@ io.on('connection', socket => {
   });
 
   // ── Discard drawn via clicking discard (cancel exchange) ──
-  socket.on('cancelExchange', ({ code }) => {
+  socket.on('cancelExchange', ({ code, playerIndex }) => {
     const room = rooms[code];
     if (!room || room.phase !== 'exchange') return;
-    const pi = room.players.findIndex(p => p.socketId === socket.id);
+    const pi = resolvePlayer(room, socket, playerIndex);
     if (pi !== room.cur || !room.drawn) return;
     const c = room.drawn;
     room.drawn = null;
@@ -293,15 +312,14 @@ io.on('connection', socket => {
   });
 
   // ── Snap ──
-  socket.on('snap', ({ code, cardIndex }) => {
+  socket.on('snap', ({ code, cardIndex, playerIndex }) => {
     const room = rooms[code];
     if (!room) return;
-    const pi = room.players.findIndex(p => p.socketId === socket.id);
+    const pi = resolvePlayer(room, socket, playerIndex);
     if (pi < 0) return;
-    const snapPhases = ['draw','drawn'];
-    if (room.phase === 'jack' && room.jackTimerStep === 'decide') snapPhases.push('jack');
+    // Snap is allowed during active play phases — by ANY player on their OWN cards
+    const snapPhases = ['draw','drawn','seven','jack'];
     if (!snapPhases.includes(room.phase)) return;
-    if (pi !== room.cur) return; // chaque joueur ne peut snap que ses propres cartes
 
     const card = room.players[pi].hand[cardIndex];
     const top = room.discard[room.discard.length - 1];
@@ -330,10 +348,10 @@ io.on('connection', socket => {
   });
 
   // ── Seven power: look at own card ──
-  socket.on('sevenLook', ({ code, cardIndex }) => {
+  socket.on('sevenLook', ({ code, cardIndex, playerIndex }) => {
     const room = rooms[code];
     if (!room || !room.sevenP) return;
-    const pi = room.players.findIndex(p => p.socketId === socket.id);
+    const pi = resolvePlayer(room, socket, playerIndex);
     if (pi !== room.cur) return;
     const card = room.players[pi].hand[cardIndex];
     if (!card) return;
@@ -345,10 +363,10 @@ io.on('connection', socket => {
     broadcastRoom(code);
   });
 
-  socket.on('sevenSkip', ({ code }) => {
+  socket.on('sevenSkip', ({ code, playerIndex }) => {
     const room = rooms[code];
     if (!room || !room.sevenP) return;
-    const pi = room.players.findIndex(p => p.socketId === socket.id);
+    const pi = resolvePlayer(room, socket, playerIndex);
     if (pi !== room.cur) return;
     room.sevenP = false;
     room.phase = 'draw';
@@ -357,10 +375,10 @@ io.on('connection', socket => {
   });
 
   // ── Jack power ──
-  socket.on('jackActivate', ({ code }) => {
+  socket.on('jackActivate', ({ code, playerIndex }) => {
     const room = rooms[code];
     if (!room || !room.jackP || room.jackTimerStep !== 'decide') return;
-    const pi = room.players.findIndex(p => p.socketId === socket.id);
+    const pi = resolvePlayer(room, socket, playerIndex);
     // Only the jack owner can activate (first in queue)
     if (room.jackQueue.length === 0 || room.jackQueue[0].player !== pi) return;
     room.jackActivated = true;
@@ -370,20 +388,20 @@ io.on('connection', socket => {
     broadcastRoom(code);
   });
 
-  socket.on('jackIgnore', ({ code }) => {
+  socket.on('jackIgnore', ({ code, playerIndex }) => {
     const room = rooms[code];
     if (!room || !room.jackP) return;
-    const pi = room.players.findIndex(p => p.socketId === socket.id);
+    const pi = resolvePlayer(room, socket, playerIndex);
     if (room.jackQueue.length === 0 || room.jackQueue[0].player !== pi) return;
     room.jackQueue.shift();
     processNextJack(room);
     broadcastRoom(code);
   });
 
-  socket.on('jackPick', ({ code, playerIndex, cardIndex }) => {
+  socket.on('jackPick', ({ code, playerIndex, cardIndex, actorIndex }) => {
     const room = rooms[code];
     if (!room || !room.jackP || !room.jackActivated) return;
-    const pi = room.players.findIndex(p => p.socketId === socket.id);
+    const pi = resolvePlayer(room, socket, actorIndex);
     if (room.jackQueue.length === 0 || room.jackQueue[0].player !== pi) return;
 
     if (room.jackTimerStep === 'pick1') {
@@ -406,25 +424,28 @@ io.on('connection', socket => {
     }
   });
 
-  socket.on('jackConfirm', ({ code }) => {
+  socket.on('jackConfirm', ({ code, playerIndex }) => {
     const room = rooms[code];
     if (!room || !room.jackP || room.jackSel.length < 2) return;
-    const pi = room.players.findIndex(p => p.socketId === socket.id);
+    const pi = resolvePlayer(room, socket, playerIndex);
     if (room.jackQueue.length === 0 || room.jackQueue[0].player !== pi) return;
     doJackSwap(room);
     broadcastRoom(code);
   });
 
   // ── Cactus ──
-  socket.on('cactus', ({ code }) => {
+  socket.on('cactus', ({ code, playerIndex }) => {
     const room = rooms[code];
-    if (!room || room.phase !== 'draw' || room.cactusRound) return;
-    const pi = room.players.findIndex(p => p.socketId === socket.id);
+    if (!room || room.cactusRound) return;
+    // Cactus can be called during your draw phase OR during the 3s cactusWindow after your turn
+    if (room.phase !== 'draw' && room.phase !== 'cactusWindow') return;
+    const pi = resolvePlayer(room, socket, playerIndex);
     if (pi !== room.cur) return;
+    if (room._cactusTimer) clearTimeout(room._cactusTimer);
     room.cactusRound = true;
     room.cactusPl = pi;
     addLog(room, `🌵 CACTUS ! ${room.players[pi].name}`);
-    endTurnIfNeeded(room);
+    passTurn(room);
     broadcastRoom(code);
   });
 
@@ -504,6 +525,26 @@ function reshuffleIfNeeded(room) {
 }
 
 function endTurnIfNeeded(room) {
+  // Give the current player a 3-second window to call Cactus before the turn passes
+  // (only if cactus hasn't already been called)
+  if (!room.cactusRound) {
+    room.phase = 'cactusWindow';
+    room.drawn = null;
+    broadcastRoom(room.code);
+    if (room._cactusTimer) clearTimeout(room._cactusTimer);
+    room._cactusTimer = setTimeout(() => {
+      // If still in cactusWindow (no cactus called), pass the turn
+      if (room.phase === 'cactusWindow') {
+        passTurn(room);
+        broadcastRoom(room.code);
+      }
+    }, 3000);
+    return;
+  }
+  passTurn(room);
+}
+
+function passTurn(room) {
   if (room.cactusRound) {
     const next = (room.cur + 1) % room.players.length;
     if (next === room.cactusPl) { endRound(room); return; }
