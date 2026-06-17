@@ -157,18 +157,9 @@ body{font-family:'Inter',sans-serif;background:#0f3020;color:white;font-size:14p
 .fly-card{position:absolute;border-radius:9px;overflow:hidden}
 
 /* ─── COUNTDOWN (small, top-right) ─── */
-#countdown-overlay{
-  position:fixed;top:10px;right:12px;z-index:400;pointer-events:none;
-  opacity:0;transition:opacity .3s;
-}
+#countdown-overlay{position:fixed;top:56px;right:12px;z-index:400;pointer-events:none;opacity:0;transition:opacity .3s;}
 #countdown-overlay.show{opacity:1}
-.countdown-pill{
-  background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.18);
-  border-radius:20px;padding:4px 12px;
-  font-size:12px;color:rgba(255,255,255,.55);
-  display:flex;align-items:center;gap:6px;
-  transition:border-color .3s,box-shadow .3s;
-}
+.countdown-pill{background:rgba(0,0,0,.75);border:1px solid rgba(212,168,75,.5);border-radius:20px;padding:6px 14px;font-size:12px;color:rgba(255,255,255,.7);display:flex;align-items:center;gap:8px;box-shadow:0 2px 12px rgba(0,0,0,.4);}
 .countdown-pill.urgent{
   border-color:rgba(255,60,60,.7);
   box-shadow:0 0 8px rgba(255,60,60,.5);
@@ -178,7 +169,7 @@ body{font-family:'Inter',sans-serif;background:#0f3020;color:white;font-size:14p
   from{box-shadow:0 0 4px rgba(255,60,60,.4);}
   to{box-shadow:0 0 14px rgba(255,60,60,.8);}
 }
-.countdown-num{font-size:13px;font-weight:700;color:var(--gold-light);min-width:14px;text-align:center}
+.countdown-num{font-size:16px;font-weight:700;color:var(--gold-light);min-width:16px;text-align:center}
 .countdown-num.urgent{color:#ff4444;}
 .cactus-announce-btn{display:none}
 
@@ -335,6 +326,42 @@ body{font-family:'Inter',sans-serif;background:#0f3020;color:white;font-size:14p
 }
 .opponents-row .prow { flex: 1; min-width: 120px; }
 
+
+/* ── RULES MODAL ── */
+.rules-modal {
+  max-width: 480px;
+  max-height: 85vh;
+  text-align: left;
+}
+.rules-scroll {
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 4px 8px;
+  margin: 12px 0;
+}
+.rules-scroll::-webkit-scrollbar { width: 6px; }
+.rules-scroll::-webkit-scrollbar-thumb { background: rgba(212,168,75,.4); border-radius: 3px; }
+.rule-section {
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(212,168,75,.15);
+}
+.rule-section:last-child { border-bottom: none; }
+.rule-section h4 {
+  font-family: 'Playfair Display', serif;
+  font-size: 16px;
+  color: var(--gold-light);
+  margin-bottom: 8px;
+}
+.rule-section p {
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: rgba(255,255,255,.85);
+  margin-bottom: 8px;
+}
+.rule-section p:last-child { margin-bottom: 0; }
+.rule-section b { color: var(--gold-light); font-weight: 600; }
+
 </style>
 </head>
 <body>
@@ -364,6 +391,7 @@ body{font-family:'Inter',sans-serif;background:#0f3020;color:white;font-size:14p
     </div>
     <div style="color:rgba(255,255,255,.3);font-size:12px;margin:8px 0">— ou —</div>
     <button class="start-btn" onclick="createRoom()">Créer une partie</button>
+    <button class="start-btn" style="background:transparent;border:1px solid rgba(212,168,75,.4);color:var(--gold-light);margin-top:10px" onclick="showRules()">📖 Voir les règles</button>
     <div class="error-msg" id="lobby-error"></div>
   </div>
   <div class="lobby-box" id="lobby-waiting" style="display:none">
@@ -393,10 +421,11 @@ body{font-family:'Inter',sans-serif;background:#0f3020;color:white;font-size:14p
 <!-- GAME -->
 <div id="s-game" class="screen">
   <div class="g-header">
-    <div class="g-title">🌵 Cactus</div>
+    <div class="g-title" id="g-title" style="cursor:pointer" onclick="returnToLobby()">🌵 Cactus</div>
     <div class="g-btns">
       <button class="gbtn cactus" id="btn-cactus">🌵 Cactus !</button>
       <button class="gbtn" id="btn-rules">Règles</button>
+      <button class="gbtn" id="btn-debug" style="font-size:11px;opacity:0.5" onclick="toggleDebug(this)">🏷️</button>
 
     </div>
   </div>
@@ -540,6 +569,13 @@ function mkCardEl(card,opts={}){
 function mkFrontEl(card){
   const el=mkCardEl(card,{flipped:true});
   el.style.cursor='default';
+  // DEBUG: show real value on face-up cards (discard, drawn) for verification
+  if(window.DEBUG_LABELS && card && card.value && card.value!=='?'){
+    const dbg=document.createElement('div');
+    dbg.style.cssText='position:absolute;top:2px;left:0;right:0;text-align:center;font-size:11px;font-weight:700;color:#fff;text-shadow:0 0 4px #000,0 0 4px #000;z-index:20;pointer-events:none;background:rgba(0,0,0,.6);border-radius:8px 8px 0 0;padding:1px 0';
+    dbg.textContent=card.value+card.suit;
+    el.appendChild(dbg);
+  }
   return el;
 }
 
@@ -712,7 +748,7 @@ function doSnap(pi,ci,el,card){
   const srcRect=el?el.getBoundingClientRect():null;
   // Snap: même valeur ET même couleur (rouge/noir) pour éviter 9♠↔9♥
   const sameColor=(c1,c2)=>(c1.suit==='♥'||c1.suit==='♦')===(c2.suit==='♥'||c2.suit==='♦');
-  if(card.value===top.value&&sameColor(card,top)){
+  if(card.value===top.value){ // même valeur uniquement
     // Bon snap — animer via clone manuel pour éviter les soucis de DOM
     G.players[pi].hand.splice(ci,1);
     G.discard.push(card);
@@ -1265,21 +1301,70 @@ qid('btn-endgame').addEventListener('click', ()=>show('final'));
 qid('btn-cactus').addEventListener('click', ()=>{
   if (G?.phase==='draw'&&G.cur===myIndex) socket.emit('cactus',{code:myRoom, playerIndex:myIndex});
 });
-qid('btn-rules').addEventListener('click', ()=>{
-  qid('modal-root').innerHTML=`<div class="modal-bg"><div class="modal-box">
-    <h3>📖 Règles</h3>
-    <p style="text-align:left;font-size:12px;line-height:1.9">
-    <b>Tour :</b> Pioche ou prend la défausse (sauf 7/Valet). Défausse ou échange.<br>
-    <b>Snap ⚡ :</b> Cliquez sur une carte pour snap la défausse (même valeur, même couleur).<br>
-    <b>7</b> → Regardez une de vos cartes<br>
-    <b>Valet</b> → Échangez 2 cartes entre joueurs différents<br>
-    <b>Points :</b> A=1 · 2-8=valeur · ♠♣9=14 · ♥♦9=−2 · 10=10 · V=11 · D=12 · R=0<br>
-    <b>Cactus 🌵 :</b> Annoncez. Score doublé si >5pts ou adversaire a moins.<br>
-    <b>Fin :</b> Éliminé à 100 pts.
-    </p>
+
+
+function toggleDebug(btn) {
+  window.DEBUG_LABELS = !window.DEBUG_LABELS;
+  btn.style.opacity = window.DEBUG_LABELS ? '1' : '0.5';
+  // Re-render discard and drawn card to show/hide labels
+  if (G) {
+    const isMyTurn = G.cur === myIndex;
+    renderDiscard(G, isMyTurn);
+    renderActions(G, isMyTurn);
+  }
+}
+
+function returnToLobby() {
+  if (!confirm('Quitter la partie et revenir au menu ?')) return;
+  if (socket) { try { socket.disconnect(); } catch(e){} }
+  location.reload();
+}
+
+qid('btn-rules').addEventListener('click', showRules);
+
+function showRules() {
+  qid('modal-root').innerHTML = `<div class="modal-bg"><div class="modal-box rules-modal">
+    <h3 style="font-family:'Playfair Display',serif;font-size:24px;margin-bottom:4px">🌵 Règles du Cactus</h3>
+    <div class="rules-scroll">
+      <div class="rule-section">
+        <h4>🎯 But du jeu</h4>
+        <p>Avoir le moins de points possible. Chaque carte vaut des points, et vous cherchez à vous débarrasser des cartes fortes. Le premier joueur à atteindre <b>100 points est éliminé</b>.</p>
+      </div>
+      <div class="rule-section">
+        <h4>🃏 Déroulement d'un tour</h4>
+        <p>À votre tour, vous pouvez soit <b>piocher</b> une carte, soit <b>prendre la carte du dessus de la défausse</b> (sauf si c'est un 7 ou un Valet). Ensuite, vous choisissez de <b>garder</b> cette carte en l'échangeant avec une des vôtres, ou de la <b>défausser</b> directement.</p>
+      </div>
+      <div class="rule-section">
+        <h4>⚡ Le Snap</h4>
+        <p>Dès qu'une carte est posée sur la défausse, <b>n'importe quel joueur</b> peut tenter un snap : si vous pensez avoir une carte de <b>la même valeur</b> (peu importe la couleur), cliquez dessus pour vous en débarrasser instantanément. Attention : si vous vous trompez de carte, vous <b>piochez une carte de pénalité</b> !</p>
+      </div>
+      <div class="rule-section">
+        <h4>🔮 Pouvoirs spéciaux</h4>
+        <p><b>Le 7.</b> Quand vous défaussez un 7, vous pouvez regarder secrètement une de vos propres cartes pour la mémoriser.</p>
+        <p><b>Le Valet.</b> Quand vous défaussez un Valet, vous pouvez échanger deux cartes entre deux joueurs différents (les vôtres avec celles d'un adversaire, ou entre deux adversaires).</p>
+      </div>
+      <div class="rule-section">
+        <h4>🌵 Annoncer "Cactus"</h4>
+        <p>Quand vous pensez avoir le total le plus bas, annoncez <b>Cactus</b> ! Vous disposez de <b>3 secondes après votre tour</b> pour le faire. Chaque autre joueur joue alors un dernier tour, puis on compte les points.</p>
+        <p>⚠️ Si votre total dépasse <b>5 points</b>, ou si un adversaire a un total inférieur ou égal au vôtre, <b>votre score est doublé</b> en pénalité !</p>
+      </div>
+      <div class="rule-section">
+        <h4>💯 Valeur des cartes</h4>
+        <p>
+        As = 1 point<br>
+        2 à 8 = leur valeur<br>
+        9 noir (♠♣) = 14 points<br>
+        9 rouge (♥♦) = −2 points<br>
+        10 = 10 points<br>
+        Valet = 11 points<br>
+        Dame = 12 points<br>
+        Roi = 0 point
+        </p>
+      </div>
+    </div>
     <div class="mbtn-row"><button class="mbtn" onclick="qid('modal-root').innerHTML=''">Compris !</button></div>
   </div></div>`;
-});
+};
 
 document.addEventListener('DOMContentLoaded', ()=>{
   if (typeof TABLE_BG !== 'undefined') {
