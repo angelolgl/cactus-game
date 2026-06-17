@@ -397,7 +397,7 @@ body{font-family:'Inter',sans-serif;background:#0f3020;color:white;font-size:14p
     <div class="g-btns">
       <button class="gbtn cactus" id="btn-cactus">🌵 Cactus !</button>
       <button class="gbtn" id="btn-rules">Règles</button>
-      <button class="gbtn" id="btn-debug" style="font-size:10px;opacity:0.5" onclick="window.DEBUG_LABELS=!window.DEBUG_LABELS;renderPlayers();this.style.opacity=window.DEBUG_LABELS?1:0.5">🏷️</button>
+
     </div>
   </div>
   <div class="g-banner">
@@ -873,7 +873,7 @@ function initSocket() {
   socket.on('roomCreated', ({code, playerIndex}) => { myIndex=playerIndex; myRoom=code; showWaiting(code,true); });
   socket.on('roomJoined',  ({code, playerIndex}) => { myIndex=playerIndex; myRoom=code; showWaiting(code,false); });
   socket.on('lobbyUpdate', ({players}) => { updateLobbyPlayers(players); });
-  socket.on('gameStarted', () => { peekedCards=[]; peekRevealed=[]; window._peekRendered=false; show('peek'); });
+  socket.on('gameStarted', () => { peekedCards=[]; peekRevealed=[]; window._peekRendered=false; _peekDoneSent=false; show('peek'); });
   socket.on('gameState',   (state) => { G=state; updateGame(state); });
   socket.on('revealCard',  ({card}) => { showRevealModal(card, () => {}); });
   socket.on('startCountdown', ({value}) => {
@@ -962,8 +962,11 @@ function startGame() {
   socket.emit('startGame', {code:myRoom, cardCount:selectedCC});
 }
 
+let _peekDoneSent = false;
 qid('btn-peek-ok').addEventListener('click', () => {
-  socket.emit('peekDone', {code:myRoom});
+  if (_peekDoneSent) return;
+  _peekDoneSent = true;
+  socket.emit('peekDone', {code:myRoom, playerIndex:myIndex});
   qid('peek-h').textContent = 'En attente des autres joueurs...';
   qid('btn-peek-ok').style.display = 'none';
   qid('peek-cards').innerHTML = '';
@@ -1030,6 +1033,8 @@ function updateGame(state) {
 
   if (state.phase==='peek' && state.players[myIndex]?.hand) {
     show('peek');
+    // If I already sent peekDone, stay in waiting state (don't re-render cards)
+    if (_peekDoneSent) return;
     if (!window._peekRendered) {
       window._peekRendered = true;
       renderPeek(state.players[myIndex].hand.filter(c=>!c.hidden));
@@ -1048,9 +1053,23 @@ function updateGame(state) {
   renderActions(state, isMyTurn);
   renderPlayers(state);
   show('game');
+
+  // Cactus window: show 3s countdown
+  if (state.phase === 'cactusWindow') {
+    if (!window._cactusCdRunning) {
+      window._cactusCdRunning = true;
+      startCountdown(() => { window._cactusCdRunning = false; }, 3);
+    }
+  } else {
+    window._cactusCdRunning = false;
+    stopCountdown();
+  }
 }
 
 function getInstruction(state, isMyTurn) {
+  if (state.phase==='cactusWindow') {
+    return isMyTurn ? '🌵 3 secondes pour annoncer Cactus !' : `${state.players[state.cur]?.name} peut annoncer Cactus...`;
+  }
   if (!isMyTurn) return `Tour de ${state.players[state.cur]?.name}...`;
   if (state.sevenP) return 'Cliquez sur une de vos cartes pour la regarder';
   if (state.jackP) {
@@ -1074,10 +1093,10 @@ function renderDiscard(state, isMyTurn) {
   const noTake=['7','J'];
   if (isMyTurn && state.phase==='draw' && !noTake.includes(state.discard.value)) {
     el.style.cursor='pointer';
-    el.addEventListener('click', () => socket.emit('takeDiscard', {code:myRoom}));
+    el.addEventListener('click', () => socket.emit('takeDiscard', {code:myRoom, playerIndex:myIndex}));
   } else if (isMyTurn && state.phase==='exchange') {
     el.style.cursor='pointer'; el.style.boxShadow='0 0 0 2px rgba(212,168,75,.5)';
-    el.addEventListener('click', () => socket.emit('cancelExchange', {code:myRoom}));
+    el.addEventListener('click', () => socket.emit('cancelExchange', {code:myRoom, playerIndex:myIndex}));
   }
   slot.appendChild(el);
 }
@@ -1095,7 +1114,7 @@ function renderDrawPile(state, isMyTurn) {
     }
   }
   dw.style.cursor = (isMyTurn && state.phase==='draw') ? 'pointer' : 'default';
-  dw.onclick = (isMyTurn && state.phase==='draw') ? () => socket.emit('draw', {code:myRoom}) : null;
+  dw.onclick = (isMyTurn && state.phase==='draw') ? () => socket.emit('draw', {code:myRoom, playerIndex:myIndex}) : null;
 }
 
 function renderActions(state, isMyTurn) {
@@ -1106,7 +1125,7 @@ function renderActions(state, isMyTurn) {
     const lbl2=document.createElement('div'); lbl2.className='plabel'; lbl2.textContent='Carte piochée'; area.appendChild(lbl2);
     const cf=mkFrontEl(state.drawn); cf.id='drawn-card-el'; area.appendChild(cf);
     const db=document.createElement('button'); db.className='abtn'; db.textContent='🗑 Défausser';
-    db.onclick=()=>socket.emit('discardDrawn',{code:myRoom});
+    db.onclick=()=>socket.emit('discardDrawn',{code:myRoom, playerIndex:myIndex});
     const eb=document.createElement('button'); eb.className='abtn gold'; eb.textContent='🔄 Échanger';
     eb.onclick=()=>{G._localExchange=true; renderActions(Object.assign({},state,{phase:'exchange'}),true);};
     area.appendChild(db); area.appendChild(eb);
@@ -1117,7 +1136,7 @@ function renderActions(state, isMyTurn) {
     const pn=document.createElement('div'); pn.className='power-note';
     pn.innerHTML='🔮 <b>7</b> — Cliquez sur une de vos cartes'; area.appendChild(pn);
     const sk=document.createElement('button'); sk.className='abtn'; sk.textContent='⏭ Ignorer';
-    sk.onclick=()=>socket.emit('sevenSkip',{code:myRoom}); area.appendChild(sk);
+    sk.onclick=()=>socket.emit('sevenSkip',{code:myRoom, playerIndex:myIndex}); area.appendChild(sk);
   } else if (state.jackP) {
     const s=state.jackTimerStep;
     const ownerName=state.jackOwner!==null?state.players[state.jackOwner]?.name:'?';
@@ -1127,7 +1146,7 @@ function renderActions(state, isMyTurn) {
       area.appendChild(pn);
       if (isJackOwner) {
         const ub=document.createElement('button'); ub.className='abtn gold'; ub.textContent='⚡ Utiliser le pouvoir';
-        ub.onclick=()=>socket.emit('jackActivate',{code:myRoom}); area.appendChild(ub);
+        ub.onclick=()=>socket.emit('jackActivate',{code:myRoom, playerIndex:myIndex}); area.appendChild(ub);
       }
     } else {
       const sel=state.jackSel?.[0];
@@ -1135,12 +1154,12 @@ function renderActions(state, isMyTurn) {
       area.appendChild(pn);
       if (isJackOwner && s==='pick2' && state.jackSel?.length===2) {
         const cb=document.createElement('button'); cb.className='abtn gold'; cb.textContent='✅ Confirmer';
-        cb.onclick=()=>socket.emit('jackConfirm',{code:myRoom}); area.appendChild(cb);
+        cb.onclick=()=>socket.emit('jackConfirm',{code:myRoom, playerIndex:myIndex}); area.appendChild(cb);
       }
     }
     if (isJackOwner) {
       const sk=document.createElement('button'); sk.className='abtn'; sk.textContent='⏭ Ignorer';
-      sk.onclick=()=>socket.emit('jackIgnore',{code:myRoom}); area.appendChild(sk);
+      sk.onclick=()=>socket.emit('jackIgnore',{code:myRoom, playerIndex:myIndex}); area.appendChild(sk);
     }
   }
 }
@@ -1203,22 +1222,25 @@ function buildPlayerRow(state, pi) {
 function onCardClick(pi, ci, card, state) {
   if (!G || !socket) return;
   const isMe = pi===myIndex, isMyTurn = G.cur===myIndex, isJackOwner = G.jackOwner===myIndex;
-  
+
+  // SEVEN power: look at own card (only the active player)
   if (G.sevenP && isMyTurn && isMe)
-    return socket.emit('sevenLook', {code:myRoom, cardIndex:ci});
-  
+    return socket.emit('sevenLook', {code:myRoom, cardIndex:ci, playerIndex:myIndex});
+
+  // JACK power: the jack owner picks cards (any player's cards)
   if (G.jackP && G.jackActivated && isJackOwner)
-    return socket.emit('jackPick', {code:myRoom, playerIndex:pi, cardIndex:ci});
-  
+    return socket.emit('jackPick', {code:myRoom, playerIndex:pi, cardIndex:ci, actorIndex:myIndex});
+
+  // EXCHANGE: active player swaps drawn card with own hand card
   if ((G.phase==='exchange'||G._localExchange) && isMyTurn && isMe) {
     G._localExchange=false;
-    return socket.emit('exchange', {code:myRoom, cardIndex:ci});
+    return socket.emit('exchange', {code:myRoom, cardIndex:ci, playerIndex:myIndex});
   }
-  
-  const snapPhases=['draw','drawn'];
-  if (G.phase==='jack' && G.jackTimerStep==='decide') snapPhases.push('jack');
+
+  // SNAP: ANY player can snap their OWN card at almost any time during play
+  const snapPhases=['draw','drawn','seven','jack','cactusWindow'];
   if (snapPhases.includes(G.phase) && isMe)
-    socket.emit('snap', {code:myRoom, cardIndex:ci});
+    socket.emit('snap', {code:myRoom, cardIndex:ci, playerIndex:myIndex});
 }
 
 // ══ SCORE ══
@@ -1241,7 +1263,7 @@ function renderScore(state) {
 qid('btn-newround').addEventListener('click', ()=>socket.emit('nextRound',{code:myRoom}));
 qid('btn-endgame').addEventListener('click', ()=>show('final'));
 qid('btn-cactus').addEventListener('click', ()=>{
-  if (G?.phase==='draw'&&G.cur===myIndex) socket.emit('cactus',{code:myRoom});
+  if (G?.phase==='draw'&&G.cur===myIndex) socket.emit('cactus',{code:myRoom, playerIndex:myIndex});
 });
 qid('btn-rules').addEventListener('click', ()=>{
   qid('modal-root').innerHTML=`<div class="modal-bg"><div class="modal-box">
