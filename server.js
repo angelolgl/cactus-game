@@ -108,11 +108,12 @@ function broadcastRoom(code) {
 
 function buildState(room, pi) {
   // Build state for player pi - hand cards are hidden for others
+  const revealAll = room.phase === 'score';
   const players = room.players.map((p, i) => ({
     name: p.name,
     cardCount: p.hand.length,
-    // Only send own hand
-    hand: i === pi ? p.hand : p.hand.map(() => ({ hidden: true })),
+    // Send own hand always; at score time reveal everyone's hand
+    hand: (i === pi || revealAll) ? p.hand : p.hand.map(() => ({ hidden: true })),
     isActive: i === room.cur,
   }));
 
@@ -125,6 +126,7 @@ function buildState(room, pi) {
     deckCount: room.deck.length,
     drawn: room.phase === 'drawn' && pi === room.cur ? room.drawn : null,
     sevenP: room.sevenP && pi === room.cur,
+    sevenActivated: room.sevenActivated || false,
     jackP: room.jackP,
     jackTimerStep: room.jackTimerStep,
     jackActivated: room.jackActivated,
@@ -136,6 +138,8 @@ function buildState(room, pi) {
     log: room.log,
     cactusRound: room.cactusRound,
     cactusPl: room.cactusPl,
+    rawScores: room._rawScores || null,
+    finalScores: room._finalScores || null,
   };
 }
 
@@ -318,7 +322,7 @@ io.on('connection', socket => {
     const pi = resolvePlayer(room, socket, playerIndex);
     if (pi < 0) return;
     // Snap is allowed during active play phases — by ANY player on their OWN cards
-    const snapPhases = ['draw','drawn','seven','jack'];
+    const snapPhases = ['draw','drawn','seven','jack','cactusWindow'];
     if (!snapPhases.includes(room.phase)) return;
 
     const card = room.players[pi].hand[cardIndex];
@@ -347,9 +351,19 @@ io.on('connection', socket => {
   });
 
   // ── Seven power: look at own card ──
-  socket.on('sevenLook', ({ code, cardIndex, playerIndex }) => {
+  socket.on('sevenActivate', ({ code, playerIndex }) => {
     const room = rooms[code];
     if (!room || !room.sevenP) return;
+    const pi = resolvePlayer(room, socket, playerIndex);
+    if (pi !== room.cur) return;
+    room.sevenActivated = true;
+    addLog(room, '🔮 Cliquez sur une de vos cartes à regarder.');
+    broadcastRoom(code);
+  });
+
+  socket.on('sevenLook', ({ code, cardIndex, playerIndex }) => {
+    const room = rooms[code];
+    if (!room || !room.sevenP || !room.sevenActivated) return;
     const pi = resolvePlayer(room, socket, playerIndex);
     if (pi !== room.cur) return;
     const card = room.players[pi].hand[cardIndex];
@@ -357,6 +371,7 @@ io.on('connection', socket => {
     // Send the card only to this player
     socket.emit('revealCard', { card, reason: 'seven' });
     room.sevenP = false;
+    room.sevenActivated = false;
     room.phase = 'draw';
     endTurnIfNeeded(room);
     broadcastRoom(code);
@@ -368,6 +383,8 @@ io.on('connection', socket => {
     const pi = resolvePlayer(room, socket, playerIndex);
     if (pi !== room.cur) return;
     room.sevenP = false;
+    room.sevenActivated = false;
+    room.sevenActivated = false;
     room.phase = 'draw';
     endTurnIfNeeded(room);
     broadcastRoom(code);
@@ -468,6 +485,7 @@ function checkSpecial(room, card) {
   if (!card) return false;
   if (card.value === '7') {
     room.sevenP = true;
+    room.sevenActivated = false;
     room.phase = 'seven';
     addLog(room, '🔮 Pouvoir du 7 — regardez une de vos cartes.');
     return true;
