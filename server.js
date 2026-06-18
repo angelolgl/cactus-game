@@ -9,7 +9,14 @@ const io = new Server(httpServer, {
   cors: { origin: '*' }
 });
 
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+  setHeaders: (res, filePath) => {
+    // Don't cache JS image files aggressively so corrections propagate
+    if (filePath.endsWith('.js')) {
+      res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+    }
+  }
+}));
 
 // ── Rooms storage ──
 const rooms = {}; // roomCode → gameState
@@ -542,23 +549,19 @@ function reshuffleIfNeeded(room) {
 }
 
 function endTurnIfNeeded(room) {
-  // Give the current player a 3-second window to call Cactus before the turn passes
-  // (only if cactus hasn't already been called)
-  if (!room.cactusRound) {
-    room.phase = 'cactusWindow';
-    room.drawn = null;
-    broadcastRoom(room.code);
-    if (room._cactusTimer) clearTimeout(room._cactusTimer);
-    room._cactusTimer = setTimeout(() => {
-      // If still in cactusWindow (no cactus called), pass the turn
-      if (room.phase === 'cactusWindow') {
-        passTurn(room);
-        broadcastRoom(room.code);
-      }
-    }, 3000);
-    return;
-  }
-  passTurn(room);
+  // Always give the current player a 3-second window after their action:
+  // - to call Cactus (if not already called)
+  // - and/or to snap a card
+  room.phase = 'cactusWindow';
+  room.drawn = null;
+  broadcastRoom(room.code);
+  if (room._cactusTimer) clearTimeout(room._cactusTimer);
+  room._cactusTimer = setTimeout(() => {
+    if (room.phase === 'cactusWindow') {
+      passTurn(room);
+      broadcastRoom(room.code);
+    }
+  }, 3000);
 }
 
 function passTurn(room) {
