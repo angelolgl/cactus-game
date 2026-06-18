@@ -362,6 +362,55 @@ body{font-family:'Inter',sans-serif;background:#0f3020;color:white;font-size:14p
 .rule-section p:last-child { margin-bottom: 0; }
 .rule-section b { color: var(--gold-light); font-weight: 600; }
 
+
+/* ── SCORE SCREEN ── */
+#s-score {
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 20px;
+  overflow-y: auto;
+  gap: 12px;
+}
+.score-block {
+  background: rgba(0,0,0,.3);
+  border: 1px solid rgba(212,168,75,.2);
+  border-radius: 14px;
+  padding: 14px;
+  width: 100%;
+  max-width: 460px;
+}
+.score-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.score-rank { font-size: 18px; min-width: 36px; }
+.score-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 17px;
+  color: var(--gold-light);
+  flex: 1;
+}
+.score-pts { font-size: 14px; color: rgba(255,255,255,.85); }
+.score-pts b { color: var(--gold-light); }
+.score-cards {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin: 6px 0;
+  min-height: 70px;
+}
+.score-total {
+  text-align: right;
+  font-size: 12px;
+  color: rgba(255,255,255,.5);
+  margin-top: 6px;
+}
+.score-total b { color: rgba(255,255,255,.85); }
+
 </style>
 </head>
 <body>
@@ -872,29 +921,27 @@ function startCountdown(onDone, seconds=3) {
 }
 
 function showRevealModal(card, onOk) {
-  const art = faceArt(card.value, card.suit);
-  const mid = art ? `<div style="line-height:0">${art}</div>` : `<span style="font-size:26px">${card.suit}</span>`;
   qid('modal-root').innerHTML = `<div class="modal-bg"><div class="modal-box">
     <h3>🔮 Votre carte</h3><p>Mémorisez-la !</p>
-    <div class="modal-card-wrap">
-      <div style="width:70px;height:100px;background:var(--card-bg);border-radius:9px;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4)">
-        ${mid}
-      </div>
-    </div>
+    <div class="modal-card-wrap" id="reveal-card-slot"></div>
     <div style="color:rgba(255,255,255,.4);font-size:12px;margin-bottom:16px">${card.value}${card.suit} — ${pts(card)} pts</div>
     <div class="mbtn-row"><button class="mbtn" id="m-ok">Mémorisé →</button></div>
   </div></div>`;
+  const cardEl = mkFrontEl(card);
+  cardEl.style.margin = '0 auto';
+  qid('reveal-card-slot').appendChild(cardEl);
   qid('m-ok').addEventListener('click', () => { qid('modal-root').innerHTML=''; if(onOk) onOk(); });
 }
 
 function showWrongSnapModal(card, onOk) {
-  const art = faceArt(card.value, card.suit);
-  const mid = art ? `<div style="line-height:0">${art}</div>` : `<span style="font-size:26px">${card.suit}</span>`;
   qid('modal-root').innerHTML = `<div class="modal-bg"><div class="modal-box">
     <h3>❌ Mauvais snap !</h3><p>Vous avez joué ${card.value}${card.suit} — pénalité !</p>
-    <div class="modal-card-wrap"><div style="width:70px;height:100px;background:var(--card-bg);border-radius:9px;display:flex;align-items:center;justify-content:center;overflow:hidden;">${mid}</div></div>
+    <div class="modal-card-wrap" id="wrong-card-slot"></div>
     <div class="mbtn-row"><button class="mbtn" id="m-ok">Compris</button></div>
   </div></div>`;
+  const cardEl = mkFrontEl(card);
+  cardEl.style.margin = '0 auto';
+  qid('wrong-card-slot').appendChild(cardEl);
   qid('m-ok').addEventListener('click', () => { qid('modal-root').innerHTML=''; if(onOk) onOk(); });
 }
 
@@ -1107,7 +1154,7 @@ function getInstruction(state, isMyTurn) {
     return isMyTurn ? '🌵 3 secondes pour annoncer Cactus !' : `${state.players[state.cur]?.name} peut annoncer Cactus...`;
   }
   if (!isMyTurn) return `Tour de ${state.players[state.cur]?.name}...`;
-  if (state.sevenP) return 'Cliquez sur une de vos cartes pour la regarder';
+  if (state.sevenP) return state.sevenActivated ? 'Cliquez sur une carte pour la voir' : '🔮 Utiliser le pouvoir du 7 ou snapper';
   if (state.jackP) {
     const s = state.jackTimerStep;
     if (s==='decide') return '🃏 Utiliser le pouvoir ou ignorer';
@@ -1170,7 +1217,17 @@ function renderActions(state, isMyTurn) {
     const cf=mkFrontEl(state.drawn); cf.id='drawn-card-el'; area.appendChild(cf);
   } else if (state.sevenP && isMyTurn) {
     const pn=document.createElement('div'); pn.className='power-note';
-    pn.innerHTML='🔮 <b>7</b> — Cliquez sur une de vos cartes'; area.appendChild(pn);
+    if (!state.sevenActivated) {
+      pn.innerHTML='🔮 <b>Pouvoir du 7</b>';
+      area.appendChild(pn);
+      // Clicking this button activates the power (avoids wasting it when you want to snap)
+      const useBtn=document.createElement('button'); useBtn.className='abtn gold';
+      useBtn.innerHTML='👁️ Regarder une de mes cartes';
+      useBtn.onclick=()=>socket.emit('sevenActivate',{code:myRoom, playerIndex:myIndex});
+      area.appendChild(useBtn);
+    } else {
+      pn.innerHTML='🔮 Cliquez sur une de vos cartes pour la voir'; area.appendChild(pn);
+    }
     const sk=document.createElement('button'); sk.className='abtn'; sk.textContent='⏭ Ignorer';
     sk.onclick=()=>socket.emit('sevenSkip',{code:myRoom, playerIndex:myIndex}); area.appendChild(sk);
   } else if (state.jackP) {
@@ -1259,8 +1316,8 @@ function onCardClick(pi, ci, card, state) {
   if (!G || !socket) return;
   const isMe = pi===myIndex, isMyTurn = G.cur===myIndex, isJackOwner = G.jackOwner===myIndex;
 
-  // SEVEN power: look at own card (only the active player)
-  if (G.sevenP && isMyTurn && isMe)
+  // SEVEN power: look at own card (only if power was explicitly activated)
+  if (G.sevenP && G.sevenActivated && isMyTurn && isMe)
     return socket.emit('sevenLook', {code:myRoom, cardIndex:ci, playerIndex:myIndex});
 
   // JACK power: the jack owner picks cards (any player's cards)
@@ -1282,18 +1339,54 @@ function onCardClick(pi, ci, card, state) {
 // ══ SCORE ══
 function renderScore(state) {
   show('score');
-  qid('sc-title').textContent=`Manche ${state.round} — Résultats`;
-  const raw=state._rawScores||[], fin=state._finalScores||[];
-  qid('sc-rows').innerHTML=state.players.map((p,i)=>{
-    const doubled=fin[i]&&raw[i]&&fin[i]>raw[i];
-    return `<div class="sc-row">
-      <span>${p.name}</span>
-      <span>${raw[i]||0} pts${doubled?` × 2 = <b>${fin[i]}</b>`:''} → Total: ${state.totals?.[i]||0}</span>
-    </div>`;
-  }).join('');
-  qid('btn-newround').style.display = myIndex===0 ? 'block' : 'none';
-  const elim = state.totals?.some(t=>t>=100);
-  if (elim) qid('btn-newround').style.display='none';
+  qid('sc-title').textContent = `Manche ${state.round} — Résultats`;
+  const raw = state.rawScores || [];
+  const fin = state.finalScores || [];
+  const rows = qid('sc-rows');
+  rows.innerHTML = '';
+
+  // Sort players by final score (best first)
+  const ranking = state.players.map((p, i) => ({ p, i, raw: raw[i]||0, fin: fin[i]||0 }))
+    .sort((a, b) => a.fin - b.fin);
+
+  ranking.forEach((entry, rank) => {
+    const { p, i } = entry;
+    const doubled = fin[i] != null && raw[i] != null && fin[i] > raw[i];
+    const isCactus = state.cactusPl === i;
+
+    const block = document.createElement('div');
+    block.className = 'score-block';
+    block.innerHTML = `
+      <div class="score-head">
+        <span class="score-rank">${rank===0?'🏆':'#'+(rank+1)}</span>
+        <span class="score-name">${i===myIndex?'Vous':p.name}${isCactus?' 🌵':''}</span>
+        <span class="score-pts">${raw[i]||0} pts${doubled?` ×2 = <b>${fin[i]}</b>`:''}</span>
+      </div>`;
+    // Reveal cards
+    const cardsRow = document.createElement('div');
+    cardsRow.className = 'score-cards';
+    if (p.hand) {
+      p.hand.forEach(c => {
+        if (!c || c.hidden) return;
+        const el = mkFrontEl(c);
+        el.style.transform = 'scale(0.7)';
+        el.style.margin = '-8px';
+        cardsRow.appendChild(el);
+      });
+    }
+    block.appendChild(cardsRow);
+
+    const totalLine = document.createElement('div');
+    totalLine.className = 'score-total';
+    totalLine.innerHTML = `Total cumulé : <b>${state.totals?.[i]||0} pts</b>`;
+    block.appendChild(totalLine);
+
+    rows.appendChild(block);
+  });
+
+  qid('btn-newround').style.display = (myIndex === 0) ? 'block' : 'none';
+  const elim = state.totals?.some(t => t >= 100);
+  if (elim) qid('btn-newround').style.display = 'none';
 }
 
 qid('btn-newround').addEventListener('click', ()=>socket.emit('nextRound',{code:myRoom}));
