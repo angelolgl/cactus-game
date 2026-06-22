@@ -86,6 +86,8 @@ function initGame(room) {
   room.sevenP  = false;
   room.jackP   = false;
   room.jackQueue = [];
+  room.sevenQueue = [];
+  room.sevenOwner = null;
   room.jackSel = [];
   room.jackTimerStep = null;
   room.jackActivated = false;
@@ -116,13 +118,18 @@ function broadcastRoom(code) {
 function buildState(room, pi) {
   // Build state for player pi - hand cards are hidden for others
   const revealAll = room.phase === 'score';
-  const players = room.players.map((p, i) => ({
-    name: p.name,
-    cardCount: p.hand.length,
-    // Send own hand always; at score time reveal everyone's hand
-    hand: (i === pi || revealAll) ? p.hand : p.hand.map(() => ({ hidden: true })),
-    isActive: i === room.cur,
-  }));
+  const players = room.players.map((p, i) => {
+    const changed = p.changed || {};
+    const hand = (i === pi || revealAll)
+      ? p.hand.map(c => ({ ...c, changed: !!changed[c.uid] }))
+      : p.hand.map(c => ({ hidden: true, changed: !!changed[c.uid] }));
+    return {
+      name: p.name,
+      cardCount: p.hand.length,
+      hand,
+      isActive: i === room.cur,
+    };
+  });
 
   return {
     players,
@@ -132,7 +139,8 @@ function buildState(room, pi) {
     discardEmpty: room.discard.length === 0,
     deckCount: room.deck.length,
     drawn: room.phase === 'drawn' && pi === room.cur ? room.drawn : null,
-    sevenP: room.sevenP && pi === room.cur,
+    sevenP: room.sevenP,
+    sevenOwner: room.sevenOwner != null ? room.sevenOwner : null,
     sevenActivated: room.sevenActivated || false,
     jackP: room.jackP,
     jackTimerStep: room.jackTimerStep,
@@ -164,6 +172,7 @@ io.on('connection', socket => {
       started: false,
       totals: null,
       round: 0,
+      chat: [],
     };
     socket.join(code);
     socket.emit('roomCreated', { code, playerIndex: 0 });
@@ -342,9 +351,19 @@ io.on('connection', socket => {
       room.players[pi].hand.splice(cardIndex, 1);
       room.discard.push(card);
       addLog(room, `⚡ ${room.players[pi].name} snap ${card.value}${card.suit} !`);
-      // Jack snapped during decide → stays in decide phase
-      if (card.value === 'J' && room.jackP && room.jackTimerStep === 'decide') {
-        addLog(room, '🃏 Valet snappé — toujours en attente de décision.');
+
+      // CUMULATE POWERS: a snapped Jack or 7 also grants its power to the snapper
+      if (card.value === 'J') {
+        if (!room.jackQueue) room.jackQueue = [];
+  room.sevenQueue = [];
+  room.sevenOwner = null;
+        room.jackQueue.push({ card, player: pi });
+        addLog(room, `🃏 Valet snappé par ${room.players[pi].name} — pouvoir en file.`);
+        if (!room.jackP) processNextJack(room);
+      } else if (card.value === '7') {
+        if (!room.sevenQueue) room.sevenQueue = [];
+        room.sevenQueue.push({ player: pi });
+        if (!room.sevenP) processNextSeven(room);
       }
     } else {
       // Bad snap → penalty
@@ -362,7 +381,7 @@ io.on('connection', socket => {
     const room = rooms[code];
     if (!room || !room.sevenP) return;
     const pi = resolvePlayer(room, socket, playerIndex);
-    if (pi !== room.cur) return;
+    if (pi !== room.sevenOwner) return;
     room.sevenActivated = true;
     addLog(room, '🔮 Cliquez sur une de vos cartes à regarder.');
     broadcastRoom(code);
@@ -372,15 +391,13 @@ io.on('connection', socket => {
     const room = rooms[code];
     if (!room || !room.sevenP || !room.sevenActivated) return;
     const pi = resolvePlayer(room, socket, playerIndex);
-    if (pi !== room.cur) return;
+    if (pi !== room.sevenOwner) return;
     const card = room.players[pi].hand[cardIndex];
     if (!card) return;
     // Send the card only to this player
     socket.emit('revealCard', { card, reason: 'seven' });
-    room.sevenP = false;
-    room.sevenActivated = false;
-    room.phase = 'draw';
-    endTurnIfNeeded(room);
+    room.sevenQueue.shift();
+    processNextSeven(room);
     broadcastRoom(code);
   });
 
@@ -388,7 +405,16 @@ io.on('connection', socket => {
     const room = rooms[code];
     if (!room || !room.sevenP) return;
     const pi = resolvePlayer(room, socket, playerIndex);
-    if (pi !== room.cur) return;
+    if (pi !== room.sevenOwner) return;
+    room.sevenQueue.shift();
+    processNextSeven(room);
+    broadcastRoom(code);
+    return;
+  });
+
+  socket.on('_sevenSkipOld', ({ code, playerIndex }) => {
+    const room = rooms[code];
+    if (!room) return;
     room.sevenP = false;
     room.sevenActivated = false;
     room.sevenActivated = false;
@@ -468,6 +494,8 @@ io.on('connection', socket => {
     room.cactusRound = true;
     room.cactusPl = pi;
     addLog(room, `🌵 CACTUS ! ${room.players[pi].name}`);
+    // Broadcast a big "CACTUS" announcement to all players
+    io.to(code).emit('cactusAnnounce', { playerName: room.players[pi].name });
     passTurn(room);
     broadcastRoom(code);
   });
@@ -482,6 +510,20 @@ io.on('connection', socket => {
     broadcastRoom(code);
   });
 
+  socket.on('chatMessage', ({ code, playerIndex, text }) => {
+    const room = rooms[code];
+    if (!room) return;
+    const pi = resolvePlayer(room, socket, playerIndex);
+    if (pi < 0) return;
+    const name = room.players[pi]?.name || 'Joueur';
+    const msg = String(text || '').slice(0, 200).trim();
+    if (!msg) return;
+    if (!room.chat) room.chat = [];
+    room.chat.push({ name, text: msg, playerIndex: pi, ts: Date.now() });
+    if (room.chat.length > 100) room.chat.shift();
+    io.to(code).emit('chatUpdate', { chat: room.chat });
+  });
+
   socket.on('disconnect', () => {
     console.log('disconnect', socket.id);
   });
@@ -491,14 +533,16 @@ io.on('connection', socket => {
 function checkSpecial(room, card) {
   if (!card) return false;
   if (card.value === '7') {
-    room.sevenP = true;
-    room.sevenActivated = false;
-    room.phase = 'seven';
-    addLog(room, '🔮 Pouvoir du 7 — regardez une de vos cartes.');
+    if (!room.sevenQueue) room.sevenQueue = [];
+    room.sevenQueue.push({ player: room.cur });
+    addLog(room, `🔮 7 posé par ${room.players[room.cur].name}.`);
+    if (!room.sevenP) processNextSeven(room);
     return true;
   }
   if (card.value === 'J') {
     if (!room.jackQueue) room.jackQueue = [];
+  room.sevenQueue = [];
+  room.sevenOwner = null;
     room.jackQueue.push({ card, player: room.cur });
     addLog(room, `🃏 Valet posé par ${room.players[room.cur].name}.`);
     if (!room.jackP) processNextJack(room);
@@ -507,14 +551,41 @@ function checkSpecial(room, card) {
   return false;
 }
 
+function processNextSeven(room) {
+  if (!room.sevenQueue || room.sevenQueue.length === 0) {
+    room.sevenP = false;
+    room.sevenActivated = false;
+    room.sevenOwner = null;
+    // After all sevens, if jacks are pending, process them; else end turn
+    if (room.jackQueue && room.jackQueue.length > 0) {
+      processNextJack(room);
+    } else {
+      room.phase = 'draw';
+      endTurnIfNeeded(room);
+    }
+    return;
+  }
+  const next = room.sevenQueue[0];
+  room.sevenP = true;
+  room.sevenActivated = false;
+  room.sevenOwner = next.player;
+  room.phase = 'seven';
+  addLog(room, `🔮 Pouvoir du 7 de ${room.players[next.player].name}.`);
+}
+
 function processNextJack(room) {
   if (!room.jackQueue || room.jackQueue.length === 0) {
     room.jackP = false;
     room.jackActivated = false;
     room.jackSel = [];
     room.jackTimerStep = null;
-    room.phase = 'draw';
-    endTurnIfNeeded(room);
+    // After all jacks, process any pending sevens, else end turn
+    if (room.sevenQueue && room.sevenQueue.length > 0) {
+      processNextSeven(room);
+    } else {
+      room.phase = 'draw';
+      endTurnIfNeeded(room);
+    }
     return;
   }
   const next = room.jackQueue[0];
@@ -533,6 +604,11 @@ function doJackSwap(room) {
   room.players[a.p].hand[a.i] = room.players[b.p].hand[b.i];
   room.players[b.p].hand[b.i] = tmp;
   addLog(room, `🔄 ${room.players[a.p].name} #${a.i+1} ↔ ${room.players[b.p].name} #${b.i+1}`);
+  // Mark changed cards with a chip (until that player finishes their next turn)
+  if (!room.players[a.p].changed) room.players[a.p].changed = {};
+  if (!room.players[b.p].changed) room.players[b.p].changed = {};
+  room.players[a.p].changed[room.players[a.p].hand[a.i].uid] = true;
+  room.players[b.p].changed[room.players[b.p].hand[b.i].uid] = true;
   room.jackSel = [];
   room.jackQueue.shift();
   processNextJack(room);
@@ -565,6 +641,8 @@ function endTurnIfNeeded(room) {
 }
 
 function passTurn(room) {
+  // Clear "changed" chips for the player who just finished their turn
+  if (room.players[room.cur]) room.players[room.cur].changed = {};
   if (room.cactusRound) {
     const next = (room.cur + 1) % room.players.length;
     if (next === room.cactusPl) { endRound(room); return; }
