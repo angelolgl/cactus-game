@@ -61,7 +61,7 @@ body{font-family:'Inter',sans-serif;background:#0f3020;color:white;font-size:14p
 @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(46,204,113,.6)}70%{box-shadow:0 0 0 7px rgba(46,204,113,0)}100%{box-shadow:0 0 0 0 rgba(46,204,113,0)}}
 .g-playername{font-size:16px;font-weight:600;color:var(--gold-light)}
 .g-instruction{font-size:12px;color:rgba(255,255,255,.45);margin-top:1px}
-.g-log{font-size:11px;color:rgba(255,255,255,.4);min-height:28px;max-height:44px;overflow:hidden;line-height:1.7;flex-shrink:0}
+.g-log{font-size:11px;color:rgba(255,255,255,.4);min-height:28px;max-height:44px;overflow:hidden;line-height:1.7;flex-shrink:0background:rgba(0,0,0,.45);border-radius:8px;padding:6px 10px;}
 .table-zone{display:flex;align-items:center;justify-content:center;gap:20px;flex-shrink:0;flex-wrap:wrap;padding:4px 0}
 .plabel{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:5px;text-align:center}
 .draw-count{font-size:10px;color:rgba(255,255,255,.3);margin-top:3px;text-align:center}
@@ -426,11 +426,114 @@ body{font-family:'Inter',sans-serif;background:#0f3020;color:white;font-size:14p
   .score-block { padding: 10px; }
 }
 
+
+/* ── CHAT WIDGET ── */
+#chat-widget {
+  position: fixed;
+  bottom: 10px;
+  left: 10px;
+  width: 240px;
+  z-index: 350;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+#chat-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11px;
+  line-height: 1.35;
+  max-height: 140px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+#chat-messages::-webkit-scrollbar { width: 4px; }
+#chat-messages::-webkit-scrollbar-thumb { background: rgba(212,168,75,.35); border-radius: 2px; }
+.chat-msg {
+  background: rgba(0,0,0,.45);
+  border-radius: 8px;
+  padding: 3px 8px;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+.chat-msg .chat-author { color: var(--gold-light); font-weight: 600; margin-right: 4px; }
+.chat-msg.faded { opacity: 0.45; }
+/* Collapsed: only show last 5 messages (4 normal + 1 faded) */
+#chat-widget.chat-collapsed #chat-messages { max-height: none; overflow: hidden; }
+#chat-input {
+  background: rgba(0,0,0,.5);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 8px;
+  color: white;
+  font-size: 11px;
+  font-family: inherit;
+  padding: 5px 8px;
+  resize: none;
+  outline: none;
+  width: 100%;
+}
+#chat-input::placeholder { color: rgba(255,255,255,.35); }
+#chat-input:focus { border-color: rgba(212,168,75,.5); }
+
+/* ── CACTUS ANNOUNCEMENT ── */
+#cactus-announce {
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  background: rgba(0,0,0,.35);
+  animation: cactusFade 1s ease forwards;
+}
+.cactus-announce-text {
+  font-family: 'Playfair Display', serif;
+  font-size: 56px;
+  font-weight: 900;
+  color: var(--gold-light);
+  text-shadow: 0 4px 24px rgba(0,0,0,.8), 0 0 40px rgba(212,168,75,.5);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  animation: cactusPop .4s cubic-bezier(.18,.89,.32,1.28);
+}
+@keyframes cactusPop {
+  0% { transform: scale(0.3); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes cactusFade {
+  0%, 70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ── CHANGED CARD CHIP ── */
+.card-chip {
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e6b33c;
+  box-shadow: 0 0 6px rgba(230,179,60,.8), 0 1px 3px rgba(0,0,0,.5);
+  z-index: 15;
+}
+
+@media (max-width: 600px) {
+  #chat-widget { width: 170px; bottom: 6px; left: 6px; }
+  #chat-messages { font-size: 10px; }
+  .cactus-announce-text { font-size: 40px; gap: 12px; }
+}
+
 </style>
 </head>
 <body>
 <div id="fly-layer"></div>
 <div id="modal-root"></div>
+<div id="cactus-announce" style="display:none"></div>
 <div id="toast" class="snap-toast"></div>
 <div id="countdown-overlay">
   <div class="countdown-pill">
@@ -511,6 +614,11 @@ body{font-family:'Inter',sans-serif;background:#0f3020;color:white;font-size:14p
     <div class="action-area" id="action-area"></div>
   </div>
   <div class="players-area" id="players-area"></div>
+  <!-- CHAT -->
+  <div id="chat-widget" class="chat-collapsed">
+    <div id="chat-messages"></div>
+    <textarea id="chat-input" rows="1" placeholder="tape ton message" maxlength="200"></textarea>
+  </div>
 </div>
 
 <!-- SCORE -->
@@ -974,6 +1082,8 @@ function initSocket() {
   socket.on('gameStarted', () => { peekedCards=[]; peekRevealed=[]; window._peekRendered=false; _peekDoneSent=false; show('peek'); });
   socket.on('gameState',   (state) => { G=state; updateGame(state); });
   socket.on('revealCard',  ({card}) => { showRevealModal(card, () => {}); });
+  socket.on('chatUpdate', ({chat}) => { chatMessages = chat || []; renderChat(); });
+  socket.on('cactusAnnounce', ({playerName}) => { showCactusAnnounce(playerName); });
   socket.on('startCountdown', ({value}) => {
     show('peek');
     qid('peek-h').textContent = value > 0 ? `La partie commence dans ${value}...` : 'C\'est parti !';
@@ -1127,7 +1237,7 @@ function updateGame(state) {
   qid('g-name').textContent = isMyTurn ? '🎴 Votre tour' : `🎴 ${state.players[state.cur]?.name}`;
   qid('g-instr').textContent = getInstruction(state, isMyTurn);
   qid('g-log').innerHTML = (state.log||[]).slice(0,4).map((l,i)=>
-    `<span style="opacity:${1-i*.22}">${l}</span>`).join(' · ');
+    `<span style="opacity:${1-i*.15};color:rgba(255,255,255,.95)">${l}</span>`).join(' · ');
 
   if (state.phase==='peek' && state.players[myIndex]?.hand) {
     show('peek');
@@ -1172,7 +1282,11 @@ function getInstruction(state, isMyTurn) {
     return isMyTurn ? '🌵 3 secondes : Cactus ou snap !' : `${state.players[state.cur]?.name} peut annoncer Cactus...`;
   }
   if (!isMyTurn) return `Tour de ${state.players[state.cur]?.name}...`;
-  if (state.sevenP) return state.sevenActivated ? 'Cliquez sur une carte pour la voir' : '🔮 Utiliser le pouvoir du 7 ou snapper';
+  if (state.sevenP) {
+    const isOwner = state.sevenOwner === myIndex;
+    if (!isOwner) return `🔮 ${state.players[state.sevenOwner]?.name} utilise le pouvoir du 7...`;
+    return state.sevenActivated ? 'Cliquez sur une carte pour la voir' : '🔮 Utiliser le pouvoir du 7 ou snapper';
+  }
   if (state.jackP) {
     const s = state.jackTimerStep;
     if (s==='decide') return '🃏 Utiliser le pouvoir ou ignorer';
@@ -1233,21 +1347,27 @@ function renderActions(state, isMyTurn) {
   } else if (state.drawn && G?._localExchange && isMyTurn) {
     const lbl2=document.createElement('div'); lbl2.className='plabel'; lbl2.textContent='Cliquez sur une carte'; area.appendChild(lbl2);
     const cf=mkFrontEl(state.drawn); cf.id='drawn-card-el'; area.appendChild(cf);
-  } else if (state.sevenP && isMyTurn) {
+  } else if (state.sevenP) {
+    const isSevenOwner = state.sevenOwner === myIndex;
+    const ownerName = state.sevenOwner != null ? state.players[state.sevenOwner]?.name : '?';
     const pn=document.createElement('div'); pn.className='power-note';
-    if (!state.sevenActivated) {
+    if (!isSevenOwner) {
+      pn.innerHTML=`🔮 <b>${ownerName}</b> utilise le pouvoir du 7...`;
+      area.appendChild(pn);
+    } else if (!state.sevenActivated) {
       pn.innerHTML='🔮 <b>Pouvoir du 7</b>';
       area.appendChild(pn);
-      // Clicking this button activates the power (avoids wasting it when you want to snap)
       const useBtn=document.createElement('button'); useBtn.className='abtn gold';
       useBtn.innerHTML='👁️ Regarder une de mes cartes';
       useBtn.onclick=()=>socket.emit('sevenActivate',{code:myRoom, playerIndex:myIndex});
       area.appendChild(useBtn);
+      const sk=document.createElement('button'); sk.className='abtn'; sk.textContent='⏭ Ignorer';
+      sk.onclick=()=>socket.emit('sevenSkip',{code:myRoom, playerIndex:myIndex}); area.appendChild(sk);
     } else {
       pn.innerHTML='🔮 Cliquez sur une de vos cartes pour la voir'; area.appendChild(pn);
+      const sk=document.createElement('button'); sk.className='abtn'; sk.textContent='⏭ Ignorer';
+      sk.onclick=()=>socket.emit('sevenSkip',{code:myRoom, playerIndex:myIndex}); area.appendChild(sk);
     }
-    const sk=document.createElement('button'); sk.className='abtn'; sk.textContent='⏭ Ignorer';
-    sk.onclick=()=>socket.emit('sevenSkip',{code:myRoom, playerIndex:myIndex}); area.appendChild(sk);
   } else if (state.jackP) {
     const s=state.jackTimerStep;
     const ownerName=state.jackOwner!==null?state.players[state.jackOwner]?.name:'?';
@@ -1322,6 +1442,12 @@ function buildPlayerRow(state, pi) {
       const inJack = state.jackSel?.some(s => s.p === pi && s.i === ci);
       // Cards always face down during play
       const el = mkCardEl({value:'?', suit:'?', uid:-pi*100-ci}, {flipped:false, selected:inJack});
+      // Chip on cards changed by a Jack swap (not on own cards we received)
+      if (c.changed && pi !== myIndex) {
+        const chip = document.createElement('div');
+        chip.className = 'card-chip';
+        el.appendChild(chip);
+      }
       el.addEventListener('click', () => onCardClick(pi, ci, c, state));
       hand.appendChild(el);
     });
@@ -1334,8 +1460,8 @@ function onCardClick(pi, ci, card, state) {
   if (!G || !socket) return;
   const isMe = pi===myIndex, isMyTurn = G.cur===myIndex, isJackOwner = G.jackOwner===myIndex;
 
-  // SEVEN power: look at own card (only if power was explicitly activated)
-  if (G.sevenP && G.sevenActivated && isMyTurn && isMe)
+  // SEVEN power: look at own card (only the seven owner, after activation)
+  if (G.sevenP && G.sevenActivated && G.sevenOwner===myIndex && isMe)
     return socket.emit('sevenLook', {code:myRoom, cardIndex:ci, playerIndex:myIndex});
 
   // JACK power: the jack owner picks cards (any player's cards)
@@ -1476,7 +1602,96 @@ function showRules() {
   </div></div>`;
 };
 
+
+
+function showCactusAnnounce(playerName) {
+  const el = qid('cactus-announce');
+  el.innerHTML = `<div class="cactus-announce-text">🔊 CACTUS 🔊</div>`;
+  el.style.display = 'flex';
+  el.style.animation = 'none';
+  void el.offsetWidth; // reflow
+  el.style.animation = 'cactusFade 1.2s ease forwards';
+  setTimeout(() => { el.style.display = 'none'; }, 1200);
+}
+
+// ══ CHAT ══
+let chatMessages = [];
+let chatExpanded = false;
+
+function renderChat() {
+  const box = qid('chat-messages');
+  if (!box) return;
+  const widget = qid('chat-widget');
+  box.innerHTML = '';
+  let msgs = chatMessages;
+  if (!chatExpanded) {
+    // Collapsed: show last 5 (4 normal + 5th faded)
+    msgs = chatMessages.slice(-5);
+  } else {
+    // Expanded: show last 5 at same level, scrollable
+    msgs = chatMessages.slice(-30);
+  }
+  msgs.forEach((m, i) => {
+    const div = document.createElement('div');
+    div.className = 'chat-msg';
+    // In collapsed mode, the oldest visible (5th from end) is faded
+    if (!chatExpanded && msgs.length === 5 && i === 0) div.classList.add('faded');
+    div.innerHTML = `<span class="chat-author">${escapeHtml(m.name)}</span>${escapeHtml(m.text)}`;
+    box.appendChild(div);
+  });
+  box.scrollTop = box.scrollHeight;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function setupChat() {
+  const input = qid('chat-input');
+  const widget = qid('chat-widget');
+  const box = qid('chat-messages');
+  if (!input) return;
+
+  // Click on chat area expands it
+  const expand = () => {
+    chatExpanded = true;
+    widget.classList.remove('chat-collapsed');
+    renderChat();
+  };
+  box.addEventListener('click', expand);
+  input.addEventListener('focus', expand);
+
+  // Click outside collapses
+  document.addEventListener('click', (e) => {
+    if (!widget.contains(e.target) && chatExpanded && document.activeElement !== input) {
+      chatExpanded = false;
+      widget.classList.add('chat-collapsed');
+      renderChat();
+    }
+  });
+
+  // Enter sends, Shift+Enter newline
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      const text = input.value.trim();
+      if (text && socket) {
+        socket.emit('chatMessage', { code: myRoom, playerIndex: myIndex, text });
+        input.value = '';
+        input.style.height = 'auto';
+      }
+    }
+  });
+
+  // Auto-grow textarea
+  input.addEventListener('input', () => {
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 60) + 'px';
+  });
+}
+
 document.addEventListener('DOMContentLoaded', ()=>{
+  setupChat();
   if (typeof TABLE_BG !== 'undefined') {
     document.body.style.backgroundImage='url('+TABLE_BG+')';
     document.body.style.backgroundSize='cover';
