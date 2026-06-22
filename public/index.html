@@ -476,35 +476,85 @@ body{font-family:'Inter',sans-serif;background:#0f3020;color:white;font-size:14p
 #chat-input::placeholder { color: rgba(255,255,255,.35); }
 #chat-input:focus { border-color: rgba(212,168,75,.5); }
 
-/* ── CACTUS ANNOUNCEMENT ── */
+/* ── CACTUS ANNOUNCEMENT (alert style) ── */
 #cactus-announce {
   position: fixed;
   inset: 0;
   z-index: 600;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   pointer-events: none;
-  background: rgba(0,0,0,.35);
-  animation: cactusFade 1s ease forwards;
+  overflow: hidden;
 }
-.cactus-announce-text {
-  font-family: 'Playfair Display', serif;
-  font-size: 56px;
-  font-weight: 900;
-  color: var(--gold-light);
-  text-shadow: 0 4px 24px rgba(0,0,0,.8), 0 0 40px rgba(212,168,75,.5);
+#cactus-announce .ca-backdrop {
+  position: absolute;
+  inset: 0;
+  background: transparent;
+}
+
+#cactus-announce .ca-speakers {
+  position: relative;
   display: flex;
-  align-items: center;
-  gap: 18px;
-  animation: cactusPop .4s cubic-bezier(.18,.89,.32,1.28);
+  justify-content: center;
+  gap: 90px;
+  margin-bottom: 8px;
+  animation: caShake .12s linear infinite;
 }
-@keyframes cactusPop {
-  0% { transform: scale(0.3); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
+.ca-icon.right { margin-left: 60px; }
+.ca-word {
+  position: relative;
+  font-family: 'Playfair Display', serif;
+  font-size: 84px;
+  font-weight: 900;
+  white-space: nowrap;
+  text-align: center;
+  color: #fff;
+  text-shadow: 0 0 4px #000, 0 0 18px rgba(255,80,80,.9), 0 6px 0 #7a0d0d, 0 8px 30px rgba(0,0,0,.7);
+  -webkit-text-stroke: 2px #5a0a0a;
+  animation: caPop .35s cubic-bezier(.18,.89,.32,1.4);
 }
-@keyframes cactusFade {
-  0%, 70% { opacity: 1; }
+.ca-icon {
+  font-size: 56px;
+  flex: 0 0 auto;
+  animation: caBlare .25s ease-in-out infinite alternate;
+}
+.ca-icon.left { transform-origin: right center; }
+.ca-icon.right { transform-origin: left center; transform: scaleX(-1); }
+.ca-sub {
+  position: relative;
+  margin-top: 18px;
+  font-family: 'Inter', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0,0,0,.8);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  animation: caPop .4s ease .05s both;
+}
+@keyframes caPop {
+  0% { transform: scale(.2) rotate(-8deg); opacity: 0; }
+  60% { transform: scale(1.15) rotate(2deg); }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+@keyframes caShake {
+  0% { transform: translate(0,0); }
+  25% { transform: translate(-3px,2px); }
+  50% { transform: translate(3px,-2px); }
+  75% { transform: translate(-2px,-2px); }
+  100% { transform: translate(2px,2px); }
+}
+@keyframes caBlare {
+  from { transform: scale(1); }
+  to { transform: scale(1.18); }
+}
+.ca-icon.right { animation-name: caBlareR; }
+@keyframes caBlareR {
+  from { transform: scaleX(-1) scale(1); }
+  to { transform: scaleX(-1) scale(1.18); }
+}
   100% { opacity: 0; }
 }
 
@@ -525,7 +575,14 @@ body{font-family:'Inter',sans-serif;background:#0f3020;color:white;font-size:14p
 @media (max-width: 600px) {
   #chat-widget { width: 170px; bottom: 6px; left: 6px; }
   #chat-messages { font-size: 10px; }
-  .cactus-announce-text { font-size: 40px; gap: 12px; }
+  .ca-inner { gap: 8px; flex-wrap: nowrap; max-width: 96vw; }
+  .ca-word { font-size: 40px; letter-spacing: 0; -webkit-text-stroke: 1.5px #5a0a0a; white-space: nowrap; }
+  .ca-icon { font-size: 28px; flex-shrink: 0; }
+  .ca-sub { font-size: 15px; }
+}
+@media (max-width: 380px) {
+  .ca-word { font-size: 34px; }
+  .ca-icon { font-size: 24px; }
 }
 
 </style>
@@ -1606,12 +1663,17 @@ function showRules() {
 
 function showCactusAnnounce(playerName) {
   const el = qid('cactus-announce');
-  el.innerHTML = `<div class="cactus-announce-text">🔊 CACTUS 🔊</div>`;
+  el.innerHTML = `
+    <div class="ca-backdrop"></div>
+    <div class="ca-speakers">
+      <span class="ca-icon left">📢</span>
+      <span class="ca-icon right">📢</span>
+    </div>
+    <div class="ca-word">CACTUS</div>
+    ${playerName ? `<div class="ca-sub">${escapeHtml(playerName)} a annoncé !</div>` : ''}`;
   el.style.display = 'flex';
-  el.style.animation = 'none';
-  void el.offsetWidth; // reflow
-  el.style.animation = 'cactusFade 1.2s ease forwards';
-  setTimeout(() => { el.style.display = 'none'; }, 1200);
+  if (navigator.vibrate) { try { navigator.vibrate([60, 40, 120]); } catch(e){} }
+  setTimeout(() => { el.style.display = 'none'; el.innerHTML=''; }, 1400);
 }
 
 // ══ CHAT ══
