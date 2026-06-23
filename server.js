@@ -88,6 +88,8 @@ function initGame(room) {
   room.jackQueue = [];
   room.sevenQueue = [];
   room.sevenOwner = null;
+  room.pendingAutoCactus = {};
+  room._ended = false;
   room.jackSel = [];
   room.jackTimerStep = null;
   room.jackActivated = false;
@@ -259,8 +261,11 @@ io.on('connection', socket => {
     if (room.deck.length === 0) return;
     room.drawn = room.deck.shift();
     room.phase = 'drawn';
+    // Player has drawn → they have seen any swapped cards, clear their green LED markers
+    if (room.players[pi]) room.players[pi].changed = {};
     addLog(room, `${room.players[pi].name} pioche.`);
     broadcastRoom(code);
+    io.to(code).emit('animDraw', { pi });
   });
 
   // ── Take discard ──
@@ -273,8 +278,11 @@ io.on('connection', socket => {
     if (!top || ['7','J'].includes(top.value)) return;
     room.drawn = room.discard.pop();
     room.phase = 'drawn';
+    // Player has taken a card → they have seen any swapped cards, clear their LED markers
+    if (room.players[pi]) room.players[pi].changed = {};
     addLog(room, `${room.players[pi].name} prend la défausse : ${room.drawn.value}${room.drawn.suit}.`);
     broadcastRoom(code);
+    io.to(code).emit('animTake', { pi, card: room.drawn });
   });
 
   // ── Discard drawn ──
@@ -287,6 +295,7 @@ io.on('connection', socket => {
     room.drawn = null;
     room.discard.push(c);
     addLog(room, `${room.players[pi].name} défausse ${c.value}${c.suit}.`);
+    io.to(code).emit('animDiscard', { pi, card: c });
     if (!checkSpecial(room, c)) {
       room.phase = 'draw';
       endTurnIfNeeded(room);
@@ -307,6 +316,7 @@ io.on('connection', socket => {
     room.drawn = null;
     room.discard.push(old);
     addLog(room, `${room.players[pi].name} échange → défausse ${old.value}${old.suit}.`);
+    io.to(code).emit('animExchange', { pi, cardIndex, oldCard: old });
     if (!checkSpecial(room, old)) {
       room.phase = 'draw';
       endTurnIfNeeded(room);
@@ -355,8 +365,6 @@ io.on('connection', socket => {
       // CUMULATE POWERS: a snapped Jack or 7 also grants its power to the snapper
       if (card.value === 'J') {
         if (!room.jackQueue) room.jackQueue = [];
-  room.sevenQueue = [];
-  room.sevenOwner = null;
         room.jackQueue.push({ card, player: pi });
         addLog(room, `🃏 Valet snappé par ${room.players[pi].name} — pouvoir en file.`);
         if (!room.jackP) processNextJack(room);
@@ -364,6 +372,32 @@ io.on('connection', socket => {
         if (!room.sevenQueue) room.sevenQueue = [];
         room.sevenQueue.push({ player: pi });
         if (!room.sevenP) processNextSeven(room);
+      }
+
+      // AUTO-CACTUS when the snap empties this player's hand
+      if (room.players[pi].hand.length === 0) {
+        room.pendingAutoCactus = room.pendingAutoCactus || {};
+        if (pi === room.cur) {
+          // Snapped my LAST card on my OWN turn → immediate Cactus,
+          // the last turn starts right away with the next player.
+          if (!room.cactusRound) {
+            room.cactusRound = true;
+            room.cactusPl = pi;
+            addLog(room, `🌵 CACTUS automatique ! ${room.players[pi].name} n'a plus de cartes.`);
+            io.to(code).emit('cactusAnnounce', { playerName: room.players[pi].name });
+          }
+          // No powers pending → end my turn now and move on
+          if (!room.sevenP && !room.jackP) {
+            if (room._cactusTimer) clearTimeout(room._cactusTimer);
+            room.drawn = null;
+            passTurn(room);
+          }
+        } else {
+          // Snapped my last card when it is NOT my turn → Cactus triggers
+          // when the turn comes back to me (I then get skipped).
+          room.pendingAutoCactus[pi] = true;
+          addLog(room, `${room.players[pi].name} n'a plus de cartes (snap).`);
+        }
       }
     } else {
       // Bad snap → penalty
@@ -541,8 +575,6 @@ function checkSpecial(room, card) {
   }
   if (card.value === 'J') {
     if (!room.jackQueue) room.jackQueue = [];
-  room.sevenQueue = [];
-  room.sevenOwner = null;
     room.jackQueue.push({ card, player: room.cur });
     addLog(room, `🃏 Valet posé par ${room.players[room.cur].name}.`);
     if (!room.jackP) processNextJack(room);
@@ -604,7 +636,7 @@ function doJackSwap(room) {
   room.players[a.p].hand[a.i] = room.players[b.p].hand[b.i];
   room.players[b.p].hand[b.i] = tmp;
   addLog(room, `🔄 ${room.players[a.p].name} #${a.i+1} ↔ ${room.players[b.p].name} #${b.i+1}`);
-  // Mark changed cards with a chip (until that player finishes their next turn)
+  // Mark swapped cards with a green LED (stays until that player draws a card)
   if (!room.players[a.p].changed) room.players[a.p].changed = {};
   if (!room.players[b.p].changed) room.players[b.p].changed = {};
   room.players[a.p].changed[room.players[a.p].hand[a.i].uid] = true;
@@ -625,9 +657,24 @@ function reshuffleIfNeeded(room) {
 }
 
 function endTurnIfNeeded(room) {
-  // Always give the current player a 3-second window after their action:
-  // - to call Cactus (if not already called)
-  // - and/or to snap a card
+  // AUTO-CACTUS: if the player who just acted has no cards left, Cactus is automatic.
+  // No 3-second window — jump straight to ending the round flow.
+  if (room.players[room.cur] && room.players[room.cur].hand.length === 0) {
+    if (!room.cactusRound) {
+      room.cactusRound = true;
+      room.cactusPl = room.cur;
+      addLog(room, `🌵 CACTUS automatique ! ${room.players[room.cur].name} n'a plus de cartes.`);
+      io.to(room.code).emit('cactusAnnounce', { playerName: room.players[room.cur].name });
+    } else {
+      addLog(room, `${room.players[room.cur].name} n'a plus de cartes.`);
+    }
+    room.drawn = null;
+    passTurn(room);
+    broadcastRoom(room.code);
+    return;
+  }
+
+  // Otherwise: give a 3-second window to call Cactus and/or snap.
   room.phase = 'cactusWindow';
   room.drawn = null;
   broadcastRoom(room.code);
@@ -641,18 +688,43 @@ function endTurnIfNeeded(room) {
 }
 
 function passTurn(room) {
-  // Clear "changed" chips for the player who just finished their turn
-  if (room.players[room.cur]) room.players[room.cur].changed = {};
-  if (room.cactusRound) {
+  room._ended = false;
+
+  // Move to the next player, skipping any who snapped out their hand (pending auto-cactus)
+  let guard = 0;
+  while (guard <= room.players.length) {
+    guard++;
+    // Advance one seat
     const next = (room.cur + 1) % room.players.length;
-    if (next === room.cactusPl) { endRound(room); return; }
+
+    // In a cactus round, ending happens when we complete the loop back to the caller
+    if (room.cactusRound && next === room.cactusPl) {
+      endRound(room);
+      return;
+    }
     room.cur = next;
-  } else {
-    room.cur = (room.cur + 1) % room.players.length;
-    if (room.players.some(p => p.hand.length === 0)) { endRound(room); return; }
+
+    // If this player snapped their last card → auto-cactus (if none) and skip them
+    if (room.pendingAutoCactus && room.pendingAutoCactus[room.cur]) {
+      if (!room.cactusRound) {
+        room.cactusRound = true;
+        room.cactusPl = room.cur;
+        addLog(room, `🌵 CACTUS automatique ! ${room.players[room.cur].name} n'a plus de cartes.`);
+        io.to(room.code).emit('cactusAnnounce', { playerName: room.players[room.cur].name });
+      } else {
+        addLog(room, `${room.players[room.cur].name} est passé (plus de cartes).`);
+      }
+      delete room.pendingAutoCactus[room.cur];
+      continue; // skip this player's turn
+    }
+
+    // Normal stop: this player plays
+    room.phase = 'draw';
+    room.drawn = null;
+    return;
   }
-  room.phase = 'draw';
-  room.drawn = null;
+  // Safety: if everyone was skipped, end the round
+  endRound(room);
 }
 
 function endRound(room) {
