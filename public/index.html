@@ -969,15 +969,24 @@ function elDrawPile(){ return qid('draw-wrap') || qid('draw-top'); }
 function elDiscard(){ return qid('discard-slot'); }
 function elHand(pi){ return qid('hand-'+pi); }
 function elDrawnSlot(){ return qid('drawn-card-el'); }
+// Central "drawn card" zone next to the discard. For the drawer it's their drawn-card
+// slot; for everyone else it's the action area beside the discard (NOT their hand).
+function elDrawnArea(){ return qid('drawn-card-el') || qid('action-area') || qid('discard-slot'); }
 
-// Everyone sees a face-down card leave the draw pile and go to the active player.
+// Keep the real discard top hidden while a card is flying toward it (avoids the
+// "double card" flash where the new discard appears before the animation lands).
+let _discardHideCount = 0;
+function hideDiscardTop(){ _discardHideCount++; const d=qid('discard-card'); if(d) d.style.visibility='hidden'; }
+function showDiscardTop(){ _discardHideCount=Math.max(0,_discardHideCount-1); if(_discardHideCount===0){ const d=qid('discard-card'); if(d) d.style.visibility=''; } }
+
+// Everyone sees a face-down card leave the draw pile and land in the central
+// "drawn card" zone beside the discard (same spot for the drawer and observers).
 function onAnimDraw({pi}){
   const isMe = pi === myIndex;
   const from = elDrawPile();
-  const to = isMe ? (elDrawnSlot() || elHand(pi)) : elHand(pi);
+  const to = elDrawnArea();
   lockInput();
   if(isMe){
-    // I drew: reveal the card as it lands in my "carte piochée" slot
     const real = elDrawnSlot();
     if(real) real.style.visibility='hidden';
     flyAnim(from, to, { card: (G&&G.drawn)||null, faceUp:false, reveal: !!(G&&G.drawn) }, ()=>{
@@ -989,48 +998,58 @@ function onAnimDraw({pi}){
   }
 }
 
-// Player took the (public) top discard card → it flies to them, face up.
+// Player took the (public) top discard card → flies from discard to the central zone, face up.
 function onAnimTake({pi, card}){
   const isMe = pi === myIndex;
   const from = elDiscard();
-  const to = isMe ? (elDrawnSlot() || elHand(pi)) : elHand(pi);
+  const to = elDrawnArea();
   lockInput();
   const real = isMe ? elDrawnSlot() : null;
   if(real) real.style.visibility='hidden';
-  flyAnim(from, to, { card, faceUp: isMe }, ()=>{ if(real) real.style.visibility=''; unlockInput(); });
+  flyAnim(from, to, { card, faceUp: true }, ()=>{ if(real) real.style.visibility=''; unlockInput(); });
 }
 
-// A drawn card is thrown to the discard. Thrower sees it face-up the whole way;
-// others see it face-down then it flips face-up as it lands in the discard.
+// A drawn card is thrown to the discard. It leaves the central drawn zone.
+// Thrower sees it face-up the whole way; others see face-down → flip face-up on arrival.
 function onAnimDiscard({pi, card}){
   const isMe = pi === myIndex;
-  const from = isMe ? (elDrawnSlot() || elHand(pi)) : elHand(pi);
+  const from = elDrawnArea();
   const to = elDiscard();
   lockInput();
-  const realDisc = qid('discard-card');
-  if(realDisc) realDisc.style.visibility='hidden';
+  hideDiscardTop();
   flyAnim(from, to, { card, faceUp: isMe, reveal: !isMe }, ()=>{
-    if(realDisc) realDisc.style.visibility='';
+    showDiscardTop();
     unlockInput();
   });
 }
 
-// Exchange: drawn card goes into the hand (hidden for others), and the old hand card
-// flies to the discard, flipping face-up for everyone.
+// Snap: the snapped card flies from the snapper's hand slot to the discard,
+// flipping face-up for everyone (it becomes public).
+function onAnimSnap({pi, cardIndex, card}){
+  const handEl = elHand(pi);
+  let src = handEl;
+  if(handEl && handEl.children[cardIndex]) src = handEl.children[cardIndex];
+  lockInput();
+  hideDiscardTop();
+  flyAnim(src, elDiscard(), { card, faceUp:false, reveal:true }, ()=>{
+    showDiscardTop();
+    unlockInput();
+  });
+}
+
+// Exchange: drawn card goes from the central zone into the hand (hidden for others),
+// and the old hand card flies to the discard, flipping face-up for everyone.
 function onAnimExchange({pi, cardIndex, oldCard}){
-  const isMe = pi === myIndex;
   lockInput(); lockInput(); // two flights
-  // 1) drawn → hand slot
-  const fromDrawn = isMe ? (elDrawnSlot() || elDrawPile()) : elDrawPile();
+  // 1) drawn (central zone) → hand slot
   const handEl = elHand(pi);
   let slotEl = handEl;
   if(handEl && handEl.children[cardIndex]) slotEl = handEl.children[cardIndex];
-  flyAnim(fromDrawn, slotEl, { card: isMe ? null : null, faceUp:false }, ()=> unlockInput());
+  flyAnim(elDrawnArea(), slotEl, { faceUp:false }, ()=> unlockInput());
   // 2) old hand card → discard (reveal for all)
-  const realDisc = qid('discard-card');
-  if(realDisc) realDisc.style.visibility='hidden';
+  hideDiscardTop();
   flyAnim(slotEl, elDiscard(), { card: oldCard, faceUp:false, reveal:true }, ()=>{
-    if(realDisc) realDisc.style.visibility='';
+    showDiscardTop();
     unlockInput();
   });
 }
@@ -1345,6 +1364,7 @@ function initSocket() {
   socket.on('animTake',     (d) => onAnimTake(d));
   socket.on('animDiscard',  (d) => onAnimDiscard(d));
   socket.on('animExchange', (d) => onAnimExchange(d));
+  socket.on('animSnap',     (d) => onAnimSnap(d));
   socket.on('startCountdown', ({value}) => {
     show('peek');
     qid('peek-h').textContent = value > 0 ? `La partie commence dans ${value}...` : 'C\'est parti !';
@@ -1435,6 +1455,9 @@ let _peekDoneSent = false;
 qid('btn-peek-ok').addEventListener('click', () => {
   if (_peekDoneSent) return;
   _peekDoneSent = true;
+  // Cancel any pending auto-hide timers so they can't re-show the cards screen
+  _peekTimers.forEach(t => clearTimeout(t));
+  _peekTimers = [];
   socket.emit('peekDone', {code:myRoom, playerIndex:myIndex});
   qid('peek-h').textContent = 'En attente des autres joueurs...';
   qid('btn-peek-ok').style.display = 'none';
@@ -1473,8 +1496,10 @@ function renderPeek(hand) {
   }
 }
 
+let _peekTimers = [];
 function peekCard(i) {
   // Can't peek if already memorized 2, or this card is currently revealed, or already peeked
+  if (_peekDoneSent) return;
   if (peekedCards.length >= 2) return;
   if (peekRevealed.includes(i)) return;
   if (peekedCards.includes(i)) return;
@@ -1482,11 +1507,13 @@ function peekCard(i) {
   peekRevealed.push(i);
   peekedCards.push(i);
   renderPeek(peekHand);
-  // Auto-hide after 3 seconds
-  setTimeout(() => {
+  // Auto-hide after 3 seconds (but not if the player already validated)
+  const t = setTimeout(() => {
+    if (_peekDoneSent) return;        // already in waiting state → don't re-show cards
     peekRevealed = peekRevealed.filter(x => x !== i);
     renderPeek(peekHand);
   }, 3000);
+  _peekTimers.push(t);
 }
 
 // ══ GAME UPDATE ══
@@ -1576,6 +1603,7 @@ function renderDiscard(state, isMyTurn) {
     return;
   }
   const el = mkFrontEl(state.discard); el.id='discard-card';
+  if (_discardHideCount > 0) el.style.visibility='hidden';
   const noTake=['7','J'];
   if (isMyTurn && state.phase==='draw' && !noTake.includes(state.discard.value)) {
     el.style.cursor='pointer';
