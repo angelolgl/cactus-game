@@ -361,6 +361,8 @@ io.on('connection', socket => {
       room.players[pi].hand.splice(cardIndex, 1);
       room.discard.push(card);
       addLog(room, `⚡ ${room.players[pi].name} snap ${card.value}${card.suit} !`);
+      // Animate the snapped card flying to the discard (revealed for all)
+      io.to(code).emit('animSnap', { pi, cardIndex, card });
 
       // CUMULATE POWERS: a snapped Jack or 7 also grants its power to the snapper
       if (card.value === 'J') {
