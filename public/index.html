@@ -154,6 +154,8 @@ body{font-family:'Inter',sans-serif;background:#0f3020;color:white;font-size:14p
 
 /* ─── FLY LAYER ─── */
 #fly-layer{position:fixed;inset:0;pointer-events:none;z-index:500}
+body.anim-lock #s-game{pointer-events:none}
+body.anim-lock #chat-widget{pointer-events:auto}
 .fly-card{position:absolute;border-radius:9px;overflow:hidden}
 
 /* ─── COUNTDOWN (small, top-right) ─── */
@@ -451,11 +453,10 @@ body{font-family:'Inter',sans-serif;background:#0f3020;color:white;font-size:14p
 #chat-messages::-webkit-scrollbar { width: 4px; }
 #chat-messages::-webkit-scrollbar-thumb { background: rgba(212,168,75,.35); border-radius: 2px; }
 .chat-msg {
-  background: rgba(0,0,0,.45);
-  border-radius: 8px;
-  padding: 3px 8px;
+  padding: 1px 2px;
   word-wrap: break-word;
   white-space: pre-wrap;
+  text-shadow: 0 1px 3px rgba(0,0,0,.9), 0 0 2px rgba(0,0,0,.7);
 }
 .chat-msg .chat-author { color: var(--gold-light); font-weight: 600; margin-right: 4px; }
 .chat-msg.faded { opacity: 0.45; }
@@ -476,113 +477,199 @@ body{font-family:'Inter',sans-serif;background:#0f3020;color:white;font-size:14p
 #chat-input::placeholder { color: rgba(255,255,255,.35); }
 #chat-input:focus { border-color: rgba(212,168,75,.5); }
 
-/* ── CACTUS ANNOUNCEMENT (alert style) ── */
+/* ── CACTUS ANNOUNCEMENT (alert / last turn) ── */
 #cactus-announce {
   position: fixed;
   inset: 0;
   z-index: 600;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   pointer-events: none;
   overflow: hidden;
 }
-#cactus-announce .ca-backdrop {
+#cactus-announce .ca-veil {
   position: absolute;
   inset: 0;
-  background: transparent;
+  background: radial-gradient(circle at center, rgba(40,0,0,.55) 0%, rgba(10,2,2,.92) 75%);
+  animation: caVeilIn .25s ease both;
 }
-
-#cactus-announce .ca-speakers {
+@keyframes caVeilIn { from { opacity: 0; } to { opacity: 1; } }
+#cactus-announce .ca-pulse {
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 180px 40px rgba(200,20,20,.0);
+  animation: caPulse .7s ease-in-out infinite;
+}
+@keyframes caPulse {
+  0%, 100% { box-shadow: inset 0 0 120px 20px rgba(200,20,20,.25); }
+  50% { box-shadow: inset 0 0 220px 70px rgba(220,30,30,.7); }
+}
+#cactus-announce .ca-stack {
   position: relative;
   display: flex;
-  justify-content: center;
-  gap: 90px;
-  margin-bottom: 8px;
-  animation: caShake .12s linear infinite;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  animation: caStackIn .3s cubic-bezier(.2,.7,.3,1.3) both;
 }
-.ca-icon.right { margin-left: 60px; }
-.ca-word {
-  position: relative;
-  font-family: 'Playfair Display', serif;
-  font-size: 84px;
-  font-weight: 900;
-  white-space: nowrap;
+@keyframes caStackIn {
+  0% { transform: scale(.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.ca-warn {
+  font-size: 68px;
+  line-height: 1;
   text-align: center;
+  animation: caWarnBlink .5s steps(1) infinite;
+}
+@keyframes caWarnBlink { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+.ca-word {
+  font-family: 'Playfair Display', serif;
+  font-size: 90px;
+  font-weight: 900;
+  letter-spacing: .12em;
+  padding-left: .12em;
   color: #fff;
-  text-shadow: 0 0 4px #000, 0 0 18px rgba(255,80,80,.9), 0 6px 0 #7a0d0d, 0 8px 30px rgba(0,0,0,.7);
-  -webkit-text-stroke: 2px #5a0a0a;
-  animation: caPop .35s cubic-bezier(.18,.89,.32,1.4);
+  text-shadow:
+    0 0 4px #000,
+    0 0 22px rgba(255,40,40,.9),
+    0 4px 0 #8a0d0d,
+    0 6px 26px rgba(0,0,0,.7);
+  -webkit-text-stroke: 2px #6e0a0a;
+  line-height: 1;
+  animation: caWordShake .1s linear infinite;
 }
-.ca-icon {
-  font-size: 56px;
-  flex: 0 0 auto;
-  animation: caBlare .25s ease-in-out infinite alternate;
-}
-.ca-icon.left { transform-origin: right center; }
-.ca-icon.right { transform-origin: left center; transform: scaleX(-1); }
-.ca-sub {
-  position: relative;
-  margin-top: 18px;
-  font-family: 'Inter', sans-serif;
-  font-size: 22px;
-  font-weight: 700;
-  color: #fff;
-  text-shadow: 0 2px 8px rgba(0,0,0,.8);
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  animation: caPop .4s ease .05s both;
-}
-@keyframes caPop {
-  0% { transform: scale(.2) rotate(-8deg); opacity: 0; }
-  60% { transform: scale(1.15) rotate(2deg); }
-  100% { transform: scale(1) rotate(0); opacity: 1; }
-}
-@keyframes caShake {
+@keyframes caWordShake {
   0% { transform: translate(0,0); }
-  25% { transform: translate(-3px,2px); }
-  50% { transform: translate(3px,-2px); }
-  75% { transform: translate(-2px,-2px); }
-  100% { transform: translate(2px,2px); }
+  25% { transform: translate(-2px,1px); }
+  50% { transform: translate(2px,-1px); }
+  75% { transform: translate(-1px,-1px); }
+  100% { transform: translate(1px,1px); }
 }
-@keyframes caBlare {
-  from { transform: scale(1); }
-  to { transform: scale(1.18); }
+.ca-pill {
+  font-family: 'Inter', sans-serif;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: #fff;
+  background: linear-gradient(180deg, #d42020, #8a0d0d);
+  padding: 7px 22px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,120,120,.5);
+  box-shadow: 0 4px 16px rgba(0,0,0,.5);
+  animation: caPillBlink 1s ease-in-out infinite;
 }
-.ca-icon.right { animation-name: caBlareR; }
-@keyframes caBlareR {
-  from { transform: scaleX(-1) scale(1); }
-  to { transform: scaleX(-1) scale(1.18); }
+@keyframes caPillBlink {
+  0%,100% { box-shadow: 0 4px 16px rgba(0,0,0,.5), 0 0 0 rgba(220,30,30,0); }
+  50% { box-shadow: 0 4px 16px rgba(0,0,0,.5), 0 0 22px rgba(220,30,30,.8); }
 }
-  100% { opacity: 0; }
+.ca-name {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  color: rgba(255,200,200,.85);
+  margin-top: 2px;
 }
 
-/* ── CHANGED CARD CHIP ── */
-.card-chip {
-  position: absolute;
-  bottom: -5px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #e6b33c;
-  box-shadow: 0 0 6px rgba(230,179,60,.8), 0 1px 3px rgba(0,0,0,.5);
-  z-index: 15;
+/* ── YOUR TURN BANNER ── */
+#yourturn-banner {
+  position: fixed;
+  inset: 0;
+  z-index: 590;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+#yourturn-banner .yt-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  animation: ytPop .4s cubic-bezier(.18,.89,.32,1.4) both;
+}
+@keyframes ytPop {
+  0% { transform: scale(.4) translateY(20px); opacity: 0; }
+  60% { transform: scale(1.08) translateY(0); }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+.yt-emoji {
+  font-size: 54px;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,.5));
+  animation: ytBob 1.1s ease-in-out infinite;
+}
+@keyframes ytBob {
+  0%,100% { transform: translateY(0) rotate(-5deg); }
+  50% { transform: translateY(-8px) rotate(5deg); }
+}
+.yt-word {
+  font-family: 'Playfair Display', serif;
+  font-size: 60px;
+  font-weight: 900;
+  letter-spacing: .04em;
+  background: linear-gradient(180deg, #8ff0a8 0%, #4ade80 50%, #2a9d54 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 3px 16px rgba(74,222,128,.5));
+  text-shadow: 0 2px 0 rgba(20,60,35,.3);
+}
+.yt-sub {
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: #1a3a24;
+  background: linear-gradient(180deg, #6ee78f, #4ade80);
+  padding: 6px 20px;
+  border-radius: 30px;
+  box-shadow: 0 4px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.4);
+}
+@media (max-width: 600px) {
+  .yt-word { font-size: 42px; }
+  .yt-emoji { font-size: 42px; }
+  .yt-sub { font-size: 13px; }
+}
+
+/* ── CHANGED CARD: green LED glow ── */
+.card-swapped {
+  display: inline-flex;
+  border-radius: 11px;
+  box-shadow:
+    0 0 0 2px #4ade80,
+    0 0 9px 1px rgba(74,222,128,.9),
+    0 0 18px 4px rgba(74,222,128,.55);
+  animation: ledPulse 1.4s ease-in-out infinite;
+}
+@keyframes ledPulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 2px #4ade80,
+      0 0 9px 1px rgba(74,222,128,.85),
+      0 0 18px 4px rgba(74,222,128,.5);
+  }
+  50% {
+    box-shadow:
+      0 0 0 2px #6ef296,
+      0 0 15px 3px rgba(110,242,150,1),
+      0 0 28px 7px rgba(74,222,128,.75);
+  }
 }
 
 @media (max-width: 600px) {
   #chat-widget { width: 170px; bottom: 6px; left: 6px; }
   #chat-messages { font-size: 10px; }
-  .ca-inner { gap: 8px; flex-wrap: nowrap; max-width: 96vw; }
-  .ca-word { font-size: 40px; letter-spacing: 0; -webkit-text-stroke: 1.5px #5a0a0a; white-space: nowrap; }
-  .ca-icon { font-size: 28px; flex-shrink: 0; }
-  .ca-sub { font-size: 15px; }
+  .ca-word { font-size: 56px; }
+  .ca-warn { font-size: 52px; }
+  .ca-pill { font-size: 14px; letter-spacing: .15em; }
 }
 @media (max-width: 380px) {
-  .ca-word { font-size: 34px; }
-  .ca-icon { font-size: 24px; }
+  .ca-word { font-size: 46px; }
+  .ca-warn { font-size: 44px; }
 }
 
 </style>
@@ -591,6 +678,7 @@ body{font-family:'Inter',sans-serif;background:#0f3020;color:white;font-size:14p
 <div id="fly-layer"></div>
 <div id="modal-root"></div>
 <div id="cactus-announce" style="display:none"></div>
+<div id="yourturn-banner" style="display:none"></div>
 <div id="toast" class="snap-toast"></div>
 <div id="countdown-overlay">
   <div class="countdown-pill">
@@ -835,6 +923,118 @@ function flyCard(srcEl,dstEl,opts={},onDone){
     setTimeout(()=>{if(fly.parentNode)fly.parentNode.removeChild(fly);if(onDone)onDone();},dur+60);
   });
 }
+
+// ══ MOVE ANIMATIONS (draw / discard / exchange) ══
+const ANIM_DUR = 400; // rapide & fluide
+let _animLock = 0;
+function lockInput(){ _animLock++; document.body.classList.add('anim-lock'); }
+function unlockInput(){ _animLock = Math.max(0, _animLock-1); if(_animLock===0) document.body.classList.remove('anim-lock'); }
+
+// Build a card element, fly it from one element to another, optionally flipping mid-air.
+// opts: { card, faceUp (start face up?), reveal (flip to face-up mid-flight), dur }
+function flyAnim(fromEl, toEl, opts={}, onDone){
+  if(!fromEl || !toEl){ if(onDone) onDone(); return; }
+  const layer=qid('fly-layer');
+  const fromR=fromEl.getBoundingClientRect();
+  const toR=toEl.getBoundingClientRect();
+  if((fromR.width===0&&fromR.height===0)||(toR.width===0&&toR.height===0)){ if(onDone) onDone(); return; }
+  const dur=opts.dur||ANIM_DUR;
+  // Fixed card size, centered on the source/destination anchors (which may be wide containers)
+  const CW=65, CH=94;
+  const fromX=fromR.left + fromR.width/2 - CW/2;
+  const fromY=fromR.top + fromR.height/2 - CH/2;
+  const toX=toR.left + toR.width/2 - CW/2;
+  const toY=toR.top + toR.height/2 - CH/2;
+  const fly=document.createElement('div');
+  fly.className='fly-card';
+  fly.style.cssText=`left:${fromX}px;top:${fromY}px;width:${CW}px;height:${CH}px;`;
+  const cardEl=mkCardEl(opts.card||{value:'?',suit:'?',uid:-99999},{flipped:!!opts.faceUp});
+  cardEl.style.cssText='position:static;width:100%;height:100%;margin:0;cursor:default;';
+  const inner=cardEl.querySelector('.card-inner');
+  if(inner) inner.style.transition=`transform ${Math.round(dur*0.45)}ms ease`;
+  fly.appendChild(cardEl);
+  layer.appendChild(fly);
+  if(opts.reveal && inner){
+    setTimeout(()=>{ if(inner) inner.style.transform='rotateY(180deg)'; }, Math.round(dur*0.30));
+  }
+  requestAnimationFrame(()=>{
+    fly.style.transition=`left ${dur}ms cubic-bezier(.4,0,.2,1),top ${dur}ms cubic-bezier(.4,0,.2,1)`;
+    fly.style.left=toX+'px';
+    fly.style.top=toY+'px';
+    setTimeout(()=>{ if(fly.parentNode) fly.parentNode.removeChild(fly); if(onDone) onDone(); }, dur+50);
+  });
+}
+
+function elDrawPile(){ return qid('draw-wrap') || qid('draw-top'); }
+function elDiscard(){ return qid('discard-slot'); }
+function elHand(pi){ return qid('hand-'+pi); }
+function elDrawnSlot(){ return qid('drawn-card-el'); }
+
+// Everyone sees a face-down card leave the draw pile and go to the active player.
+function onAnimDraw({pi}){
+  const isMe = pi === myIndex;
+  const from = elDrawPile();
+  const to = isMe ? (elDrawnSlot() || elHand(pi)) : elHand(pi);
+  lockInput();
+  if(isMe){
+    // I drew: reveal the card as it lands in my "carte piochée" slot
+    const real = elDrawnSlot();
+    if(real) real.style.visibility='hidden';
+    flyAnim(from, to, { card: (G&&G.drawn)||null, faceUp:false, reveal: !!(G&&G.drawn) }, ()=>{
+      if(real) real.style.visibility='';
+      unlockInput();
+    });
+  } else {
+    flyAnim(from, to, { faceUp:false }, ()=> unlockInput());
+  }
+}
+
+// Player took the (public) top discard card → it flies to them, face up.
+function onAnimTake({pi, card}){
+  const isMe = pi === myIndex;
+  const from = elDiscard();
+  const to = isMe ? (elDrawnSlot() || elHand(pi)) : elHand(pi);
+  lockInput();
+  const real = isMe ? elDrawnSlot() : null;
+  if(real) real.style.visibility='hidden';
+  flyAnim(from, to, { card, faceUp: isMe }, ()=>{ if(real) real.style.visibility=''; unlockInput(); });
+}
+
+// A drawn card is thrown to the discard. Thrower sees it face-up the whole way;
+// others see it face-down then it flips face-up as it lands in the discard.
+function onAnimDiscard({pi, card}){
+  const isMe = pi === myIndex;
+  const from = isMe ? (elDrawnSlot() || elHand(pi)) : elHand(pi);
+  const to = elDiscard();
+  lockInput();
+  const realDisc = qid('discard-card');
+  if(realDisc) realDisc.style.visibility='hidden';
+  flyAnim(from, to, { card, faceUp: isMe, reveal: !isMe }, ()=>{
+    if(realDisc) realDisc.style.visibility='';
+    unlockInput();
+  });
+}
+
+// Exchange: drawn card goes into the hand (hidden for others), and the old hand card
+// flies to the discard, flipping face-up for everyone.
+function onAnimExchange({pi, cardIndex, oldCard}){
+  const isMe = pi === myIndex;
+  lockInput(); lockInput(); // two flights
+  // 1) drawn → hand slot
+  const fromDrawn = isMe ? (elDrawnSlot() || elDrawPile()) : elDrawPile();
+  const handEl = elHand(pi);
+  let slotEl = handEl;
+  if(handEl && handEl.children[cardIndex]) slotEl = handEl.children[cardIndex];
+  flyAnim(fromDrawn, slotEl, { card: isMe ? null : null, faceUp:false }, ()=> unlockInput());
+  // 2) old hand card → discard (reveal for all)
+  const realDisc = qid('discard-card');
+  if(realDisc) realDisc.style.visibility='hidden';
+  flyAnim(slotEl, elDiscard(), { card: oldCard, faceUp:false, reveal:true }, ()=>{
+    if(realDisc) realDisc.style.visibility='';
+    unlockInput();
+  });
+}
+
 
 function backSVG(){
   return `<svg class="card-back-svg" viewBox="0 0 66 94" xmlns="http://www.w3.org/2000/svg">
@@ -1141,6 +1341,10 @@ function initSocket() {
   socket.on('revealCard',  ({card}) => { showRevealModal(card, () => {}); });
   socket.on('chatUpdate', ({chat}) => { chatMessages = chat || []; renderChat(); });
   socket.on('cactusAnnounce', ({playerName}) => { showCactusAnnounce(playerName); });
+  socket.on('animDraw',     (d) => onAnimDraw(d));
+  socket.on('animTake',     (d) => onAnimTake(d));
+  socket.on('animDiscard',  (d) => onAnimDiscard(d));
+  socket.on('animExchange', (d) => onAnimExchange(d));
   socket.on('startCountdown', ({value}) => {
     show('peek');
     qid('peek-h').textContent = value > 0 ? `La partie commence dans ${value}...` : 'C\'est parti !';
@@ -1286,10 +1490,20 @@ function peekCard(i) {
 }
 
 // ══ GAME UPDATE ══
+let _prevTurnKey = null;
 function updateGame(state) {
   if (!state) return;
   G = state;
   const isMyTurn = state.cur === myIndex;
+
+  // Show a "C'est à vous" banner when the turn becomes mine (during active play)
+  const activePhases = ['draw','drawn','seven','jack','cactusWindow'];
+  const turnKey = state.cur + ':' + state.round;
+  if (isMyTurn && activePhases.includes(state.phase) && turnKey !== _prevTurnKey) {
+    showYourTurnBanner();
+  }
+  if (activePhases.includes(state.phase)) _prevTurnKey = turnKey;
+  if (state.phase === 'score' || state.phase === 'peek') _prevTurnKey = null;
 
   qid('g-name').textContent = isMyTurn ? '🎴 Votre tour' : `🎴 ${state.players[state.cur]?.name}`;
   qid('g-instr').textContent = getInstruction(state, isMyTurn);
@@ -1499,14 +1713,17 @@ function buildPlayerRow(state, pi) {
       const inJack = state.jackSel?.some(s => s.p === pi && s.i === ci);
       // Cards always face down during play
       const el = mkCardEl({value:'?', suit:'?', uid:-pi*100-ci}, {flipped:false, selected:inJack});
-      // Chip on cards changed by a Jack swap (not on own cards we received)
-      if (c.changed && pi !== myIndex) {
-        const chip = document.createElement('div');
-        chip.className = 'card-chip';
-        el.appendChild(chip);
-      }
       el.addEventListener('click', () => onCardClick(pi, ci, c, state));
-      hand.appendChild(el);
+      // Green LED glow around cards changed by a Jack swap (own cards too).
+      // Wrap in a plain 2D container so the glow isn't swallowed by the 3D flip context.
+      if (c.changed) {
+        const wrap = document.createElement('div');
+        wrap.className = 'card-swapped';
+        wrap.appendChild(el);
+        hand.appendChild(wrap);
+      } else {
+        hand.appendChild(el);
+      }
     });
   }
   row.appendChild(hand);
@@ -1661,19 +1878,34 @@ function showRules() {
 
 
 
+function showYourTurnBanner() {
+  const el = qid('yourturn-banner');
+  if (!el) return;
+  el.innerHTML = `
+    <div class="yt-stack">
+      <div class="yt-emoji">🌵</div>
+      <div class="yt-word">C'est à vous !</div>
+      <div class="yt-sub">À votre tour de jouer</div>
+    </div>`;
+  el.style.display = 'flex';
+  if (navigator.vibrate) { try { navigator.vibrate(60); } catch(e){} }
+  setTimeout(() => { el.style.display = 'none'; el.innerHTML=''; }, 1300);
+}
+
 function showCactusAnnounce(playerName) {
   const el = qid('cactus-announce');
   el.innerHTML = `
-    <div class="ca-backdrop"></div>
-    <div class="ca-speakers">
-      <span class="ca-icon left">📢</span>
-      <span class="ca-icon right">📢</span>
-    </div>
-    <div class="ca-word">CACTUS</div>
-    ${playerName ? `<div class="ca-sub">${escapeHtml(playerName)} a annoncé !</div>` : ''}`;
+    <div class="ca-veil"></div>
+    <div class="ca-pulse"></div>
+    <div class="ca-stack">
+      <div class="ca-warn">⚠️</div>
+      <div class="ca-word">CACTUS</div>
+      <div class="ca-pill">Dernier tour</div>
+      ${playerName ? `<div class="ca-name">annoncé par ${escapeHtml(playerName)}</div>` : ''}
+    </div>`;
   el.style.display = 'flex';
-  if (navigator.vibrate) { try { navigator.vibrate([60, 40, 120]); } catch(e){} }
-  setTimeout(() => { el.style.display = 'none'; el.innerHTML=''; }, 1400);
+  if (navigator.vibrate) { try { navigator.vibrate([80, 40, 80, 40, 120]); } catch(e){} }
+  setTimeout(() => { el.style.display = 'none'; el.innerHTML=''; }, 1800);
 }
 
 // ══ CHAT ══
