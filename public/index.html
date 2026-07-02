@@ -80,6 +80,8 @@ body{font-family:'Inter',sans-serif;background:#0f3020;color:white;font-size:14p
 /* ── Avatars ── */
 .pav{width:26px;height:26px;border-radius:50%;object-fit:cover;flex-shrink:0;background:rgba(255,255,255,.06);border:2px solid var(--gold);box-shadow:0 1px 4px rgba(0,0,0,.35)}
 .lobby-av{width:30px;height:30px;border-radius:50%;object-fit:cover;flex-shrink:0;background:rgba(255,255,255,.06);border:2px solid var(--gold);box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.lobby-av.lobby-av-empty{border:1.5px solid rgba(212,168,75,.28);background:rgba(255,255,255,.03);box-shadow:none;display:inline-block}
+.pav.pav-empty{border:1.5px solid rgba(212,168,75,.28);background:rgba(255,255,255,.03);box-shadow:none;display:inline-block}
 .av-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:8px 0 4px;justify-items:center}
 .av-picker{display:flex;flex-direction:column;align-items:center;gap:8px;margin:14px 0 6px}
 .av-toggle{width:58px;height:58px;border-radius:50%;border:2px solid var(--gold);background:rgba(255,255,255,.06);cursor:pointer;padding:0;overflow:hidden;display:flex;align-items:center;justify-content:center;color:var(--gold-light);transition:transform .12s,box-shadow .12s,border-color .12s}
@@ -1023,6 +1025,9 @@ function toggleSound(btn){
 
 
 const _reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+// Default flight duration for card animations (ms). Was missing → flyAnim threw a
+// ReferenceError mid-draw, leaving the drawn card hidden and the game frozen.
+const ANIM_DUR = 380;
 let _animLock = 0;
 function lockInput(){ _animLock++; document.body.classList.add('anim-lock'); }
 function unlockInput(){ _animLock = Math.max(0, _animLock-1); if(_animLock===0) document.body.classList.remove('anim-lock'); }
@@ -1627,7 +1632,9 @@ function updateLobbyPlayers(players) {
   qid('lobby-players-list').innerHTML = norm.map((p,i) =>
     `<div style="background:rgba(255,255,255,.08);border-radius:8px;padding:8px 14px;font-size:14px;display:flex;align-items:center;gap:8px">
       <span>${i+1}.</span>
-      <img class="lobby-av" src="${avatarImg(p.avatar, i)}" alt="">
+      ${typeof p.avatar === 'number'
+        ? `<img class="lobby-av" src="${avatarImg(p.avatar, i)}" alt="">`
+        : `<span class="lobby-av lobby-av-empty" aria-hidden="true"></span>`}
       <strong>${p.name}</strong>
       ${i===0?'<span style="margin-left:auto;font-size:11px;color:var(--gold-light)">Hôte</span>':''}
     </div>`).join('');
@@ -1943,7 +1950,9 @@ function buildPlayerRow(state, pi) {
   header.className = 'prow-header';
   header.innerHTML = `
     <div class="prow-name">${isActive ? '<div class="adot"></div>' : ''}
-      <img class="pav" src="${avatarImg(pl.avatar, pi)}" alt="">
+      ${typeof pl.avatar === 'number'
+        ? `<img class="pav" src="${avatarImg(pl.avatar, pi)}" alt="">`
+        : `<span class="pav pav-empty" aria-hidden="true"></span>`}
       ${isMe ? '<span style="color:var(--gold-light)">Vous</span>' : pl.name}
       ${pl.connected === false ? '<span class="offline-tag">🔌 déconnecté</span>' : ''}
       <span class="cbadge">${pl.cardCount}🃏</span>
