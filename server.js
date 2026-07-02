@@ -133,6 +133,7 @@ function buildState(room, pi) {
       hand,
       isActive: i === room.cur,
       connected: p.connected !== false,
+      avatar: (typeof p.avatar === 'number') ? p.avatar : null,
     };
   });
 
@@ -172,7 +173,7 @@ io.on('connection', socket => {
     const code = makeCode();
     rooms[code] = {
       code, cardCount: 4,
-      players: [{ socketId: socket.id, name, hand: [], ready: false, connected: true }],
+      players: [{ socketId: socket.id, name, hand: [], ready: false, connected: true, avatar: null }],
       host: socket.id,
       started: false,
       totals: null,
@@ -181,7 +182,7 @@ io.on('connection', socket => {
     };
     socket.join(code);
     socket.emit('roomCreated', { code, playerIndex: 0 });
-    io.to(code).emit('lobbyUpdate', { players: rooms[code].players.map(p => p.name), host: 0 });
+    io.to(code).emit('lobbyUpdate', { players: rooms[code].players.map(p => ({ name: p.name, avatar: p.avatar })), host: 0 });
     console.log(`Room ${code} created by ${name}`);
   });
 
@@ -192,11 +193,22 @@ io.on('connection', socket => {
     if (room.started) { socket.emit('error', 'Partie déjà commencée'); return; }
     if (room.players.length >= 5) { socket.emit('error', 'Partie pleine (5 max)'); return; }
     const pi = room.players.length;
-    room.players.push({ socketId: socket.id, name, hand: [], ready: false, connected: true });
+    room.players.push({ socketId: socket.id, name, hand: [], ready: false, connected: true, avatar: null });
     socket.join(code);
     socket.emit('roomJoined', { code, playerIndex: pi });
-    io.to(code).emit('lobbyUpdate', { players: room.players.map(p => p.name), host: 0 });
+    io.to(code).emit('lobbyUpdate', { players: room.players.map(p => ({ name: p.name, avatar: p.avatar })), host: 0 });
     console.log(`${name} joined ${code}`);
+  });
+
+  // ── Choose / change avatar (lobby only, before game start) ──
+  socket.on('setAvatar', ({ code, playerIndex, avatar }) => {
+    const room = rooms[code];
+    if (!room || room.started) return;              // only before launch
+    const pi = resolvePlayer(room, socket, playerIndex);
+    if (pi < 0) return;
+    if (typeof avatar !== 'number' || avatar < 0 || avatar > 9) return;
+    room.players[pi].avatar = avatar;
+    io.to(code).emit('lobbyUpdate', { players: room.players.map(p => ({ name: p.name, avatar: p.avatar })), host: 0 });
   });
 
   socket.on('startGame', ({ code, cardCount }) => {
@@ -211,6 +223,8 @@ io.on('connection', socket => {
     else cc = 4; // 4-5 players
     room.cardCount = cc;
     room.started = true;
+    // Anyone who never picked an avatar gets a default based on their seat.
+    room.players.forEach((p, i) => { if (typeof p.avatar !== 'number') p.avatar = i % 10; });
     initGame(room);
     io.to(code).emit('gameStarted');
     broadcastRoom(code);
@@ -594,7 +608,7 @@ io.on('connection', socket => {
           // Still in the lobby: remove them from the list
           room.players.splice(pi, 1);
           if (room.players.length === 0) { delete rooms[code]; }
-          else io.to(code).emit('lobbyUpdate', { players: room.players.map(p => p.name), host: 0 });
+          else io.to(code).emit('lobbyUpdate', { players: room.players.map(p => ({ name: p.name, avatar: p.avatar })), host: 0 });
         }
         break;
       }
