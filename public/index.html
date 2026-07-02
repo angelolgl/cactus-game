@@ -77,6 +77,21 @@ body{font-family:'Inter',sans-serif;background:#0f3020;color:white;font-size:14p
 .prow.active{background:rgba(0,0,0,.35);border-color:rgba(212,168,75,.45);box-shadow:0 0 18px rgba(212,168,75,.08)}
 .prow-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .prow-name{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:600}
+/* ── Avatars ── */
+.pav{width:26px;height:26px;border-radius:50%;object-fit:cover;flex-shrink:0;background:rgba(255,255,255,.06);border:2px solid var(--gold);box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.lobby-av{width:30px;height:30px;border-radius:50%;object-fit:cover;flex-shrink:0;background:rgba(255,255,255,.06);border:2px solid var(--gold);box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.av-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:8px 0 4px;justify-items:center}
+.av-picker{display:flex;flex-direction:column;align-items:center;gap:8px;margin:14px 0 6px}
+.av-toggle{width:58px;height:58px;border-radius:50%;border:2px solid var(--gold);background:rgba(255,255,255,.06);cursor:pointer;padding:0;overflow:hidden;display:flex;align-items:center;justify-content:center;color:var(--gold-light);transition:transform .12s,box-shadow .12s,border-color .12s}
+.av-toggle:hover{transform:scale(1.05);box-shadow:0 0 14px rgba(212,168,75,.55)}
+.av-toggle.open{border-color:var(--gold-light);box-shadow:0 0 0 2px var(--gold)}
+.av-toggle .av-face{display:flex;align-items:center;justify-content:center;width:34px;height:34px}
+.av-toggle .av-face svg{width:34px;height:34px}
+.av-toggle img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.av-opt{width:100%;max-width:64px;aspect-ratio:1/1;border-radius:50%;object-fit:cover;cursor:pointer;background:rgba(255,255,255,.05);border:2px solid transparent;transition:transform .12s,border-color .12s,box-shadow .12s}
+.av-opt:hover{transform:scale(1.06);border-color:rgba(212,168,75,.5)}
+.av-opt.sel{border-color:var(--gold-light);box-shadow:0 0 0 2px var(--gold),0 0 14px rgba(212,168,75,.55)}
+.av-label{font-size:12px;color:rgba(255,255,255,.5);text-align:center;margin-top:10px}
 .adot{width:7px;height:7px;border-radius:50%;background:#2ecc71;box-shadow:0 0 5px #2ecc71;flex-shrink:0}
 .cbadge{font-size:10px;background:rgba(255,255,255,.1);border-radius:20px;padding:2px 8px;color:rgba(255,255,255,.45)}
 .pscore{font-size:12px;color:rgba(255,255,255,.35)}
@@ -154,6 +169,11 @@ body{font-family:'Inter',sans-serif;background:#0f3020;color:white;font-size:14p
 
 /* ─── FLY LAYER ─── */
 #fly-layer{position:fixed;inset:0;pointer-events:none;z-index:500}
+@keyframes cardLand{0%{transform:scale(.82)}60%{transform:scale(1.06)}100%{transform:scale(1)}}
+#reconnect-banner{position:fixed;top:0;left:0;right:0;z-index:700;display:none;text-align:center;background:linear-gradient(180deg,#8a5a0d,#6e4708);color:#fff;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;padding:8px;box-shadow:0 2px 12px rgba(0,0,0,.5);animation:rcBlink 1.2s ease-in-out infinite}
+@keyframes rcBlink{0%,100%{opacity:1}50%{opacity:.6}}
+.prow.offline{opacity:.55}
+.offline-tag{font-size:10px;color:#e6a23c;font-weight:600;margin-left:4px}
 body.anim-lock #s-game{pointer-events:none}
 body.anim-lock #chat-widget{pointer-events:auto}
 .fly-card{position:absolute;border-radius:9px;overflow:hidden}
@@ -639,24 +659,26 @@ body.anim-lock #chat-widget{pointer-events:auto}
 .card-swapped {
   display: inline-flex;
   border-radius: 11px;
-  box-shadow:
-    0 0 0 2px #4ade80,
-    0 0 9px 1px rgba(74,222,128,.9),
-    0 0 18px 4px rgba(74,222,128,.55);
+  --led: #4ade80;
+  --led-bright: #6ef296;
   animation: ledPulse 1.4s ease-in-out infinite;
 }
+.card-swapped.led-1 { --led:#4ade80; --led-bright:#8ff0a8; } /* vert (1 échange) */
+.card-swapped.led-2 { --led:#f0c96e; --led-bright:#ffe49a; } /* or (2 échanges) */
+.card-swapped.led-3 { --led:#38bdf8; --led-bright:#8ad8fb; } /* bleu (3 échanges) */
+.card-swapped.led-4 { --led:#c084fc; --led-bright:#e0c4ff; } /* violet (4 échanges) */
 @keyframes ledPulse {
   0%, 100% {
     box-shadow:
-      0 0 0 2px #4ade80,
-      0 0 9px 1px rgba(74,222,128,.85),
-      0 0 18px 4px rgba(74,222,128,.5);
+      0 0 0 2px var(--led),
+      0 0 9px 1px var(--led),
+      0 0 18px 4px var(--led);
   }
   50% {
     box-shadow:
-      0 0 0 2px #6ef296,
-      0 0 15px 3px rgba(110,242,150,1),
-      0 0 28px 7px rgba(74,222,128,.75);
+      0 0 0 2px var(--led-bright),
+      0 0 15px 3px var(--led-bright),
+      0 0 28px 7px var(--led);
   }
 }
 
@@ -711,6 +733,21 @@ body.anim-lock #chat-widget{pointer-events:auto}
     <div style="font-family:'Playfair Display',serif;font-size:42px;color:var(--gold-light);letter-spacing:.15em;text-align:center;text-shadow:0 2px 8px rgba(0,0,0,.5);margin:12px 0" id="lobby-code-display">----</div>
     <p style="color:rgba(255,255,255,.4);font-size:12px;text-align:center">Partagez ce code</p>
     <div style="display:flex;flex-direction:column;gap:8px;margin:16px 0;min-height:50px" id="lobby-players-list"></div>
+    <div class="av-picker">
+      <div class="av-label">Votre avatar</div>
+      <button type="button" class="av-toggle" id="avatar-toggle" onclick="toggleAvatarGrid()" title="Choisir un avatar">
+        <span class="av-face" id="avatar-toggle-face" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+            <circle cx="12" cy="12" r="9"></circle>
+            <circle cx="9" cy="10" r="1.1" fill="currentColor" stroke="none"></circle>
+            <circle cx="15" cy="10" r="1.1" fill="currentColor" stroke="none"></circle>
+            <path d="M8.5 14.5c1 1.2 2.2 1.8 3.5 1.8s2.5-.6 3.5-1.8"></path>
+          </svg>
+        </span>
+        <img id="avatar-toggle-img" alt="" style="display:none">
+      </button>
+      <div class="av-grid" id="avatar-grid" style="display:none"></div>
+    </div>
     <div id="host-controls" style="display:none">
       <div class="slabel" style="margin-bottom:8px">Cartes par joueur</div>
       <div class="row-btns" id="lobby-cc-btns" style="justify-content:center;flex-wrap:wrap;gap:6px;margin-bottom:14px"></div>
@@ -737,6 +774,7 @@ body.anim-lock #chat-widget{pointer-events:auto}
     <div class="g-btns">
       <button class="gbtn cactus" id="btn-cactus">🌵 Cactus !</button>
       <button class="gbtn" id="btn-rules">Règles</button>
+      <button class="gbtn" id="btn-sound" title="Son" onclick="toggleSound(this)">🔊</button>
       <button class="gbtn" id="btn-debug" style="font-size:11px;opacity:0.5" onclick="toggleDebug(this)">🏷️</button>
 
     </div>
@@ -785,6 +823,7 @@ body.anim-lock #chat-widget{pointer-events:auto}
 
 <script src="/images1.js?v=3"></script>
 <script src="/images2.js?v=3"></script>
+<script src="/avatars.js?v=1"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script>
 // ══ DOM HELPERS (must be first) ══
@@ -902,35 +941,94 @@ function flyCard(srcEl,dstEl,opts={},onDone){
   if(!srcEl||!dstEl){if(onDone)onDone();return;}
   const layer=qid('fly-layer');
   const fromR=getRect(srcEl);const toR=getRect(dstEl);
+  if(!fromR||!toR){if(onDone)onDone();return;}
+  const dur = _reduceMotion ? 150 : (opts.dur||360);
   const fly=document.createElement('div');
   fly.className='fly-card';
-  fly.style.cssText=`left:${fromR.left}px;top:${fromR.top}px;width:${fromR.width}px;height:${fromR.height}px;`;
+  fly.style.cssText=`left:${fromR.left}px;top:${fromR.top}px;width:${fromR.width}px;height:${fromR.height}px;will-change:transform;transform:translate3d(0,0,0);`;
   const clone=srcEl.cloneNode(true);
   clone.style.cssText='position:static;width:100%;height:100%;transition:none!important;animation:none!important;transform:none';
   fly.appendChild(clone);
   layer.appendChild(fly);
-  const dur=opts.dur||360;
-  // If we want to reveal: flip clone mid-flight
   if(opts.revealCard){
     const inner=clone.querySelector('.card-inner');
-    if(inner){
-      setTimeout(()=>{if(inner)inner.style.transform='rotateY(180deg)';},dur/2);
-    }
+    if(inner){ inner.style.transition=`transform ${Math.round(dur*0.5)}ms ease`; setTimeout(()=>{if(inner)inner.style.transform='rotateY(180deg)';},dur*0.26); }
   }
-  requestAnimationFrame(()=>{
-    fly.style.transition=`left ${dur}ms cubic-bezier(.4,0,.2,1),top ${dur}ms cubic-bezier(.4,0,.2,1),opacity ${dur}ms ease`;
-    fly.style.left=toR.left+'px';fly.style.top=toR.top+'px';
-    setTimeout(()=>{if(fly.parentNode)fly.parentNode.removeChild(fly);if(onDone)onDone();},dur+60);
-  });
+  const dx=toR.left-fromR.left, dy=toR.top-fromR.top;
+  const lift=_reduceMotion?0:Math.min(46,Math.max(10,Math.hypot(dx,dy)*0.09));
+  const frames=_reduceMotion?[
+    {transform:'translate3d(0,0,0)'},{transform:`translate3d(${dx}px,${dy}px,0)`}
+  ]:[
+    {transform:'translate3d(0,0,0) scale(1)',offset:0},
+    {transform:`translate3d(${dx*0.5}px,${dy*0.5-lift}px,0) scale(1.05)`,offset:0.55},
+    {transform:`translate3d(${dx}px,${dy}px,0) scale(1)`,offset:1}
+  ];
+  const anim=fly.animate(frames,{duration:dur,easing:'cubic-bezier(.34,0,.22,1)',fill:'forwards'});
+  anim.onfinish=()=>{if(fly.parentNode)fly.parentNode.removeChild(fly);if(onDone)onDone();};
+  setTimeout(()=>{if(fly.parentNode){fly.parentNode.removeChild(fly);if(onDone)onDone();}},dur+120);
 }
 
-// ══ MOVE ANIMATIONS (draw / discard / exchange) ══
-const ANIM_DUR = 400; // rapide & fluide
+// ══ CARD SOUNDS (light synthesized SFX, no files) ══
+let _actx = null;
+let _soundOn = true;
+function _audio(){
+  if(!_soundOn) return null;
+  if(!_actx){
+    try { _actx = new (window.AudioContext||window.webkitAudioContext)(); } catch(e){ return null; }
+  }
+  if(_actx.state==='suspended') _actx.resume();
+  return _actx;
+}
+// Filtered noise burst = the "swish/flick" of a card sliding
+function _cardNoise({dur=0.14, vol=0.05, freq=1800, q=0.8, type='bandpass', sweep=0}={}){
+  const ctx=_audio(); if(!ctx) return;
+  const n=Math.floor(ctx.sampleRate*dur);
+  const buf=ctx.createBuffer(1,n,ctx.sampleRate);
+  const data=buf.getChannelData(0);
+  for(let i=0;i<n;i++){ data[i]=(Math.random()*2-1)*Math.pow(1-i/n,1.6); } // decaying noise
+  const src=ctx.createBufferSource(); src.buffer=buf;
+  const filt=ctx.createBiquadFilter(); filt.type=type; filt.frequency.value=freq; filt.Q.value=q;
+  if(sweep){ filt.frequency.setValueAtTime(freq,ctx.currentTime); filt.frequency.exponentialRampToValueAtTime(Math.max(120,freq+sweep),ctx.currentTime+dur); }
+  const g=ctx.createGain();
+  g.gain.setValueAtTime(vol,ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+dur);
+  src.connect(filt); filt.connect(g); g.connect(ctx.destination);
+  src.start();
+}
+// Short tonal blip for accents (snap, your turn)
+function _blip({freq=520, dur=0.09, vol=0.05, type='triangle'}={}){
+  const ctx=_audio(); if(!ctx) return;
+  const o=ctx.createOscillator(); const g=ctx.createGain();
+  o.type=type; o.frequency.value=freq;
+  g.gain.setValueAtTime(0.0001,ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(vol,ctx.currentTime+0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+dur);
+  o.connect(g); g.connect(ctx.destination);
+  o.start(); o.stop(ctx.currentTime+dur+0.02);
+}
+const SFX = {
+  draw(){ _cardNoise({dur:0.13, vol:0.045, freq:1500, q:0.7, sweep:-600}); },        // soft slide off deck
+  discard(){ _cardNoise({dur:0.16, vol:0.05, freq:900, q:0.6, sweep:-400}); },        // card landing
+  take(){ _cardNoise({dur:0.13, vol:0.045, freq:1300, q:0.7, sweep:-400}); },
+  exchange(){ _cardNoise({dur:0.14, vol:0.045, freq:1600, q:0.7, sweep:-700}); },
+  snap(){ _cardNoise({dur:0.09, vol:0.06, freq:2600, q:1.2, sweep:-1400}); setTimeout(()=>_blip({freq:680,dur:0.07,vol:0.035,type:'square'}),20); }, // sharp flick + tiny click
+  turn(){ _blip({freq:523,dur:0.10,vol:0.04}); setTimeout(()=>_blip({freq:784,dur:0.12,vol:0.04}),90); }, // gentle two-note
+  cactus(){ _blip({freq:400,dur:0.14,vol:0.05,type:'sawtooth'}); setTimeout(()=>_blip({freq:300,dur:0.18,vol:0.05,type:'sawtooth'}),120); }
+};
+function toggleSound(btn){
+  _soundOn = !_soundOn;
+  if(btn){ btn.textContent = _soundOn ? '🔊' : '🔇'; btn.style.opacity = _soundOn ? '1' : '0.5'; }
+  if(_soundOn){ SFX.take(); } // little confirmation blip
+}
+
+
+const _reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 let _animLock = 0;
 function lockInput(){ _animLock++; document.body.classList.add('anim-lock'); }
 function unlockInput(){ _animLock = Math.max(0, _animLock-1); if(_animLock===0) document.body.classList.remove('anim-lock'); }
 
-// Build a card element, fly it from one element to another, optionally flipping mid-air.
+// Build a card element and fly it from one element to another (GPU-accelerated),
+// with a subtle arc + landing pop, optionally flipping face-down→face-up mid-air.
 // opts: { card, faceUp (start face up?), reveal (flip to face-up mid-flight), dur }
 function flyAnim(fromEl, toEl, opts={}, onDone){
   if(!fromEl || !toEl){ if(onDone) onDone(); return; }
@@ -938,31 +1036,42 @@ function flyAnim(fromEl, toEl, opts={}, onDone){
   const fromR=fromEl.getBoundingClientRect();
   const toR=toEl.getBoundingClientRect();
   if((fromR.width===0&&fromR.height===0)||(toR.width===0&&toR.height===0)){ if(onDone) onDone(); return; }
-  const dur=opts.dur||ANIM_DUR;
-  // Fixed card size, centered on the source/destination anchors (which may be wide containers)
+  const dur = _reduceMotion ? 160 : (opts.dur||ANIM_DUR);
   const CW=65, CH=94;
   const fromX=fromR.left + fromR.width/2 - CW/2;
   const fromY=fromR.top + fromR.height/2 - CH/2;
   const toX=toR.left + toR.width/2 - CW/2;
   const toY=toR.top + toR.height/2 - CH/2;
+  const dx=toX-fromX, dy=toY-fromY;
   const fly=document.createElement('div');
   fly.className='fly-card';
-  fly.style.cssText=`left:${fromX}px;top:${fromY}px;width:${CW}px;height:${CH}px;`;
+  fly.style.cssText=`left:${fromX}px;top:${fromY}px;width:${CW}px;height:${CH}px;will-change:transform;transform:translate3d(0,0,0);`;
   const cardEl=mkCardEl(opts.card||{value:'?',suit:'?',uid:-99999},{flipped:!!opts.faceUp});
   cardEl.style.cssText='position:static;width:100%;height:100%;margin:0;cursor:default;';
   const inner=cardEl.querySelector('.card-inner');
-  if(inner) inner.style.transition=`transform ${Math.round(dur*0.45)}ms ease`;
+  if(inner) inner.style.transition=`transform ${Math.round(dur*0.5)}ms ease`;
   fly.appendChild(cardEl);
   layer.appendChild(fly);
-  if(opts.reveal && inner){
-    setTimeout(()=>{ if(inner) inner.style.transform='rotateY(180deg)'; }, Math.round(dur*0.30));
+  // Reveal flip mid-flight
+  if(opts.reveal && inner && !_reduceMotion){
+    setTimeout(()=>{ if(inner) inner.style.transform='rotateY(180deg)'; }, Math.round(dur*0.26));
+  } else if(opts.reveal && inner){
+    inner.style.transform='rotateY(180deg)';
   }
-  requestAnimationFrame(()=>{
-    fly.style.transition=`left ${dur}ms cubic-bezier(.4,0,.2,1),top ${dur}ms cubic-bezier(.4,0,.2,1)`;
-    fly.style.left=toX+'px';
-    fly.style.top=toY+'px';
-    setTimeout(()=>{ if(fly.parentNode) fly.parentNode.removeChild(fly); if(onDone) onDone(); }, dur+50);
-  });
+  // Subtle upward arc scaled to distance (feels like a real card toss)
+  const lift = _reduceMotion ? 0 : Math.min(46, Math.max(10, Math.hypot(dx,dy)*0.09));
+  const frames = _reduceMotion ? [
+    { transform:'translate3d(0,0,0)' },
+    { transform:`translate3d(${dx}px,${dy}px,0)` }
+  ] : [
+    { transform:'translate3d(0,0,0) scale(1)', offset:0 },
+    { transform:`translate3d(${dx*0.5}px, ${dy*0.5 - lift}px, 0) scale(1.05)`, offset:0.55 },
+    { transform:`translate3d(${dx}px, ${dy}px, 0) scale(1)`, offset:1 }
+  ];
+  const anim = fly.animate(frames, { duration:dur, easing:'cubic-bezier(.34,0,.22,1)', fill:'forwards' });
+  anim.onfinish = ()=>{ if(fly.parentNode) fly.parentNode.removeChild(fly); if(onDone) onDone(); };
+  // Safety cleanup if onfinish doesn't fire
+  setTimeout(()=>{ if(fly.parentNode){ fly.parentNode.removeChild(fly); if(onDone) onDone(); } }, dur+120);
 }
 
 function elDrawPile(){ return qid('draw-wrap') || qid('draw-top'); }
@@ -977,11 +1086,12 @@ function elDrawnArea(){ return qid('drawn-card-el') || qid('action-area') || qid
 // "double card" flash where the new discard appears before the animation lands).
 let _discardHideCount = 0;
 function hideDiscardTop(){ _discardHideCount++; const d=qid('discard-card'); if(d) d.style.visibility='hidden'; }
-function showDiscardTop(){ _discardHideCount=Math.max(0,_discardHideCount-1); if(_discardHideCount===0){ const d=qid('discard-card'); if(d) d.style.visibility=''; } }
+function showDiscardTop(){ _discardHideCount=Math.max(0,_discardHideCount-1); if(_discardHideCount===0){ const d=qid('discard-card'); if(d){ d.style.visibility=''; if(!_reduceMotion){ d.style.animation='cardLand .28s ease'; setTimeout(()=>{ if(d) d.style.animation=''; },300); } } } }
 
 // Everyone sees a face-down card leave the draw pile and land in the central
 // "drawn card" zone beside the discard (same spot for the drawer and observers).
 function onAnimDraw({pi}){
+  SFX.draw();
   const isMe = pi === myIndex;
   const from = elDrawPile();
   const to = elDrawnArea();
@@ -1000,6 +1110,7 @@ function onAnimDraw({pi}){
 
 // Player took the (public) top discard card → flies from discard to the central zone, face up.
 function onAnimTake({pi, card}){
+  SFX.take();
   const isMe = pi === myIndex;
   const from = elDiscard();
   const to = elDrawnArea();
@@ -1012,6 +1123,7 @@ function onAnimTake({pi, card}){
 // A drawn card is thrown to the discard. It leaves the central drawn zone.
 // Thrower sees it face-up the whole way; others see face-down → flip face-up on arrival.
 function onAnimDiscard({pi, card}){
+  SFX.discard();
   const isMe = pi === myIndex;
   const from = elDrawnArea();
   const to = elDiscard();
@@ -1026,6 +1138,7 @@ function onAnimDiscard({pi, card}){
 // Snap: the snapped card flies from the snapper's hand slot to the discard,
 // flipping face-up for everyone (it becomes public).
 function onAnimSnap({pi, cardIndex, card}){
+  SFX.snap();
   const handEl = elHand(pi);
   let src = handEl;
   if(handEl && handEl.children[cardIndex]) src = handEl.children[cardIndex];
@@ -1040,6 +1153,7 @@ function onAnimSnap({pi, cardIndex, card}){
 // Exchange: drawn card goes from the central zone into the hand (hidden for others),
 // and the old hand card flies to the discard, flipping face-up for everyone.
 function onAnimExchange({pi, cardIndex, oldCard}){
+  SFX.exchange();
   lockInput(); lockInput(); // two flights
   // 1) drawn (central zone) → hand slot
   const handEl = elHand(pi);
@@ -1346,14 +1460,97 @@ function showWrongSnapModal(card, onOk) {
 
 // ══ CLIENT STATE ══
 let socket, myIndex = -1, myRoom = '', G = null, peekSel = [];
+let myName = '', _hasJoinedOnce = false;
+let myAvatar = null;
+
+// ══ AVATARS ══
+// window.AVATARS (numéro→dataURI) est fourni par avatars.js.
+// Fallback : avatar par défaut basé sur la position du joueur.
+function avatarImg(n, fallbackIndex) {
+  const AV = window.AVATARS || {};
+  const total = Object.keys(AV).length || 10;
+  let idx = (typeof n === 'number' && n >= 0) ? n
+          : ((typeof fallbackIndex === 'number' ? fallbackIndex : 0) % total);
+  return AV[idx] || AV[0] || '';
+}
+
+function renderAvatarGrid() {
+  const grid = qid('avatar-grid');
+  if (!grid) return;
+  const AV = window.AVATARS || {};
+  const total = Object.keys(AV).length || 10;
+  const active = (typeof myAvatar === 'number') ? myAvatar : -1;
+  grid.innerHTML = '';
+  for (let n = 0; n < total; n++) {
+    const img = document.createElement('img');
+    img.className = 'av-opt' + (n === active ? ' sel' : '');
+    img.src = AV[n] || '';
+    img.alt = 'Avatar ' + (n + 1);
+    img.addEventListener('click', () => selectAvatar(n));
+    grid.appendChild(img);
+  }
+  updateAvatarToggle();
+}
+
+// The face button shows a face icon until an avatar is chosen, then the avatar.
+function updateAvatarToggle() {
+  const face = qid('avatar-toggle-face'), im = qid('avatar-toggle-img');
+  if (!face || !im) return;
+  if (typeof myAvatar === 'number') {
+    im.src = avatarImg(myAvatar, myIndex);
+    im.style.display = 'block';
+    face.style.display = 'none';
+  } else {
+    im.style.display = 'none';
+    face.style.display = 'flex';
+  }
+}
+
+function toggleAvatarGrid() {
+  const grid = qid('avatar-grid'), btn = qid('avatar-toggle');
+  if (!grid) return;
+  const show = (grid.style.display === 'none' || !grid.style.display);
+  grid.style.display = show ? 'grid' : 'none';
+  if (btn) btn.classList.toggle('open', show);
+}
+
+function selectAvatar(n) {
+  myAvatar = n;
+  renderAvatarGrid();          // refresh highlight + toggle image
+  const grid = qid('avatar-grid'), btn = qid('avatar-toggle');
+  if (grid) grid.style.display = 'none';   // collapse after choosing
+  if (btn) btn.classList.remove('open');
+  if (socket && myRoom) socket.emit('setAvatar', { code: myRoom, playerIndex: myIndex, avatar: n });
+}
 
 // ══ SOCKET ══
 function initSocket() {
   if (socket && socket.connected) return;
   socket = io();
   socket.on('connect_error', () => { qid('lobby-error').textContent = 'Erreur de connexion'; });
-  socket.on('roomCreated', ({code, playerIndex}) => { myIndex=playerIndex; myRoom=code; showWaiting(code,true); });
-  socket.on('roomJoined',  ({code, playerIndex}) => { myIndex=playerIndex; myRoom=code; showWaiting(code,false); });
+  socket.on('connect', () => {
+    // Auto-rejoin after a network drop (socket.io reconnected with a new id)
+    if (_hasJoinedOnce && myRoom) {
+      socket.emit('rejoin', { code: myRoom, name: myName, playerIndex: myIndex });
+    }
+  });
+  socket.on('disconnect', () => {
+    if (_hasJoinedOnce) showReconnecting(true);
+  });
+  socket.on('rejoined', ({playerIndex, code}) => {
+    myIndex = playerIndex; myRoom = code;
+    showReconnecting(false);
+    showToast('✅ Reconnecté');
+  });
+  socket.on('rejoinFailed', () => {
+    showReconnecting(false);
+    showToast('⚠️ Impossible de rejoindre la partie');
+  });
+  socket.on('playerConn', ({pi, connected, name}) => {
+    if (name && pi !== myIndex) showToast(connected ? `✅ ${name} est de retour` : `⚠️ ${name} s'est déconnecté`);
+  });
+  socket.on('roomCreated', ({code, playerIndex}) => { myIndex=playerIndex; myRoom=code; _hasJoinedOnce=true; showWaiting(code,true); });
+  socket.on('roomJoined',  ({code, playerIndex}) => { myIndex=playerIndex; myRoom=code; _hasJoinedOnce=true; showWaiting(code,false); });
   socket.on('lobbyUpdate', ({players}) => { updateLobbyPlayers(players); });
   socket.on('gameStarted', () => { peekedCards=[]; peekRevealed=[]; window._peekRendered=false; _peekDoneSent=false; show('peek'); });
   socket.on('gameState',   (state) => { G=state; updateGame(state); });
@@ -1375,9 +1572,20 @@ function initSocket() {
   socket.on('error',       (msg) => { showToast('⚠️ '+msg); qid('lobby-error').textContent=msg; });
 }
 
+function showReconnecting(on){
+  let el = qid('reconnect-banner');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'reconnect-banner';
+    el.textContent = '🔌 Reconnexion en cours...';
+    document.body.appendChild(el);
+  }
+  el.style.display = on ? 'block' : 'none';
+}
+
 // ══ LOBBY ══
 
-function getName() { return qid('player-name').value.trim() || 'Joueur'; }
+function getName() { myName = qid('player-name').value.trim() || 'Joueur'; return myName; }
 
 let lobbyPlayers = [], isHost = false;
 
@@ -1408,18 +1616,28 @@ function showWaiting(code, host) {
   qid('lobby-code-display').textContent = code;
   qid('host-controls').style.display = host ? 'block' : 'none';
   qid('waiting-msg').style.display = host ? 'none' : 'block';
+  renderAvatarGrid();
 }
 
 let selectedCC = 4;
 function updateLobbyPlayers(players) {
-  lobbyPlayers = players;
-  qid('lobby-players-list').innerHTML = players.map((name,i) =>
+  // players peut être un tableau de chaînes (ancien) ou d'objets {name, avatar}.
+  const norm = (players || []).map(p => (typeof p === 'string') ? { name: p, avatar: null } : p);
+  lobbyPlayers = norm;
+  qid('lobby-players-list').innerHTML = norm.map((p,i) =>
     `<div style="background:rgba(255,255,255,.08);border-radius:8px;padding:8px 14px;font-size:14px;display:flex;align-items:center;gap:8px">
-      <span>${i+1}.</span><strong>${name}</strong>
+      <span>${i+1}.</span>
+      <img class="lobby-av" src="${avatarImg(p.avatar, i)}" alt="">
+      <strong>${p.name}</strong>
       ${i===0?'<span style="margin-left:auto;font-size:11px;color:var(--gold-light)">Hôte</span>':''}
     </div>`).join('');
+  // Garde myAvatar en phase avec le serveur (utile après reconnexion)
+  if (myIndex >= 0 && norm[myIndex] && typeof norm[myIndex].avatar === 'number') {
+    myAvatar = norm[myIndex].avatar;
+  }
+  renderAvatarGrid();
   // Update card count options based on player count (host only)
-  if (isHost) updateCardCountOptions(players.length);
+  if (isHost) updateCardCountOptions(norm.length);
 }
 
 function updateCardCountOptions(n) {
@@ -1719,13 +1937,15 @@ function buildPlayerRow(state, pi) {
   const isActive = pi === state.cur;
   const isMe = pi === myIndex;
   const row = document.createElement('div');
-  row.className = 'prow' + (isActive ? ' active' : '') + (isMe ? ' me' : '');
+  row.className = 'prow' + (isActive ? ' active' : '') + (isMe ? ' me' : '') + (pl.connected === false ? ' offline' : '');
 
   const header = document.createElement('div');
   header.className = 'prow-header';
   header.innerHTML = `
     <div class="prow-name">${isActive ? '<div class="adot"></div>' : ''}
+      <img class="pav" src="${avatarImg(pl.avatar, pi)}" alt="">
       ${isMe ? '<span style="color:var(--gold-light)">Vous</span>' : pl.name}
+      ${pl.connected === false ? '<span class="offline-tag">🔌 déconnecté</span>' : ''}
       <span class="cbadge">${pl.cardCount}🃏</span>
       ${state.cactusRound && pi === state.cactusPl ? '<span style="color:#2ecc71;font-size:11px"> 🌵</span>' : ''}
     </div>
@@ -1742,11 +1962,13 @@ function buildPlayerRow(state, pi) {
       // Cards always face down during play
       const el = mkCardEl({value:'?', suit:'?', uid:-pi*100-ci}, {flipped:false, selected:inJack});
       el.addEventListener('click', () => onCardClick(pi, ci, c, state));
-      // Green LED glow around cards changed by a Jack swap (own cards too).
+      // Colored LED glow around cards changed by a Jack swap (own cards too).
+      // Color depends on how many times the slot was swapped (1-4).
       // Wrap in a plain 2D container so the glow isn't swallowed by the 3D flip context.
       if (c.changed) {
+        const n = Math.max(1, Math.min(4, c.changed));
         const wrap = document.createElement('div');
-        wrap.className = 'card-swapped';
+        wrap.className = 'card-swapped led-' + n;
         wrap.appendChild(el);
         hand.appendChild(wrap);
       } else {
@@ -1878,12 +2100,23 @@ function showRules() {
       </div>
       <div class="rule-section">
         <h4>🔮 Pouvoirs spéciaux</h4>
-        <p><b>Le 7.</b> Quand vous défaussez un 7, vous pouvez regarder secrètement une de vos propres cartes pour la mémoriser.</p>
+        <p><b>Le 7.</b> Quand vous défaussez un 7, vous pouvez regarder secrètement une de vos propres cartes pour la mémoriser. Cliquez d'abord sur le bouton pour activer le pouvoir, puis sur la carte à regarder.</p>
         <p><b>Le Valet.</b> Quand vous défaussez un Valet, vous pouvez échanger deux cartes entre deux joueurs différents (les vôtres avec celles d'un adversaire, ou entre deux adversaires).</p>
+      </div>
+      <div class="rule-section">
+        <h4>💡 Cartes échangées (LED de couleur)</h4>
+        <p>Après un échange par un Valet, les cartes concernées sont entourées d'une <b>lumière colorée</b> jusqu'à ce que leur propriétaire pioche. La couleur indique <b>combien de fois</b> cet emplacement a été échangé :</p>
+        <p>
+        <span style="color:#4ade80">●</span> Vert = 1 échange<br>
+        <span style="color:#f0c96e">●</span> Or = 2 échanges<br>
+        <span style="color:#38bdf8">●</span> Bleu = 3 échanges<br>
+        <span style="color:#c084fc">●</span> Violet = 4 échanges (maximum)
+        </p>
       </div>
       <div class="rule-section">
         <h4>🌵 Annoncer "Cactus"</h4>
         <p>Quand vous pensez avoir le total le plus bas, annoncez <b>Cactus</b> ! Vous disposez de <b>3 secondes après votre tour</b> pour le faire. Chaque autre joueur joue alors un dernier tour, puis on compte les points.</p>
+        <p>Si vous vous débarrassez de votre <b>dernière carte</b> (par snap ou échange), le Cactus est <b>automatique</b> !</p>
         <p>⚠️ Si votre total dépasse <b>5 points</b>, ou si un adversaire a un total inférieur ou égal au vôtre, <b>votre score est doublé</b> en pénalité !</p>
       </div>
       <div class="rule-section">
@@ -1909,6 +2142,7 @@ function showRules() {
 function showYourTurnBanner() {
   const el = qid('yourturn-banner');
   if (!el) return;
+  SFX.turn();
   el.innerHTML = `
     <div class="yt-stack">
       <div class="yt-emoji">🌵</div>
@@ -1921,6 +2155,7 @@ function showYourTurnBanner() {
 }
 
 function showCactusAnnounce(playerName) {
+  SFX.cactus();
   const el = qid('cactus-announce');
   el.innerHTML = `
     <div class="ca-veil"></div>
