@@ -101,6 +101,8 @@ function initGame(room) {
 }
 
 function addLog(room, msg) {
+  if (!room) return;
+  if (!room.log) room.log = [];
   room.log.unshift(msg);
   if (room.log.length > 30) room.log.pop();
 }
@@ -123,13 +125,14 @@ function buildState(room, pi) {
   const players = room.players.map((p, i) => {
     const changed = p.changed || {};
     const hand = (i === pi || revealAll)
-      ? p.hand.map(c => ({ ...c, changed: !!changed[c.uid] }))
-      : p.hand.map(c => ({ hidden: true, changed: !!changed[c.uid] }));
+      ? p.hand.map(c => ({ ...c, changed: changed[c.uid] || 0 }))
+      : p.hand.map(c => ({ hidden: true, changed: changed[c.uid] || 0 }));
     return {
       name: p.name,
       cardCount: p.hand.length,
       hand,
       isActive: i === room.cur,
+      connected: p.connected !== false,
     };
   });
 
@@ -169,7 +172,7 @@ io.on('connection', socket => {
     const code = makeCode();
     rooms[code] = {
       code, cardCount: 4,
-      players: [{ socketId: socket.id, name, hand: [], ready: false }],
+      players: [{ socketId: socket.id, name, hand: [], ready: false, connected: true }],
       host: socket.id,
       started: false,
       totals: null,
@@ -189,7 +192,7 @@ io.on('connection', socket => {
     if (room.started) { socket.emit('error', 'Partie déjà commencée'); return; }
     if (room.players.length >= 5) { socket.emit('error', 'Partie pleine (5 max)'); return; }
     const pi = room.players.length;
-    room.players.push({ socketId: socket.id, name, hand: [], ready: false });
+    room.players.push({ socketId: socket.id, name, hand: [], ready: false, connected: true });
     socket.join(code);
     socket.emit('roomJoined', { code, playerIndex: pi });
     io.to(code).emit('lobbyUpdate', { players: room.players.map(p => p.name), host: 0 });
@@ -560,8 +563,42 @@ io.on('connection', socket => {
     io.to(code).emit('chatUpdate', { chat: room.chat });
   });
 
+  socket.on('rejoin', ({ code, name, playerIndex }) => {
+    const room = rooms[code];
+    if (!room) { socket.emit('rejoinFailed'); return; }
+    let pi = (typeof playerIndex === 'number' && room.players[playerIndex]) ? playerIndex : -1;
+    if (pi < 0 && name) pi = room.players.findIndex(p => p.name === name);
+    if (pi < 0) { socket.emit('rejoinFailed'); return; }
+    room.players[pi].socketId = socket.id;
+    room.players[pi].connected = true;
+    socket.join(code);
+    addLog(room, `${room.players[pi].name} est de retour.`);
+    io.to(code).emit('playerConn', { pi, connected: true, name: room.players[pi].name });
+    socket.emit('rejoined', { playerIndex: pi, code });
+    broadcastRoom(code);
+  });
+
   socket.on('disconnect', () => {
-    console.log('disconnect', socket.id);
+    // Keep the player's game state so they can reconnect; just mark them offline.
+    for (const code in rooms) {
+      const room = rooms[code];
+      const pi = room.players.findIndex(p => p.socketId === socket.id);
+      if (pi >= 0) {
+        if (room.started) {
+          // Game in progress: keep the seat, mark offline so they can reconnect
+          room.players[pi].connected = false;
+          addLog(room, `${room.players[pi].name} s'est déconnecté...`);
+          io.to(code).emit('playerConn', { pi, connected: false, name: room.players[pi].name });
+          broadcastRoom(code);
+        } else {
+          // Still in the lobby: remove them from the list
+          room.players.splice(pi, 1);
+          if (room.players.length === 0) { delete rooms[code]; }
+          else io.to(code).emit('lobbyUpdate', { players: room.players.map(p => p.name), host: 0 });
+        }
+        break;
+      }
+    }
   });
 });
 
@@ -634,15 +671,25 @@ function processNextJack(room) {
 function doJackSwap(room) {
   const [a, b] = room.jackSel;
   if (!a || !b || a.p === b.p) { room.jackQueue.shift(); processNextJack(room); return; }
-  const tmp = room.players[a.p].hand[a.i];
-  room.players[a.p].hand[a.i] = room.players[b.p].hand[b.i];
-  room.players[b.p].hand[b.i] = tmp;
-  addLog(room, `🔄 ${room.players[a.p].name} #${a.i+1} ↔ ${room.players[b.p].name} #${b.i+1}`);
-  // Mark swapped cards with a green LED (stays until that player draws a card)
   if (!room.players[a.p].changed) room.players[a.p].changed = {};
   if (!room.players[b.p].changed) room.players[b.p].changed = {};
-  room.players[a.p].changed[room.players[a.p].hand[a.i].uid] = true;
-  room.players[b.p].changed[room.players[b.p].hand[b.i].uid] = true;
+  const chA = room.players[a.p].changed;
+  const chB = room.players[b.p].changed;
+  // Cards currently at each slot (before swap) and the swap-count that slot carries
+  const cardA = room.players[a.p].hand[a.i];
+  const cardB = room.players[b.p].hand[b.i];
+  const countA = chA[cardA.uid] || 0; // how many times slot A was already swapped
+  const countB = chB[cardB.uid] || 0;
+  // Perform the swap
+  room.players[a.p].hand[a.i] = cardB;
+  room.players[b.p].hand[b.i] = cardA;
+  addLog(room, `🔄 ${room.players[a.p].name} #${a.i+1} ↔ ${room.players[b.p].name} #${b.i+1}`);
+  // Each swapped slot's count increments (capped at 4 = the max number of Jacks).
+  // The count follows the SLOT; the card now sitting there displays it.
+  delete chA[cardA.uid];
+  delete chB[cardB.uid];
+  chA[cardB.uid] = Math.min(4, countA + 1);
+  chB[cardA.uid] = Math.min(4, countB + 1);
   room.jackSel = [];
   room.jackQueue.shift();
   processNextJack(room);
