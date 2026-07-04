@@ -1842,8 +1842,66 @@ function renderPeek(hand) {
 }
 
 let _peekTimers = [];
+let _dealing = false;
+
+// Deal the peek cards in one-by-one (face down) from a central deck, then let the
+// player peek. Triggered on the shared peek broadcast so every POV starts together.
+function dealPeekCards() {
+  const row = qid('peek-cards');
+  if (!row) return;
+  const cards = [...row.children];
+  if (!cards.length) return;
+
+  if (_reduceMotion) {
+    cards.forEach((c, i) => {
+      c.style.opacity = '0';
+      const t = setTimeout(() => { c.style.transition = 'opacity .18s ease'; c.style.opacity = ''; }, i * 70);
+      _peekTimers.push(t);
+    });
+    return;
+  }
+
+  _dealing = true;
+  const peekH = qid('peek-h');
+  if (peekH) peekH.textContent = 'Distribution…';
+  const okBtn = qid('btn-peek-ok'); if (okBtn) okBtn.style.display = 'none';
+  const rowR = row.getBoundingClientRect();
+  // Invisible origin (a "deck") above the row — only used for its position.
+  const origin = document.createElement('div');
+  origin.style.cssText = `position:fixed;width:65px;height:94px;left:${rowR.left + rowR.width/2 - 32}px;top:${Math.max(8, rowR.top - 104)}px;opacity:0;pointer-events:none;z-index:1;`;
+  document.body.appendChild(origin);
+
+  cards.forEach(c => { c.style.visibility = 'hidden'; });
+  const STAG = 140;
+  let landed = 0, finished = false;
+  const finish = () => {
+    if (finished) return; finished = true;
+    _dealing = false;
+    if (origin.parentNode) origin.parentNode.removeChild(origin);
+    if (!_peekDoneSent && peekH) {
+      const rem = 2 - peekedCards.length;
+      peekH.textContent = rem > 0 ? `Cliquez sur ${rem} carte${rem>1?'s':''}` : 'Cartes mémorisées !';
+    }
+  };
+  cards.forEach((card, i) => {
+    const t = setTimeout(() => {
+      flyAnim(origin, card, { faceUp: false, dur: 300 }, () => {
+        card.style.visibility = '';
+        card.style.animation = 'cardLand .28s ease';
+        setTimeout(() => { if (card) card.style.animation = ''; }, 300);
+        if (++landed === cards.length) finish();
+      });
+    }, i * STAG);
+    _peekTimers.push(t);
+  });
+  // Safety: never leave cards hidden / dealing stuck
+  const safety = setTimeout(() => { cards.forEach(c => c.style.visibility = ''); finish(); }, cards.length * STAG + 1000);
+  _peekTimers.push(safety);
+}
+
 function peekCard(i) {
   // Can't peek if already memorized 2, or this card is currently revealed, or already peeked
+  if (_dealing) return;              // cards still being dealt in
   if (_peekDoneSent) return;
   if (peekedCards.length >= 2) return;
   if (peekRevealed.includes(i)) return;
@@ -1889,6 +1947,7 @@ function updateGame(state) {
     if (!window._peekRendered) {
       window._peekRendered = true;
       renderPeek(state.players[myIndex].hand.filter(c=>!c.hidden));
+      dealPeekCards();
     }
     return;
   }
