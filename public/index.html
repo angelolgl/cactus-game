@@ -499,6 +499,40 @@ body.anim-lock #chat-widget{pointer-events:auto}
 #chat-input::placeholder { color: rgba(255,255,255,.35); }
 #chat-input:focus { border-color: rgba(212,168,75,.5); }
 
+/* ── QUICK REACTIONS ── */
+#react-dock{
+  position:fixed; left:260px; bottom:10px; z-index:351;
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+}
+#react-btn{
+  width:44px; height:44px; border-radius:50%;
+  border:2px solid var(--gold); background:rgba(0,0,0,.5);
+  font-size:22px; line-height:1; cursor:pointer; padding:0;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 2px 8px rgba(0,0,0,.45); transition:transform .12s,box-shadow .12s;
+}
+#react-btn:hover{ transform:scale(1.06); box-shadow:0 0 14px rgba(212,168,75,.5); }
+#react-btn.open{ border-color:var(--gold-light); box-shadow:0 0 0 2px var(--gold); }
+#react-strip{
+  display:none; flex-direction:column; gap:6px; align-items:center;
+}
+#react-strip.show{ display:flex; }
+.react-emoji{
+  width:40px; height:40px; border-radius:50%;
+  border:1px solid rgba(212,168,75,.35); background:rgba(0,0,0,.55);
+  font-size:20px; line-height:1; cursor:pointer; padding:0;
+  display:flex; align-items:center; justify-content:center;
+  transition:transform .1s,background .1s;
+  animation:reactPop .18s ease both;
+}
+.react-emoji:hover{ transform:scale(1.15); background:rgba(212,168,75,.25); }
+@keyframes reactPop{ from{opacity:0;transform:translateY(6px) scale(.8)} to{opacity:1;transform:translateY(0) scale(1)} }
+/* Floating reaction that rises above a player's avatar */
+.reaction-float{
+  position:fixed; z-index:520; font-size:30px; pointer-events:none;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.6)); will-change:transform,opacity;
+}
+
 /* ── CACTUS ANNOUNCEMENT (alert / last turn) ── */
 #cactus-announce {
   position: fixed;
@@ -686,6 +720,9 @@ body.anim-lock #chat-widget{pointer-events:auto}
 
 @media (max-width: 600px) {
   #chat-widget { width: 170px; bottom: 6px; left: 6px; }
+  #react-dock { left: 184px; bottom: 6px; gap:5px; }
+  #react-btn { width:38px; height:38px; font-size:19px; }
+  .react-emoji { width:34px; height:34px; font-size:17px; }
   #chat-messages { font-size: 10px; }
   .ca-word { font-size: 56px; }
   .ca-warn { font-size: 52px; }
@@ -803,6 +840,11 @@ body.anim-lock #chat-widget{pointer-events:auto}
   <div id="chat-widget" class="chat-collapsed">
     <div id="chat-messages"></div>
     <textarea id="chat-input" rows="1" placeholder="tape ton message" maxlength="200"></textarea>
+  </div>
+  <!-- QUICK REACTIONS -->
+  <div id="react-dock">
+    <div id="react-strip"></div>
+    <button type="button" id="react-btn" onclick="toggleReactionStrip(event)" title="Réactions rapides" aria-label="Réactions rapides">🙂</button>
   </div>
 </div>
 
@@ -1021,6 +1063,82 @@ function toggleSound(btn){
   _soundOn = !_soundOn;
   if(btn){ btn.textContent = _soundOn ? '🔊' : '🔇'; btn.style.opacity = _soundOn ? '1' : '0.5'; }
   if(_soundOn){ SFX.take(); } // little confirmation blip
+}
+
+// ══ QUICK REACTIONS ══
+const REACTIONS = ['👍','❤️','👏','😂','😮','🌵'];
+SFX.react = ()=> _blip({freq:700, dur:0.07, vol:0.03, type:'sine'});
+
+function renderReactionStrip(){
+  const strip = qid('react-strip');
+  if(!strip || strip.dataset.built) return;
+  strip.dataset.built = '1';
+  REACTIONS.forEach(em=>{
+    const b=document.createElement('button');
+    b.type='button'; b.className='react-emoji'; b.textContent=em;
+    b.addEventListener('click', (e)=>{ e.stopPropagation(); sendReaction(em); });
+    strip.appendChild(b);
+  });
+}
+function openReactionStrip(){
+  renderReactionStrip();
+  const strip=qid('react-strip'), btn=qid('react-btn');
+  if(strip) strip.classList.add('show');
+  if(btn) btn.classList.add('open');
+}
+function closeReactionStrip(){
+  const strip=qid('react-strip'), btn=qid('react-btn');
+  if(strip) strip.classList.remove('show');
+  if(btn) btn.classList.remove('open');
+}
+function toggleReactionStrip(e){
+  if(e) e.stopPropagation();
+  const strip=qid('react-strip');
+  if(strip && strip.classList.contains('show')) closeReactionStrip(); else openReactionStrip();
+}
+function sendReaction(emoji){
+  if(!REACTIONS.includes(emoji)) return;
+  if(socket && myRoom!=='') socket.emit('reaction', {code:myRoom, playerIndex:myIndex, emoji});
+  closeReactionStrip();
+}
+// Close the strip when clicking anywhere else
+document.addEventListener('click', (e)=>{
+  const dock=qid('react-dock');
+  if(dock && !dock.contains(e.target)) closeReactionStrip();
+});
+
+// Float a reaction emoji rising above the sender's avatar (works across re-renders
+// because it lives on the overlay layer, not inside the player row).
+function showReaction(pi, emoji){
+  if(!REACTIONS.includes(emoji)) return;
+  if(_soundOn) SFX.react();
+  const anchor = qid('pav-'+pi) || qid('prow-'+pi);
+  const layer = qid('fly-layer');
+  if(!anchor || !layer) return;
+  const r = anchor.getBoundingClientRect();
+  if(r.width===0 && r.height===0) return;
+  const el=document.createElement('div');
+  el.className='reaction-float';
+  el.textContent=emoji;
+  el.style.left=(r.left + r.width/2 - 15)+'px';
+  el.style.top=(r.top - 6)+'px';
+  layer.appendChild(el);
+  const dur = _reduceMotion ? 900 : 1800;
+  const frames = _reduceMotion ? [
+    {opacity:0, transform:'scale(1)'},
+    {opacity:1, transform:'scale(1)', offset:0.15},
+    {opacity:1, transform:'scale(1)', offset:0.75},
+    {opacity:0, transform:'scale(1)'}
+  ] : [
+    {opacity:0, transform:'translateY(4px) scale(.6)'},
+    {opacity:1, transform:'translateY(-10px) scale(1.15)', offset:0.18},
+    {opacity:1, transform:'translateY(-34px) scale(1)', offset:0.7},
+    {opacity:0, transform:'translateY(-58px) scale(.95)'}
+  ];
+  const anim = el.animate(frames, {duration:dur, easing:'cubic-bezier(.25,.7,.3,1)', fill:'forwards'});
+  const done=()=>{ if(el.parentNode) el.parentNode.removeChild(el); };
+  if(anim) anim.onfinish=done;
+  setTimeout(done, dur+150);
 }
 
 
@@ -1561,6 +1679,7 @@ function initSocket() {
   socket.on('gameState',   (state) => { G=state; updateGame(state); });
   socket.on('revealCard',  ({card}) => { showRevealModal(card, () => {}); });
   socket.on('chatUpdate', ({chat}) => { chatMessages = chat || []; renderChat(); });
+  socket.on('reaction', ({pi, emoji}) => showReaction(pi, emoji));
   socket.on('cactusAnnounce', ({playerName}) => { showCactusAnnounce(playerName); });
   socket.on('animDraw',     (d) => onAnimDraw(d));
   socket.on('animTake',     (d) => onAnimTake(d));
@@ -1944,6 +2063,7 @@ function buildPlayerRow(state, pi) {
   const isActive = pi === state.cur;
   const isMe = pi === myIndex;
   const row = document.createElement('div');
+  row.id = 'prow-' + pi;
   row.className = 'prow' + (isActive ? ' active' : '') + (isMe ? ' me' : '') + (pl.connected === false ? ' offline' : '');
 
   const header = document.createElement('div');
@@ -1951,8 +2071,8 @@ function buildPlayerRow(state, pi) {
   header.innerHTML = `
     <div class="prow-name">${isActive ? '<div class="adot"></div>' : ''}
       ${typeof pl.avatar === 'number'
-        ? `<img class="pav" src="${avatarImg(pl.avatar, pi)}" alt="">`
-        : `<span class="pav pav-empty" aria-hidden="true"></span>`}
+        ? `<img id="pav-${pi}" class="pav" src="${avatarImg(pl.avatar, pi)}" alt="">`
+        : `<span id="pav-${pi}" class="pav pav-empty" aria-hidden="true"></span>`}
       ${isMe ? '<span style="color:var(--gold-light)">Vous</span>' : pl.name}
       ${pl.connected === false ? '<span class="offline-tag">🔌 déconnecté</span>' : ''}
       <span class="cbadge">${pl.cardCount}🃏</span>
