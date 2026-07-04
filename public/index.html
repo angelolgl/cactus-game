@@ -501,9 +501,10 @@ body.anim-lock #chat-widget{pointer-events:auto}
 
 /* ── QUICK REACTIONS ── */
 #react-dock{
-  position:fixed; left:260px; bottom:10px; z-index:351;
+  position:absolute; left:100%; bottom:0; margin-left:8px; z-index:352;
   display:flex; flex-direction:column; align-items:center; gap:6px;
 }
+body.anim-lock #react-dock{ pointer-events:auto; }
 #react-btn{
   width:44px; height:44px; border-radius:50%;
   border:2px solid var(--gold); background:rgba(0,0,0,.5);
@@ -720,7 +721,7 @@ body.anim-lock #chat-widget{pointer-events:auto}
 
 @media (max-width: 600px) {
   #chat-widget { width: 170px; bottom: 6px; left: 6px; }
-  #react-dock { left: 184px; bottom: 6px; gap:5px; }
+  #react-dock { left: 0; bottom: 100%; margin: 0 0 8px 0; gap:5px; }
   #react-btn { width:38px; height:38px; font-size:19px; }
   .react-emoji { width:34px; height:34px; font-size:17px; }
   #chat-messages { font-size: 10px; }
@@ -838,13 +839,13 @@ body.anim-lock #chat-widget{pointer-events:auto}
   <div class="players-area" id="players-area"></div>
   <!-- CHAT -->
   <div id="chat-widget" class="chat-collapsed">
+    <!-- QUICK REACTIONS (anchored to the chat) -->
+    <div id="react-dock">
+      <div id="react-strip"></div>
+      <button type="button" id="react-btn" onclick="toggleReactionStrip(event)" title="Réactions rapides" aria-label="Réactions rapides">🙂</button>
+    </div>
     <div id="chat-messages"></div>
     <textarea id="chat-input" rows="1" placeholder="tape ton message" maxlength="200"></textarea>
-  </div>
-  <!-- QUICK REACTIONS -->
-  <div id="react-dock">
-    <div id="react-strip"></div>
-    <button type="button" id="react-btn" onclick="toggleReactionStrip(event)" title="Réactions rapides" aria-label="Réactions rapides">🙂</button>
   </div>
 </div>
 
@@ -2378,6 +2379,7 @@ function setupChat() {
 
 document.addEventListener('DOMContentLoaded', ()=>{
   setupChat();
+  renderReactionStrip();
   if (typeof TABLE_BG !== 'undefined') {
     document.body.style.backgroundImage='url('+TABLE_BG+')';
     document.body.style.backgroundSize='cover';
