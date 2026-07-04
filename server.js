@@ -577,6 +577,22 @@ io.on('connection', socket => {
     io.to(code).emit('chatUpdate', { chat: room.chat });
   });
 
+  // ── Quick reactions (ephemeral emoji over a player's avatar) ──
+  const ALLOWED_REACTIONS = ['👍','❤️','👏','😂','😮','🌵'];
+  socket.on('reaction', ({ code, playerIndex, emoji }) => {
+    const room = rooms[code];
+    if (!room) return;
+    const pi = resolvePlayer(room, socket, playerIndex);
+    if (pi < 0) return;
+    if (!ALLOWED_REACTIONS.includes(emoji)) return;
+    // Light anti-spam: ignore if this player reacted < 350ms ago
+    const now = Date.now();
+    const p = room.players[pi];
+    if (p._lastReact && now - p._lastReact < 350) return;
+    p._lastReact = now;
+    io.to(code).emit('reaction', { pi, emoji });
+  });
+
   socket.on('rejoin', ({ code, name, playerIndex }) => {
     const room = rooms[code];
     if (!room) { socket.emit('rejoinFailed'); return; }
