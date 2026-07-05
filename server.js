@@ -223,8 +223,6 @@ io.on('connection', socket => {
     else cc = 4; // 4-5 players
     room.cardCount = cc;
     room.started = true;
-    // Anyone who never picked an avatar gets a default based on their seat.
-    room.players.forEach((p, i) => { if (typeof p.avatar !== 'number') p.avatar = i % 10; });
     initGame(room);
     io.to(code).emit('gameStarted');
     broadcastRoom(code);
