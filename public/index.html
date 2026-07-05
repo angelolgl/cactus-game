@@ -16,7 +16,27 @@
 html,body{height:100%;overflow:hidden}
 body{font-family:'Inter',sans-serif;background:#0f3020;color:white;font-size:14px;position:relative}
 .screen{position:fixed;inset:0;display:none;z-index:1}
-.screen.active{display:flex}
+.screen.active{display:flex;animation:screenPop .3s cubic-bezier(.2,.7,.3,1) both}
+#s-game.active{animation:screenFade .3s ease both} /* no transform: keeps fixed chat/dock stable */
+@keyframes screenPop{from{opacity:0;transform:translateY(10px) scale(.992)}to{opacity:1;transform:none}}
+@keyframes screenFade{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion: reduce){.screen.active,#s-game.active{animation:none}}
+/* ── Victory overlay + confetti + elimination ── */
+#victory-overlay{position:fixed;inset:0;z-index:800;display:none;align-items:center;justify-content:center;padding:20px;background:radial-gradient(circle at 50% 38%,rgba(20,60,45,.86),rgba(6,20,15,.94));animation:screenFade .35s ease both}
+#victory-overlay.show{display:flex}
+.vo-card{position:relative;z-index:2;text-align:center;padding:24px 28px;border-radius:20px;max-width:340px;background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(0,0,0,.18));border:1px solid rgba(212,168,75,.5);box-shadow:0 20px 60px rgba(0,0,0,.55);animation:voPop .5s cubic-bezier(.2,1.15,.3,1) both}
+@keyframes voPop{from{opacity:0;transform:scale(.72) translateY(18px)}to{opacity:1;transform:none}}
+.vo-trophy{font-size:62px;line-height:1;filter:drop-shadow(0 4px 10px rgba(0,0,0,.5));animation:voTrophy 2s ease-in-out infinite}
+@keyframes voTrophy{0%,100%{transform:translateY(0) rotate(-5deg)}50%{transform:translateY(-6px) rotate(5deg)}}
+.vo-title{font-family:'Playfair Display',serif;font-size:32px;font-weight:700;color:var(--gold-light);letter-spacing:.08em;margin:2px 0 12px;text-shadow:0 2px 8px rgba(0,0,0,.5)}
+.vo-avatar{width:92px;height:92px;border-radius:50%;object-fit:cover;border:3px solid var(--gold);box-shadow:0 0 0 4px rgba(212,168,75,.22),0 8px 24px rgba(0,0,0,.5);margin:0 auto 10px;display:block}
+.vo-winner{font-size:19px;font-weight:700;color:#fff;margin-bottom:6px}
+.vo-elim{font-size:13px;color:#ff9a8a;margin-bottom:16px;min-height:16px}
+.vo-actions button{background:linear-gradient(180deg,var(--gold),#b8860b);color:#1a1a1a;font-weight:700;border:none;border-radius:10px;padding:11px 22px;font-size:15px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.4)}
+.vo-actions button:hover{filter:brightness(1.08)}
+#confetti-canvas{position:fixed;inset:0;z-index:810;pointer-events:none}
+.score-block.eliminated{outline:1px solid rgba(255,90,60,.4)}
+.elim-badge{display:inline-block;background:rgba(255,60,40,.18);color:#ff7a63;border:1px solid rgba(255,90,60,.5);font-size:11px;font-weight:700;padding:1px 7px;border-radius:999px;margin-left:6px;vertical-align:middle}
 
 /* ─── SETUP ─── */
 #s-setup{flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:24px;overflow-y:auto}
@@ -78,7 +98,11 @@ body{font-family:'Inter',sans-serif;background:#0f3020;color:white;font-size:14p
 .prow-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .prow-name{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:600}
 /* ── Avatars ── */
-.pav{width:26px;height:26px;border-radius:50%;object-fit:cover;flex-shrink:0;background:rgba(255,255,255,.06);border:2px solid var(--gold);box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.pav{width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;background:rgba(255,255,255,.06);border:2px solid var(--gold);box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.pav-wrap{position:relative;display:inline-flex;width:40px;height:40px;flex-shrink:0}
+.turn-ring{position:absolute;top:50%;left:50%;width:52px;height:52px;transform:translate(-50%,-50%) rotate(-90deg);pointer-events:none;overflow:visible;filter:drop-shadow(0 0 4px rgba(245,197,24,.55))}
+.turn-ring circle{fill:none;stroke:#f5c518;stroke-width:3.5;stroke-linecap:round;stroke-dasharray:144.5;stroke-dashoffset:144.5;animation-name:ringFill;animation-timing-function:linear;animation-fill-mode:forwards}
+@keyframes ringFill{to{stroke-dashoffset:0}}
 .lobby-av{width:30px;height:30px;border-radius:50%;object-fit:cover;flex-shrink:0;background:rgba(255,255,255,.06);border:2px solid var(--gold);box-shadow:0 1px 4px rgba(0,0,0,.35)}
 .lobby-av.lobby-av-empty{border:1.5px solid rgba(212,168,75,.28);background:rgba(255,255,255,.03);box-shadow:none;display:inline-block}
 .pav.pav-empty{border:1.5px solid rgba(212,168,75,.28);background:rgba(255,255,255,.03);box-shadow:none;display:inline-block}
@@ -868,6 +892,18 @@ body.anim-lock #react-dock{ pointer-events:auto; }
   <button class="sc-btn" onclick="location.reload()">Nouvelle partie →</button>
 </div>
 
+<!-- VICTORY OVERLAY -->
+<div id="victory-overlay">
+  <div class="vo-card">
+    <div class="vo-trophy">🏆</div>
+    <div class="vo-title">VICTOIRE</div>
+    <img class="vo-avatar" id="vo-avatar" alt="">
+    <div class="vo-winner" id="vo-winner"></div>
+    <div class="vo-elim" id="vo-elim"></div>
+    <div class="vo-actions"><button id="vo-scores" type="button">Voir les scores</button></div>
+  </div>
+</div>
+
 <script src="/images1.js?v=3"></script>
 <script src="/images2.js?v=3"></script>
 <script src="/avatars.js?v=1"></script>
@@ -1107,7 +1143,8 @@ const SFX = {
   exchange(){ playSound('defausse', 0.75); },   // a hand card is thrown to the discard
   snap(){ playSound('defausse', 0.75); },        // snapped card goes to the discard
   turn(){ _blip({freq:523,dur:0.10,vol:0.04}); setTimeout(()=>_blip({freq:784,dur:0.12,vol:0.04}),90); }, // gentle two-note
-  cactus(){ playSound('cactus', 0.9); }        // your file (~matches the announce animation)
+  cactus(){ playSound('cactus', 0.9); },       // your file (~matches the announce animation)
+  victory(){ [523,659,784,1046,1319].forEach((f,i)=>setTimeout(()=>_blip({freq:f,dur:0.18,vol:0.05,type:'triangle'}), i*120)); }
 };
 function toggleSound(btn){
   _soundOn = !_soundOn;
@@ -1724,8 +1761,23 @@ function initSocket() {
   });
   socket.on('roomCreated', ({code, playerIndex}) => { myIndex=playerIndex; myRoom=code; _hasJoinedOnce=true; showWaiting(code,true); });
   socket.on('roomJoined',  ({code, playerIndex}) => { myIndex=playerIndex; myRoom=code; _hasJoinedOnce=true; showWaiting(code,false); });
-  socket.on('lobbyUpdate', ({players}) => { updateLobbyPlayers(players); });
-  socket.on('gameStarted', () => { peekedCards=[]; peekRevealed=[]; window._peekRendered=false; _peekDoneSent=false; show('peek'); });
+  socket.on('lobbyUpdate', ({players, host}) => { updateLobbyPlayers(players, host); });
+  socket.on('hostChanged', ({host}) => {
+    if (typeof host === 'number') hostIndex = host;
+    isHost = (myIndex === hostIndex);
+    const waiting = qid('lobby-waiting');
+    if (waiting && waiting.style.display !== 'none') {
+      qid('host-controls').style.display = isHost ? 'block' : 'none';
+      qid('waiting-msg').style.display = isHost ? 'none' : 'block';
+    }
+    const nr = qid('btn-newround');
+    if (nr && G && G.phase === 'score') {
+      const elim = G.totals && G.totals.some(t => t >= 100);
+      nr.style.display = (isHost && !elim) ? 'block' : 'none';
+    }
+    if (isHost) showToast('👑 Vous êtes maintenant l\'hôte');
+  });
+  socket.on('gameStarted', () => { peekedCards=[]; peekRevealed=[]; window._peekRendered=false; _peekDoneSent=false; _victoryShown=false; qid('victory-overlay').classList.remove('show'); show('peek'); });
   socket.on('gameState',   (state) => { G=state; updateGame(state); });
   socket.on('revealCard',  ({card}) => { showRevealModal(card, () => {}); });
   socket.on('chatUpdate', ({chat}) => { chatMessages = chat || []; renderChat(); });
@@ -1761,7 +1813,7 @@ function showReconnecting(on){
 
 function getName() { myName = qid('player-name').value.trim() || 'Joueur'; return myName; }
 
-let lobbyPlayers = [], isHost = false;
+let lobbyPlayers = [], isHost = false, hostIndex = 0;
 
 function createRoom() {
   const errEl = qid('lobby-error');
@@ -1794,10 +1846,12 @@ function showWaiting(code, host) {
 }
 
 let selectedCC = 4;
-function updateLobbyPlayers(players) {
+function updateLobbyPlayers(players, host) {
   // players peut être un tableau de chaînes (ancien) ou d'objets {name, avatar}.
   const norm = (players || []).map(p => (typeof p === 'string') ? { name: p, avatar: null } : p);
   lobbyPlayers = norm;
+  if (typeof host === 'number') hostIndex = host;
+  isHost = (myIndex === hostIndex);
   qid('lobby-players-list').innerHTML = norm.map((p,i) =>
     `<div style="background:rgba(255,255,255,.08);border-radius:8px;padding:8px 14px;font-size:14px;display:flex;align-items:center;gap:8px">
       <span>${i+1}.</span>
@@ -1805,14 +1859,19 @@ function updateLobbyPlayers(players) {
         ? `<img class="lobby-av" src="${avatarImg(p.avatar, i)}" alt="">`
         : ''}
       <strong>${p.name}</strong>
-      ${i===0?'<span style="margin-left:auto;font-size:11px;color:var(--gold-light)">Hôte</span>':''}
+      ${i===hostIndex?'<span style="margin-left:auto;font-size:11px;color:var(--gold-light)">Hôte</span>':''}
     </div>`).join('');
   // Garde myAvatar en phase avec le serveur (utile après reconnexion)
   if (myIndex >= 0 && norm[myIndex] && typeof norm[myIndex].avatar === 'number') {
     myAvatar = norm[myIndex].avatar;
   }
   renderAvatarGrid();
-  // Update card count options based on player count (host only)
+  // Reflect host status on the lobby controls (handles host transfer)
+  const waiting = qid('lobby-waiting');
+  if (waiting && waiting.style.display !== 'none') {
+    qid('host-controls').style.display = isHost ? 'block' : 'none';
+    qid('waiting-msg').style.display = isHost ? 'none' : 'block';
+  }
   if (isHost) updateCardCountOptions(norm.length);
 }
 
@@ -2011,6 +2070,7 @@ function updateGame(state) {
   renderDiscard(state, isMyTurn);
   renderDrawPile(state, isMyTurn);
   renderActions(state, isMyTurn);
+  updateTurnRing(state);
   renderPlayers(state);
   show('game');
 
@@ -2148,8 +2208,23 @@ function renderActions(state, isMyTurn) {
   }
 }
 
-function renderPlayers(state) {
-  const area = qid('players-area');
+// Turn-ring sync: track when the current turn started (aligned to the server deadline)
+let _ringTurnKey = null, _ringStart = 0;
+function updateTurnRing(state){
+  if (state && state.turnActive) {
+    const key = state.cur + ':' + state.round;
+    if (key !== _ringTurnKey) {
+      _ringTurnKey = key;
+      const total = state.turnMs || 20000;
+      const elapsed = (state.turnRemaining != null) ? Math.max(0, total - state.turnRemaining) : 0;
+      _ringStart = Date.now() - elapsed;
+    }
+  } else {
+    _ringTurnKey = null;
+  }
+}
+
+function renderPlayers(state) {  const area = qid('players-area');
   area.innerHTML = '';
   const n = state.players.length;
   area.className = 'players-area layout-' + n;
@@ -2181,7 +2256,7 @@ function buildPlayerRow(state, pi) {
   header.innerHTML = `
     <div class="prow-name">${isActive ? '<div class="adot"></div>' : ''}
       ${typeof pl.avatar === 'number'
-        ? `<img id="pav-${pi}" class="pav" src="${avatarImg(pl.avatar, pi)}" alt="">`
+        ? `<span class="pav-wrap"><img id="pav-${pi}" class="pav" src="${avatarImg(pl.avatar, pi)}" alt="">${(state.turnActive && isActive) ? `<svg class="turn-ring" viewBox="0 0 52 52"><circle cx="26" cy="26" r="23" style="animation-duration:${state.turnMs||20000}ms;animation-delay:-${Math.max(0, Math.min((state.turnMs||20000), Date.now()-_ringStart))}ms"></circle></svg>` : ''}</span>`
         : ''}
       ${isMe ? '<span style="color:var(--gold-light)">Vous</span>' : pl.name}
       ${pl.connected === false ? '<span class="offline-tag">🔌 déconnecté</span>' : ''}
@@ -2244,6 +2319,61 @@ function onCardClick(pi, ci, card, state) {
 }
 
 // ══ SCORE ══
+// ── Confetti + victory overlay ──
+let _confettiRAF = null;
+function launchConfetti(duration = 4500){
+  if (_reduceMotion) return;
+  let cv = qid('confetti-canvas');
+  if (!cv){ cv = document.createElement('canvas'); cv.id = 'confetti-canvas'; document.body.appendChild(cv); }
+  const ctx = cv.getContext('2d');
+  if (!ctx) { if (cv.parentNode) cv.parentNode.removeChild(cv); return; }
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const resize = () => { cv.width = innerWidth*dpr; cv.height = innerHeight*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); };
+  resize(); window.addEventListener('resize', resize);
+  const colors = ['#f5c518','#ffd21e','#2ecc71','#e74c3c','#ffffff','#f0c96e'];
+  const pieces = [];
+  for (let i=0;i<140;i++) pieces.push({
+    x: Math.random()*innerWidth, y: -20 - Math.random()*innerHeight*0.6,
+    w: 6+Math.random()*7, h: 8+Math.random()*8, c: colors[i%colors.length],
+    vy: 2+Math.random()*3.5, vx: -1.5+Math.random()*3, rot: Math.random()*Math.PI,
+    vr: -0.2+Math.random()*0.4, sway: Math.random()*Math.PI
+  });
+  const start = performance.now();
+  if (_confettiRAF) cancelAnimationFrame(_confettiRAF);
+  const frame = (now) => {
+    const t = now - start;
+    ctx.clearRect(0,0,innerWidth,innerHeight);
+    const fade = t > duration-800 ? Math.max(0,(duration-t)/800) : 1;
+    ctx.globalAlpha = fade;
+    for (const p of pieces){
+      p.sway += 0.03; p.x += p.vx + Math.sin(p.sway)*0.6; p.y += p.vy; p.rot += p.vr;
+      if (p.y > innerHeight+20){ p.y = -20; p.x = Math.random()*innerWidth; }
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot);
+      ctx.fillStyle = p.c; ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h); ctx.restore();
+    }
+    ctx.globalAlpha = 1;
+    if (t < duration){ _confettiRAF = requestAnimationFrame(frame); }
+    else { ctx.clearRect(0,0,innerWidth,innerHeight); window.removeEventListener('resize',resize); if (cv.parentNode) cv.parentNode.removeChild(cv); _confettiRAF = null; }
+  };
+  _confettiRAF = requestAnimationFrame(frame);
+}
+
+let _victoryShown = false;
+function showVictory(state){
+  const totals = state.totals || [];
+  if (!totals.length) return;
+  let winner = 0;
+  for (let i=1;i<totals.length;i++){ if ((totals[i]||0) < (totals[winner]||0)) winner = i; }
+  const av = qid('vo-avatar'); if (av) av.src = avatarImg(state.players[winner] && state.players[winner].avatar, winner);
+  qid('vo-winner').textContent = (winner===myIndex) ? 'Vous avez gagné !' : ((state.players[winner] && state.players[winner].name || '?') + ' gagne !');
+  const elim = state.players.map((p,i)=>({p,i})).filter(x => (totals[x.i]||0) >= 100);
+  qid('vo-elim').textContent = elim.length ? ('💀 Éliminé : ' + elim.map(x => x.i===myIndex ? 'Vous' : x.p.name).join(', ')) : '';
+  qid('victory-overlay').classList.add('show');
+  launchConfetti(4500);
+  if (_soundOn && SFX.victory) SFX.victory();
+  if (navigator.vibrate) { try { navigator.vibrate([40,60,40]); } catch(e){} }
+}
+
 function renderScore(state) {
   show('score');
   qid('sc-title').textContent = `Manche ${state.round} — Résultats`;
@@ -2260,13 +2390,14 @@ function renderScore(state) {
     const { p, i } = entry;
     const doubled = fin[i] != null && raw[i] != null && fin[i] > raw[i];
     const isCactus = state.cactusPl === i;
+    const isElim = (state.totals?.[i]||0) >= 100;
 
     const block = document.createElement('div');
-    block.className = 'score-block';
+    block.className = 'score-block' + (isElim ? ' eliminated' : '');
     block.innerHTML = `
       <div class="score-head">
         <span class="score-rank">${rank===0?'🏆':'#'+(rank+1)}</span>
-        <span class="score-name">${i===myIndex?'Vous':p.name}${isCactus?' 🌵':''}</span>
+        <span class="score-name">${i===myIndex?'Vous':p.name}${isCactus?' 🌵':''}${isElim?'<span class="elim-badge">ÉLIMINÉ</span>':''}</span>
         <span class="score-pts">${raw[i]||0} pts${doubled?` ×2 = <b>${fin[i]}</b>`:''}</span>
       </div>`;
     // Reveal cards
@@ -2293,10 +2424,12 @@ function renderScore(state) {
   qid('btn-newround').style.display = (myIndex === 0) ? 'block' : 'none';
   const elim = state.totals?.some(t => t >= 100);
   if (elim) qid('btn-newround').style.display = 'none';
+  if (elim && !_victoryShown){ _victoryShown = true; setTimeout(() => showVictory(state), 650); }
 }
 
 qid('btn-newround').addEventListener('click', ()=>socket.emit('nextRound',{code:myRoom}));
 qid('btn-endgame').addEventListener('click', ()=>show('final'));
+qid('vo-scores').addEventListener('click', ()=>{ qid('victory-overlay').classList.remove('show'); });
 qid('btn-cactus').addEventListener('click', ()=>{
   if (G && (G.phase==='draw'||G.phase==='cactusWindow') && G.cur===myIndex) socket.emit('cactus',{code:myRoom, playerIndex:myIndex});
 });
