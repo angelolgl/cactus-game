@@ -2,6 +2,7 @@ const express = require('express');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const httpServer = createServer(app);
@@ -20,6 +21,7 @@ app.use(express.static(path.join(__dirname, 'public'), {
 
 // ── Rooms storage ──
 const rooms = {}; // roomCode → gameState
+const TURN_MS = 20000; // per-turn reflection time before auto pioche/défausse
 
 // Resolve player index, refreshing socketId on reconnect
 function resolvePlayer(room, socket, playerIndex) {
@@ -30,6 +32,17 @@ function resolvePlayer(room, socket, playerIndex) {
     socket.join(room.code);
   }
   return pi;
+}
+
+// ── Host helpers (host is tracked by SEAT index, so it survives reconnection) ──
+function seatOf(room, socket) { return room.players.findIndex(p => p.socketId === socket.id); }
+function isHostSocket(room, socket) { return seatOf(room, socket) === (room.hostIndex || 0); }
+// Give the host role to the first connected player (used when the host leaves).
+function reassignHost(room) {
+  let idx = room.players.findIndex(p => p.connected !== false);
+  if (idx < 0) idx = 0;
+  room.hostIndex = idx;
+  return idx;
 }
 
 
@@ -111,12 +124,67 @@ function addLog(room, msg) {
 function broadcastRoom(code) {
   const room = rooms[code];
   if (!room) return;
+  room._lastActivity = Date.now();
+  room._dirty = true;   // mark for persistence snapshot
   // Send each player their private view
   room.players.forEach((p, pi) => {
     const socket = io.sockets.sockets.get(p.socketId);
     if (!socket) return;
     socket.emit('gameState', buildState(room, pi));
   });
+  syncTurnTimer(room);
+}
+
+// ── Per-turn reflection timer (server-authoritative). Fills a ring on the client;
+// when it elapses, the current player's turn is auto-played (pioche + défausse). ──
+function syncTurnTimer(room){
+  const active = (room.phase === 'draw' || room.phase === 'drawn' || room.phase === 'exchange');
+  if (!active){
+    if (room._turnTimer){ clearTimeout(room._turnTimer); room._turnTimer = null; }
+    room._turnTimerFor = null; room.turnDeadline = null;
+    return;
+  }
+  if (room._turnTimerFor == null){   // a fresh turn just began
+    room._turnTimerFor = room.cur;
+    room.turnDeadline = Date.now() + TURN_MS;
+    if (room._turnTimer) clearTimeout(room._turnTimer);
+    room._turnTimer = setTimeout(() => onTurnTimeout(room.code), TURN_MS);
+  }
+}
+function onTurnTimeout(code){
+  const room = rooms[code];
+  if (!room) return;
+  room._turnTimer = null;
+  const pi = room.cur;
+  if (room.phase === 'draw'){
+    reshuffleIfNeeded(room);
+    if (room.deck.length === 0) return;      // nothing left to draw (rare end-game)
+    room.drawn = room.deck.shift();
+    room.phase = 'drawn';
+    io.to(code).emit('animDraw', { pi });
+    addLog(room, `⏱️ Temps écoulé — pioche automatique pour ${room.players[pi].name}.`);
+    broadcastRoom(code);
+    setTimeout(() => {
+      const r = rooms[code];
+      if (!r || r.cur !== pi || r.phase !== 'drawn') return;  // player/turn changed meanwhile
+      autoDiscardDrawn(code, pi);
+    }, 650);
+  } else if (room.phase === 'drawn' || room.phase === 'exchange'){
+    autoDiscardDrawn(code, pi);
+  }
+}
+function autoDiscardDrawn(code, pi){
+  const room = rooms[code];
+  if (!room || !room.drawn) return;
+  const c = room.drawn; room.drawn = null;
+  room.discard.push(c);
+  addLog(room, `⏱️ ${room.players[pi].name} n'a pas joué à temps — défausse automatique (${c.value}${c.suit}).`);
+  io.to(code).emit('animDiscard', { pi, card: c });
+  if (!checkSpecial(room, c)){
+    room.phase = 'draw';
+    endTurnIfNeeded(room);
+  }
+  broadcastRoom(code);
 }
 
 function buildState(room, pi) {
@@ -159,10 +227,50 @@ function buildState(room, pi) {
     log: room.log,
     cactusRound: room.cactusRound,
     cactusPl: room.cactusPl,
+    turnActive: (room.phase === 'draw' || room.phase === 'drawn' || room.phase === 'exchange'),
+    turnRemaining: room.turnDeadline ? Math.max(0, room.turnDeadline - Date.now()) : null,
+    turnMs: TURN_MS,
     rawScores: room._rawScores || null,
     finalScores: room._finalScores || null,
   };
 }
+
+// ── Light anti-cheat / anti-flood (the server is the source of truth; these are guard-rails) ──
+const RL_WINDOW = 1000;        // sliding window (ms) for the global per-connection limiter
+const RL_MAX    = 20;          // max events per window per connection
+const WRONG_SNAP_LOCK = 500;   // lockout (ms) on the snap action after a wrong snap
+const ACTION_COOLDOWN = {      // min ms between two of the SAME action (per connection)
+  draw:250, takeDiscard:250, discardDrawn:200, exchange:250, cancelExchange:150,
+  snap:225, sevenActivate:150, sevenLook:150, sevenSkip:150,
+  jackActivate:150, jackIgnore:150, jackPick:120, jackConfirm:200,
+  cactus:400, peekDone:300, setAvatar:150, startGame:600, nextRound:600,
+  createRoom:500, joinRoom:400, chatMessage:700, reaction:300, rejoin:0,
+};
+const _rl = new Map(); // socket.id -> { times:[], last:{}, rejected:0, snapLock:0 }
+function _rlState(socket){
+  let st = _rl.get(socket.id);
+  if(!st){ st = { times:[], last:{}, rejected:0, snapLock:0 }; _rl.set(socket.id, st); }
+  return st;
+}
+function _rlReject(st, action){
+  st.rejected++;
+  if(st.rejected % 25 === 0) console.warn(`[anti-cheat] ${st.rejected} actions rejetees (derniere: ${action})`);
+}
+// Returns true if allowed; false (silently dropped) if flooding / too fast / locked.
+function allow(socket, action){
+  const st = _rlState(socket);
+  const now = Date.now();
+  st.times = st.times.filter(t => now - t < RL_WINDOW);
+  if(st.times.length >= RL_MAX){ _rlReject(st, action); return false; }
+  const cd = ACTION_COOLDOWN[action] || 0;
+  if(cd && st.last[action] && now - st.last[action] < cd){ _rlReject(st, action); return false; }
+  if(action === 'snap' && st.snapLock && now < st.snapLock){ _rlReject(st, action); return false; }
+  st.times.push(now);
+  st.last[action] = now;
+  return true;
+}
+// Bounds check for client-supplied indices
+function inRange(n, len){ return Number.isInteger(n) && n >= 0 && n < len; }
 
 // ── Socket events ──
 io.on('connection', socket => {
@@ -170,11 +278,12 @@ io.on('connection', socket => {
 
   // ── Lobby ──
   socket.on('createRoom', ({ name }) => {
+    if (!allow(socket, 'createRoom')) return;
     const code = makeCode();
     rooms[code] = {
       code, cardCount: 4,
       players: [{ socketId: socket.id, name, hand: [], ready: false, connected: true, avatar: null }],
-      host: socket.id,
+      hostIndex: 0,
       started: false,
       totals: null,
       round: 0,
@@ -182,11 +291,12 @@ io.on('connection', socket => {
     };
     socket.join(code);
     socket.emit('roomCreated', { code, playerIndex: 0 });
-    io.to(code).emit('lobbyUpdate', { players: rooms[code].players.map(p => ({ name: p.name, avatar: p.avatar })), host: 0 });
+    io.to(code).emit('lobbyUpdate', { players: rooms[code].players.map(p => ({ name: p.name, avatar: p.avatar })), host: rooms[code].hostIndex });
     console.log(`Room ${code} created by ${name}`);
   });
 
   socket.on('joinRoom', ({ code, name }) => {
+    if (!allow(socket, 'joinRoom')) return;
     code = String(code).trim();
     const room = rooms[code];
     if (!room) { socket.emit('error', 'Partie introuvable'); return; }
@@ -196,24 +306,26 @@ io.on('connection', socket => {
     room.players.push({ socketId: socket.id, name, hand: [], ready: false, connected: true, avatar: null });
     socket.join(code);
     socket.emit('roomJoined', { code, playerIndex: pi });
-    io.to(code).emit('lobbyUpdate', { players: room.players.map(p => ({ name: p.name, avatar: p.avatar })), host: 0 });
+    io.to(code).emit('lobbyUpdate', { players: room.players.map(p => ({ name: p.name, avatar: p.avatar })), host: room.hostIndex });
     console.log(`${name} joined ${code}`);
   });
 
   // ── Choose / change avatar (lobby only, before game start) ──
   socket.on('setAvatar', ({ code, playerIndex, avatar }) => {
+    if (!allow(socket, 'setAvatar')) return;
     const room = rooms[code];
     if (!room || room.started) return;              // only before launch
     const pi = resolvePlayer(room, socket, playerIndex);
     if (pi < 0) return;
     if (typeof avatar !== 'number' || avatar < 0 || avatar > 9) return;
     room.players[pi].avatar = avatar;
-    io.to(code).emit('lobbyUpdate', { players: room.players.map(p => ({ name: p.name, avatar: p.avatar })), host: 0 });
+    io.to(code).emit('lobbyUpdate', { players: room.players.map(p => ({ name: p.name, avatar: p.avatar })), host: room.hostIndex });
   });
 
   socket.on('startGame', ({ code, cardCount }) => {
+    if (!allow(socket, 'startGame')) return;
     const room = rooms[code];
-    if (!room || room.host !== socket.id) return;
+    if (!room || !isHostSocket(room, socket)) return;
     if (room.players.length < 2) { socket.emit('error', 'Minimum 2 joueurs'); return; }
     // Validate card count based on player count
     const n = room.players.length;
@@ -223,6 +335,8 @@ io.on('connection', socket => {
     else cc = 4; // 4-5 players
     room.cardCount = cc;
     room.started = true;
+    // Avatars are mandatory in-game: anyone who didn't pick gets a random one.
+    room.players.forEach(p => { if (typeof p.avatar !== 'number') p.avatar = Math.floor(Math.random() * 10); });
     initGame(room);
     io.to(code).emit('gameStarted');
     broadcastRoom(code);
@@ -231,6 +345,7 @@ io.on('connection', socket => {
 
   // ── Peek ──
   socket.on('peekDone', ({ code, playerIndex }) => {
+    if (!allow(socket, 'peekDone')) return;
     const room = rooms[code];
     if (!room) return;
     let pi = room.players.findIndex(p => p.socketId === socket.id);
@@ -268,6 +383,7 @@ io.on('connection', socket => {
 
   // ── Draw ──
   socket.on('draw', ({ code, playerIndex }) => {
+    if (!allow(socket, 'draw')) return;
     const room = rooms[code];
     if (!room || room.phase !== 'draw') return;
     const pi = resolvePlayer(room, socket, playerIndex);
@@ -285,6 +401,7 @@ io.on('connection', socket => {
 
   // ── Take discard ──
   socket.on('takeDiscard', ({ code, playerIndex }) => {
+    if (!allow(socket, 'takeDiscard')) return;
     const room = rooms[code];
     if (!room || room.phase !== 'draw') return;
     const pi = resolvePlayer(room, socket, playerIndex);
@@ -302,6 +419,7 @@ io.on('connection', socket => {
 
   // ── Discard drawn ──
   socket.on('discardDrawn', ({ code, playerIndex }) => {
+    if (!allow(socket, 'discardDrawn')) return;
     const room = rooms[code];
     if (!room || room.phase !== 'drawn') return;
     const pi = resolvePlayer(room, socket, playerIndex);
@@ -320,11 +438,13 @@ io.on('connection', socket => {
 
   // ── Exchange drawn with hand card ──
   socket.on('exchange', ({ code, cardIndex, playerIndex }) => {
+    if (!allow(socket, 'exchange')) return;
     const room = rooms[code];
     if (!room || !['drawn','exchange'].includes(room.phase)) return;
     const pi = resolvePlayer(room, socket, playerIndex);
     if (pi !== room.cur) return;
     if (!room.drawn) return;
+    if (!inRange(cardIndex, room.players[pi].hand.length)) return;
     const old = room.players[pi].hand[cardIndex];
     if (!old) return;
     room.players[pi].hand[cardIndex] = room.drawn;
@@ -341,6 +461,7 @@ io.on('connection', socket => {
 
   // ── Discard drawn via clicking discard (cancel exchange) ──
   socket.on('cancelExchange', ({ code, playerIndex }) => {
+    if (!allow(socket, 'cancelExchange')) return;
     const room = rooms[code];
     if (!room || room.phase !== 'exchange') return;
     const pi = resolvePlayer(room, socket, playerIndex);
@@ -358,6 +479,7 @@ io.on('connection', socket => {
 
   // ── Snap ──
   socket.on('snap', ({ code, cardIndex, playerIndex }) => {
+    if (!allow(socket, 'snap')) return;
     const room = rooms[code];
     if (!room) return;
     const pi = resolvePlayer(room, socket, playerIndex);
@@ -365,6 +487,7 @@ io.on('connection', socket => {
     // Snap is allowed during active play phases — by ANY player on their OWN cards
     const snapPhases = ['draw','drawn','seven','jack','cactusWindow'];
     if (!snapPhases.includes(room.phase)) return;
+    if (!inRange(cardIndex, room.players[pi].hand.length)) return;
 
     const card = room.players[pi].hand[cardIndex];
     const top = room.discard[room.discard.length - 1];
@@ -423,12 +546,14 @@ io.on('connection', socket => {
       if (penalty) room.players[pi].hand.push(penalty);
       addLog(room, `❌ ${room.players[pi].name} rate son snap (${card.value}${card.suit}) — pénalité !`);
       io.to(code).emit('wrongSnap', { playerIndex: pi, card });
+      _rlState(socket).snapLock = Date.now() + WRONG_SNAP_LOCK;
     }
     broadcastRoom(code);
   });
 
   // ── Seven power: look at own card ──
   socket.on('sevenActivate', ({ code, playerIndex }) => {
+    if (!allow(socket, 'sevenActivate')) return;
     const room = rooms[code];
     if (!room || !room.sevenP) return;
     const pi = resolvePlayer(room, socket, playerIndex);
@@ -439,10 +564,12 @@ io.on('connection', socket => {
   });
 
   socket.on('sevenLook', ({ code, cardIndex, playerIndex }) => {
+    if (!allow(socket, 'sevenLook')) return;
     const room = rooms[code];
     if (!room || !room.sevenP || !room.sevenActivated) return;
     const pi = resolvePlayer(room, socket, playerIndex);
     if (pi !== room.sevenOwner) return;
+    if (!inRange(cardIndex, room.players[pi].hand.length)) return;
     const card = room.players[pi].hand[cardIndex];
     if (!card) return;
     // Send the card only to this player
@@ -453,6 +580,7 @@ io.on('connection', socket => {
   });
 
   socket.on('sevenSkip', ({ code, playerIndex }) => {
+    if (!allow(socket, 'sevenSkip')) return;
     const room = rooms[code];
     if (!room || !room.sevenP) return;
     const pi = resolvePlayer(room, socket, playerIndex);
@@ -476,6 +604,7 @@ io.on('connection', socket => {
 
   // ── Jack power ──
   socket.on('jackActivate', ({ code, playerIndex }) => {
+    if (!allow(socket, 'jackActivate')) return;
     const room = rooms[code];
     if (!room || !room.jackP || room.jackTimerStep !== 'decide') return;
     const pi = resolvePlayer(room, socket, playerIndex);
@@ -489,6 +618,7 @@ io.on('connection', socket => {
   });
 
   socket.on('jackIgnore', ({ code, playerIndex }) => {
+    if (!allow(socket, 'jackIgnore')) return;
     const room = rooms[code];
     if (!room || !room.jackP) return;
     const pi = resolvePlayer(room, socket, playerIndex);
@@ -499,10 +629,13 @@ io.on('connection', socket => {
   });
 
   socket.on('jackPick', ({ code, playerIndex, cardIndex, actorIndex }) => {
+    if (!allow(socket, 'jackPick')) return;
     const room = rooms[code];
     if (!room || !room.jackP || !room.jackActivated) return;
     const pi = resolvePlayer(room, socket, actorIndex);
     if (room.jackQueue.length === 0 || room.jackQueue[0].player !== pi) return;
+    if (!inRange(playerIndex, room.players.length)) return;
+    if (!inRange(cardIndex, room.players[playerIndex].hand.length)) return;
 
     if (room.jackTimerStep === 'pick1') {
       room.jackSel = [{ p: playerIndex, i: cardIndex }];
@@ -525,6 +658,7 @@ io.on('connection', socket => {
   });
 
   socket.on('jackConfirm', ({ code, playerIndex }) => {
+    if (!allow(socket, 'jackConfirm')) return;
     const room = rooms[code];
     if (!room || !room.jackP || room.jackSel.length < 2) return;
     const pi = resolvePlayer(room, socket, playerIndex);
@@ -535,6 +669,7 @@ io.on('connection', socket => {
 
   // ── Cactus ──
   socket.on('cactus', ({ code, playerIndex }) => {
+    if (!allow(socket, 'cactus')) return;
     const room = rooms[code];
     if (!room || room.cactusRound) return;
     // Cactus can be called during your draw phase OR during the 3s cactusWindow after your turn
@@ -553,8 +688,9 @@ io.on('connection', socket => {
 
   // ── Next round ──
   socket.on('nextRound', ({ code }) => {
+    if (!allow(socket, 'nextRound')) return;
     const room = rooms[code];
-    if (!room || room.host !== socket.id) return;
+    if (!room || !isHostSocket(room, socket)) return;
     if (room.totals && room.totals.some(t => t >= 100)) return;
     initGame(room);
     io.to(code).emit('gameStarted');
@@ -562,6 +698,7 @@ io.on('connection', socket => {
   });
 
   socket.on('chatMessage', ({ code, playerIndex, text }) => {
+    if (!allow(socket, 'chatMessage')) return;
     const room = rooms[code];
     if (!room) return;
     const pi = resolvePlayer(room, socket, playerIndex);
@@ -578,6 +715,7 @@ io.on('connection', socket => {
   // ── Quick reactions (ephemeral emoji over a player's avatar) ──
   const ALLOWED_REACTIONS = ['👍','❤️','👏','😂','😮','🌵'];
   socket.on('reaction', ({ code, playerIndex, emoji }) => {
+    if (!allow(socket, 'reaction')) return;
     const room = rooms[code];
     if (!room) return;
     const pi = resolvePlayer(room, socket, playerIndex);
@@ -592,6 +730,7 @@ io.on('connection', socket => {
   });
 
   socket.on('rejoin', ({ code, name, playerIndex }) => {
+    if (!allow(socket, 'rejoin')) return;
     const room = rooms[code];
     if (!room) { socket.emit('rejoinFailed'); return; }
     let pi = (typeof playerIndex === 'number' && room.players[playerIndex]) ? playerIndex : -1;
@@ -607,22 +746,36 @@ io.on('connection', socket => {
   });
 
   socket.on('disconnect', () => {
+    _rl.delete(socket.id);
     // Keep the player's game state so they can reconnect; just mark them offline.
     for (const code in rooms) {
       const room = rooms[code];
       const pi = room.players.findIndex(p => p.socketId === socket.id);
       if (pi >= 0) {
+        if (room.hostIndex == null) room.hostIndex = 0;
         if (room.started) {
           // Game in progress: keep the seat, mark offline so they can reconnect
           room.players[pi].connected = false;
           addLog(room, `${room.players[pi].name} s'est déconnecté...`);
           io.to(code).emit('playerConn', { pi, connected: false, name: room.players[pi].name });
+          // If the host dropped, hand the host role to a connected player so the
+          // game can still advance (start next round, rematch, etc.).
+          if (pi === room.hostIndex) {
+            const nh = reassignHost(room);
+            io.to(code).emit('hostChanged', { host: nh });
+            addLog(room, `${room.players[nh] ? room.players[nh].name : 'Un joueur'} est maintenant l'hôte.`);
+          }
           broadcastRoom(code);
         } else {
           // Still in the lobby: remove them from the list
+          const wasHost = (pi === room.hostIndex);
           room.players.splice(pi, 1);
-          if (room.players.length === 0) { delete rooms[code]; }
-          else io.to(code).emit('lobbyUpdate', { players: room.players.map(p => ({ name: p.name, avatar: p.avatar })), host: 0 });
+          if (room.players.length === 0) { delete rooms[code]; break; }
+          // Keep hostIndex pointing at the right seat after the splice
+          if (wasHost) room.hostIndex = 0;
+          else if (pi < room.hostIndex) room.hostIndex -= 1;
+          if (room.hostIndex < 0 || room.hostIndex >= room.players.length) room.hostIndex = 0;
+          io.to(code).emit('lobbyUpdate', { players: room.players.map(p => ({ name: p.name, avatar: p.avatar })), host: room.hostIndex });
         }
         break;
       }
@@ -825,15 +978,74 @@ function endRound(room) {
 // ── Sleep prevention & health check ──
 app.get('/ping', (req, res) => res.json({ ok: true, rooms: Object.keys(rooms).length }));
 
-// Auto-clean empty rooms after 2h
+// Auto-clean inactive / abandoned rooms (frees memory)
 setInterval(() => {
   const now = Date.now();
   for (const code of Object.keys(rooms)) {
     const room = rooms[code];
     if (!room._lastActivity) room._lastActivity = now;
-    if (now - room._lastActivity > 2 * 3600 * 1000) delete rooms[code];
+    const idle = now - room._lastActivity;
+    const anyConnected = room.players.some(p => p.connected !== false);
+    // Delete if: nobody connected for >10 min, OR no activity at all for >1h
+    if ((!anyConnected && idle > 10 * 60 * 1000) || idle > 60 * 60 * 1000) {
+      delete rooms[code];
+      _persistDirty = true;
+    }
   }
 }, 60000);
+
+// ── Best-effort persistence (survives a server restart) ──
+// Snapshot the in-memory rooms to disk and restore them on boot. On Railway the
+// filesystem is ephemeral: this survives in-container restarts/crashes, and also
+// redeploys IF a persistent Volume is mounted and STATE_FILE points to it.
+const STATE_FILE = process.env.STATE_FILE || path.join(require('os').tmpdir(), 'cactus-state.json');
+let _persistDirty = false;
+
+function _saveState() {
+  try {
+    const data = JSON.stringify(rooms, (key, value) => {
+      if (key === '_cactusTimer' || key === '_turnTimer') return undefined; // Timeouts: not serializable
+      if (value instanceof Set) return { __set: true, v: [...value] };
+      return value;
+    });
+    fs.writeFileSync(STATE_FILE, data);
+  } catch (e) { console.warn('[persist] save failed:', e.message); }
+}
+
+function _loadState() {
+  try {
+    if (!fs.existsSync(STATE_FILE)) return;
+    const parsed = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'), (key, value) => {
+      if (value && value.__set) return new Set(value.v);
+      return value;
+    });
+    let n = 0;
+    for (const code in parsed) {
+      const r = parsed[code];
+      r._cactusTimer = null;
+      r._turnTimer = null; r._turnTimerFor = null; r.turnDeadline = null;
+      r._dirty = false;
+      if (!(r.peekedPlayers instanceof Set)) r.peekedPlayers = new Set(r.peekedPlayers || []);
+      if (typeof r.hostIndex !== 'number') r.hostIndex = 0;
+      (r.players || []).forEach(p => { p.connected = false; });  // sockets are gone; players will rejoin
+      if (r.phase === 'countdown') r.phase = 'peek';             // interrupted countdown → restart cleanly
+      rooms[code] = r;
+      n++;
+    }
+    if (n) console.log(`[persist] restored ${n} room(s) from ${STATE_FILE}`);
+  } catch (e) { console.warn('[persist] load failed:', e.message); }
+}
+
+// Periodic snapshot when something changed
+setInterval(() => {
+  const dirty = _persistDirty || Object.values(rooms).some(r => r._dirty);
+  if (dirty) { _saveState(); _persistDirty = false; Object.values(rooms).forEach(r => { r._dirty = false; }); }
+}, 5000);
+
+// Save on graceful shutdown (Railway sends SIGTERM on redeploy/restart)
+['SIGTERM', 'SIGINT'].forEach(sig => process.on(sig, () => { _saveState(); process.exit(0); }));
+
+_loadState();  // restore before accepting connections
 
 const PORT = process.env.PORT || 3000;
 httpServer.listen(PORT, () => console.log(`Cactus server running on port ${PORT}`));
