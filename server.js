@@ -21,7 +21,7 @@ app.use(express.static(path.join(__dirname, 'public'), {
 
 // ── Rooms storage ──
 const rooms = {}; // roomCode → gameState
-const TURN_MS = 20000; // per-turn reflection time before auto pioche/défausse
+const TURN_MS = 25000; // per-turn reflection time before auto pioche/défausse
 
 // Resolve player index, refreshing socketId on reconnect
 function resolvePlayer(room, socket, playerIndex) {
