@@ -547,13 +547,14 @@ body.anim-lock #chat-widget{pointer-events:auto}
 }
 body.anim-lock #react-dock{ pointer-events:auto; }
 #react-btn{
-  width:44px; height:44px; border-radius:50%;
-  border:2px solid var(--gold); background:rgba(0,0,0,.5);
-  color:var(--gold-light); cursor:pointer; padding:0;
+  width:34px; height:34px; border-radius:50%;
+  border:1.5px solid rgba(212,168,75,.55); background:rgba(0,0,0,.4);
+  color:var(--gold-light); cursor:pointer; padding:0; opacity:.75;
   display:flex; align-items:center; justify-content:center;
-  box-shadow:0 2px 8px rgba(0,0,0,.45); transition:transform .12s,box-shadow .12s;
+  box-shadow:0 1px 5px rgba(0,0,0,.4); transition:transform .12s,box-shadow .12s,opacity .12s;
 }
-#react-btn svg{ width:26px; height:26px; display:block; }
+#react-btn:hover{ opacity:1; }
+#react-btn svg{ width:20px; height:20px; display:block; }
 #react-btn:hover{ transform:scale(1.06); box-shadow:0 0 14px rgba(212,168,75,.5); }
 #react-btn.open{ border-color:var(--gold-light); box-shadow:0 0 0 2px var(--gold); }
 #react-strip{
@@ -764,8 +765,8 @@ body.anim-lock #react-dock{ pointer-events:auto; }
 @media (max-width: 600px) {
   #chat-widget { width: 170px; bottom: 6px; left: 6px; }
   #react-dock { left: 0; bottom: 100%; margin: 0 0 8px 0; gap:5px; }
-  #react-btn { width:38px; height:38px; font-size:19px; }
-  #react-btn svg { width:22px; height:22px; }
+  #react-btn { width:30px; height:30px; }
+  #react-btn svg { width:18px; height:18px; }
   .react-emoji { width:34px; height:34px; font-size:17px; }
   #chat-messages { font-size: 10px; }
   .ca-word { font-size: 56px; }
