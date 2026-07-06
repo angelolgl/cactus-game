@@ -180,10 +180,9 @@ function autoDiscardDrawn(code, pi){
   room.discard.push(c);
   addLog(room, `⏱️ ${room.players[pi].name} n'a pas joué à temps — défausse automatique (${c.value}${c.suit}).`);
   io.to(code).emit('animDiscard', { pi, card: c });
-  if (!checkSpecial(room, c)){
-    room.phase = 'draw';
-    endTurnIfNeeded(room);
-  }
+  // Inactivity skip: any power on the auto-discarded card (7 or Valet) is LOST.
+  room.phase = 'draw';
+  endTurnIfNeeded(room);
   broadcastRoom(code);
 }
 
