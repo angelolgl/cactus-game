@@ -245,6 +245,39 @@ body.anim-lock #chat-widget{pointer-events:auto}
 .set-legal{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:14px}
 .set-link{background:none;border:none;color:rgba(255,255,255,.45);font-size:12px;text-decoration:underline;cursor:pointer;padding:2px 4px}
 .set-link:hover{color:rgba(255,255,255,.75)}
+/* ── V2: profile button + drawer ── */
+#profile-btn{position:fixed;top:14px;right:14px;width:46px;height:46px;border-radius:50%;border:2px solid var(--gold);background:rgba(0,0,0,.35);padding:2px;cursor:pointer;z-index:700;box-shadow:0 2px 10px rgba(0,0,0,.45);transition:transform .12s,box-shadow .12s;display:none}
+#profile-btn:hover{transform:scale(1.06);box-shadow:0 0 16px rgba(212,168,75,.5)}
+#profile-btn img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block}
+body[data-screen="lobby"] #profile-btn,body[data-screen="game"] #profile-btn{display:block}
+#drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .25s;z-index:750}
+#drawer-overlay.show{opacity:1;pointer-events:auto}
+#profile-drawer{position:fixed;top:0;right:0;height:100%;width:300px;max-width:82vw;background:linear-gradient(180deg,#0c2e20,#081b13);border-left:1px solid var(--gold);box-shadow:-10px 0 40px rgba(0,0,0,.5);z-index:760;transform:translateX(100%);transition:transform .28s cubic-bezier(.3,.7,.3,1);display:flex;flex-direction:column;padding:22px 18px}
+#profile-drawer.open{transform:translateX(0)}
+.pd-head{display:flex;flex-direction:column;align-items:center;text-align:center;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:14px}
+.pd-avatar{width:78px;height:78px;border-radius:50%;object-fit:cover;border:3px solid var(--gold);box-shadow:0 0 0 4px rgba(212,168,75,.18);cursor:pointer}
+.pd-name{font-size:18px;font-weight:700;color:#fff;margin-top:10px}
+.pd-code{display:flex;align-items:center;gap:8px;margin-top:8px;background:rgba(20,45,32,.8);border-radius:8px;padding:4px 10px}
+.pd-code span{font-size:12px;color:var(--gold-light);font-weight:600}
+.pd-code button{background:none;border:none;color:rgba(255,255,255,.5);font-size:11px;cursor:pointer;text-decoration:underline}
+.pd-cta{margin-top:12px;width:100%;background:linear-gradient(180deg,var(--gold),#b8860b);color:#1a1a1a;font-weight:700;border:none;border-radius:10px;padding:10px;font-size:14px;cursor:pointer}
+.pd-cta:hover{filter:brightness(1.06)}
+.pd-nav{display:flex;flex-direction:column;gap:8px}
+.pd-item{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:12px 14px;color:#fff;font-size:15px;cursor:pointer;transition:background .12s}
+.pd-item:hover{background:rgba(212,168,75,.14)}
+.pd-ic{font-size:17px;width:22px;text-align:center}
+.pd-lock{margin-left:auto;font-size:11px;font-weight:700;color:var(--gold-light);opacity:.85}
+.pd-item.locked{opacity:.55}
+/* Profil / auth modal reuse .modal-box; avatar grid inside profil */
+.profil-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0 4px;justify-items:center}
+.profil-grid img{width:100%;max-width:64px;aspect-ratio:1/1;border-radius:50%;object-fit:cover;cursor:pointer;border:2px solid transparent;transition:transform .1s,border-color .1s}
+.profil-grid img:hover{transform:scale(1.06);border-color:rgba(212,168,75,.5)}
+.profil-grid img.sel{border-color:var(--gold-light);box-shadow:0 0 0 2px var(--gold),0 0 12px rgba(212,168,75,.5)}
+.auth-field{width:100%;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:12px 14px;color:#fff;font-size:15px;margin-bottom:10px;outline:none}
+.auth-field:focus{border-color:rgba(212,168,75,.5)}
+.auth-tabs{display:flex;gap:6px;margin-bottom:14px}
+.auth-tab{flex:1;background:none;border:none;color:rgba(255,255,255,.45);font-weight:700;font-size:15px;padding:8px;cursor:pointer;border-bottom:2px solid transparent}
+.auth-tab.on{color:var(--gold-light);border-color:var(--gold)}
 .modal-card-wrap{display:inline-block;margin:10px auto;animation:flipIn .4s ease .1s both}
 @keyframes flipIn{0%{transform:rotateY(90deg) scale(.8)}100%{transform:rotateY(0)}}
 .mbtn-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
@@ -547,14 +580,14 @@ body.anim-lock #chat-widget{pointer-events:auto}
 }
 body.anim-lock #react-dock{ pointer-events:auto; }
 #react-btn{
-  width:34px; height:34px; border-radius:50%;
+  width:23px; height:23px; border-radius:50%;
   border:1.5px solid rgba(212,168,75,.55); background:rgba(0,0,0,.4);
-  color:var(--gold-light); cursor:pointer; padding:0; opacity:.75;
+  color:var(--gold-light); cursor:pointer; padding:0; opacity:.7;
   display:flex; align-items:center; justify-content:center;
-  box-shadow:0 1px 5px rgba(0,0,0,.4); transition:transform .12s,box-shadow .12s,opacity .12s;
+  box-shadow:0 1px 4px rgba(0,0,0,.4); transition:transform .12s,box-shadow .12s,opacity .12s;
 }
 #react-btn:hover{ opacity:1; }
-#react-btn svg{ width:20px; height:20px; display:block; }
+#react-btn svg{ width:14px; height:14px; display:block; }
 #react-btn:hover{ transform:scale(1.06); box-shadow:0 0 14px rgba(212,168,75,.5); }
 #react-btn.open{ border-color:var(--gold-light); box-shadow:0 0 0 2px var(--gold); }
 #react-strip{
@@ -765,8 +798,8 @@ body.anim-lock #react-dock{ pointer-events:auto; }
 @media (max-width: 600px) {
   #chat-widget { width: 170px; bottom: 6px; left: 6px; }
   #react-dock { left: 0; bottom: 100%; margin: 0 0 8px 0; gap:5px; }
-  #react-btn { width:30px; height:30px; }
-  #react-btn svg { width:18px; height:18px; }
+  #react-btn { width:20px; height:20px; }
+  #react-btn svg { width:12px; height:12px; }
   .react-emoji { width:34px; height:34px; font-size:17px; }
   #chat-messages { font-size: 10px; }
   .ca-word { font-size: 56px; }
@@ -800,16 +833,26 @@ body.anim-lock #react-dock{ pointer-events:auto; }
     <h1>CACTUS</h1>
     <p>Jeu de cartes en ligne</p>
   </div>
-  <div class="lobby-box" id="lobby-main">
+  <!-- ACCUEIL COMPTE (V2) -->
+  <div class="lobby-box" id="home-account">
+    <button class="start-btn" onclick="openAuth('login')">Se connecter</button>
+    <button class="start-btn" style="background:transparent;border:2px solid var(--gold);color:var(--gold-light);margin-top:10px" onclick="openAuth('register')">S'inscrire</button>
+    <div style="color:rgba(255,255,255,.3);font-size:12px;margin:14px 0 8px;text-align:center">— ou —</div>
+    <button class="start-btn" style="background:transparent;border:1px solid rgba(212,168,75,.35);color:rgba(255,255,255,.75);font-size:14px" onclick="playGuest()">🎮 Jouer en invité</button>
+    <div style="color:rgba(255,255,255,.3);font-size:11px;text-align:center;margin-top:10px">Invité = pas de sauvegarde des stats</div>
+  </div>
+
+  <!-- REJOINDRE / CRÉER (invité ou connecté) -->
+  <div class="lobby-box" id="lobby-main" style="display:none">
     <h2>Rejoindre ou créer</h2>
     <input class="ninput" id="player-name" placeholder="Votre prénom" maxlength="20" style="margin-bottom:12px">
     <div style="display:flex;gap:10px;margin-bottom:12px">
       <input class="ninput" id="room-code" placeholder="Code (ex: 1234)" maxlength="4" inputmode="numeric" style="text-align:center;font-size:18px;letter-spacing:.1em">
       <button class="start-btn" style="padding:0 16px;font-size:14px;white-space:nowrap" onclick="joinRoom()">Rejoindre</button>
     </div>
-    <div style="color:rgba(255,255,255,.3);font-size:12px;margin:8px 0">— ou —</div>
+    <div style="color:rgba(255,255,255,.3);font-size:12px;margin:8px 0;text-align:center">— ou —</div>
     <button class="start-btn" onclick="createRoom()">Créer une partie</button>
-    <button class="start-btn" style="background:transparent;border:1px solid rgba(212,168,75,.4);color:var(--gold-light);margin-top:10px" onclick="showSettings()">⚙️ Paramètres</button>
+    <button class="start-btn" style="background:transparent;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);margin-top:10px;font-size:13px" onclick="backToHome()">← Retour</button>
     <div class="error-msg" id="lobby-error"></div>
   </div>
   <div class="lobby-box" id="lobby-waiting" style="display:none">
@@ -817,21 +860,6 @@ body.anim-lock #react-dock{ pointer-events:auto; }
     <div style="font-family:'Playfair Display',serif;font-size:42px;color:var(--gold-light);letter-spacing:.15em;text-align:center;text-shadow:0 2px 8px rgba(0,0,0,.5);margin:12px 0" id="lobby-code-display">----</div>
     <p style="color:rgba(255,255,255,.4);font-size:12px;text-align:center">Partagez ce code</p>
     <div style="display:flex;flex-direction:column;gap:8px;margin:16px 0;min-height:50px" id="lobby-players-list"></div>
-    <div class="av-picker">
-      <div class="av-label">Votre avatar</div>
-      <button type="button" class="av-toggle" id="avatar-toggle" onclick="toggleAvatarGrid()" title="Choisir un avatar">
-        <span class="av-face" id="avatar-toggle-face" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
-            <circle cx="12" cy="12" r="9"></circle>
-            <circle cx="9" cy="10" r="1.1" fill="currentColor" stroke="none"></circle>
-            <circle cx="15" cy="10" r="1.1" fill="currentColor" stroke="none"></circle>
-            <path d="M8.5 14.5c1 1.2 2.2 1.8 3.5 1.8s2.5-.6 3.5-1.8"></path>
-          </svg>
-        </span>
-        <img id="avatar-toggle-img" alt="" style="display:none">
-      </button>
-      <div class="av-grid" id="avatar-grid" style="display:none"></div>
-    </div>
     <div id="host-controls" style="display:none">
       <div class="slabel" style="margin-bottom:8px">Cartes par joueur</div>
       <div class="row-btns" id="lobby-cc-btns" style="justify-content:center;flex-wrap:wrap;gap:6px;margin-bottom:14px"></div>
@@ -921,6 +949,27 @@ body.anim-lock #react-dock{ pointer-events:auto; }
   </div>
 </div>
 
+<!-- PROFILE BUTTON (top-right: accueil + jeu) -->
+<button id="profile-btn" onclick="openProfileDrawer()" title="Profil" aria-label="Profil"><img id="profile-btn-av" alt=""></button>
+
+<!-- PROFILE DRAWER (slides from the right) -->
+<div id="drawer-overlay" onclick="closeProfileDrawer()"></div>
+<aside id="profile-drawer" aria-hidden="true">
+  <div class="pd-head">
+    <img id="pd-avatar" class="pd-avatar" alt="" onclick="openProfil()">
+    <div id="pd-name" class="pd-name">Invité</div>
+    <div id="pd-code" class="pd-code" style="display:none"><span id="pd-code-val">#CACT-XXXXX</span><button type="button" onclick="copyFriendCode()">copier</button></div>
+    <button id="pd-cta" class="pd-cta" onclick="openAuth('login')">Se connecter / S'inscrire</button>
+  </div>
+  <nav class="pd-nav">
+    <button class="pd-item" onclick="openProfil()"><span class="pd-ic">👤</span> Profil</button>
+    <button class="pd-item" onclick="closeProfileDrawer(); showSettings()"><span class="pd-ic">⚙️</span> Paramètres</button>
+    <button class="pd-item" id="pd-history" onclick="lockedRubric('Historique')"><span class="pd-ic">🕓</span> Historique <span class="pd-lock">Se connecter</span></button>
+    <button class="pd-item" id="pd-friends" onclick="lockedRubric('Mes amis')"><span class="pd-ic">👥</span> Mes amis <span class="pd-lock">Se connecter</span></button>
+    <button class="pd-item" id="pd-logout" style="display:none" onclick="logoutAccount()"><span class="pd-ic">🚪</span> Déconnexion</button>
+  </nav>
+</aside>
+
 <script src="/images1.js?v=3"></script>
 <script src="/images2.js?v=3"></script>
 <script src="/avatars.js?v=1"></script>
@@ -932,6 +981,7 @@ const qid = id => document.getElementById(id);
 const show = id => {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   (document.getElementById('s-'+id)||document.getElementById(id))?.classList.add('active');
+  document.body.dataset.screen = id;
 };
 
 // ══ CONSTANTS & UTILS ══
@@ -1710,67 +1760,88 @@ function showWrongSnapModal(card, onOk) {
 // ══ CLIENT STATE ══
 let socket, myIndex = -1, myRoom = '', G = null, peekSel = [];
 let myName = '', _hasJoinedOnce = false;
-let myAvatar = null;
+// ══ AVATARS & PROFIL (V2) ══
+const DEFAULT_AVATAR = "data:image/webp;base64,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";   // cactus par défaut (utilisé si aucun avatar choisi)
+let myAvatar = null;                // null = cactus par défaut ; 0..9 = avatar choisi
+try { const _a = localStorage.getItem('cactus_avatar'); if (_a !== null) myAvatar = (_a === 'null' ? null : parseInt(_a,10)); } catch(e){}
 
-// ══ AVATARS ══
-// window.AVATARS (numéro→dataURI) est fourni par avatars.js.
-// Fallback : avatar par défaut basé sur la position du joueur.
-function avatarImg(n, fallbackIndex) {
+function avatarImg(n) {
+  const AV = window.AVATARS || {};
+  if (typeof n === 'number' && n >= 0 && AV[n]) return AV[n];
+  return DEFAULT_AVATAR;              // null / inconnu -> cactus par défaut
+}
+function persistAvatar(){ try { localStorage.setItem('cactus_avatar', myAvatar===null?'null':String(myAvatar)); } catch(e){} }
+function refreshMyAvatarUI(){
+  const url = avatarImg(myAvatar);
+  const pb = qid('profile-btn-av'); if (pb) pb.src = url;
+  const pd = qid('pd-avatar');      if (pd) pd.src = url;
+}
+
+// ── Tiroir profil ──
+function openProfileDrawer(){
+  refreshMyAvatarUI();
+  qid('profile-drawer').classList.add('open');
+  qid('drawer-overlay').classList.add('show');
+}
+function closeProfileDrawer(){
+  qid('profile-drawer').classList.remove('open');
+  qid('drawer-overlay').classList.remove('show');
+}
+function lockedRubric(name){ showToast('🔒 ' + name + ' — connecte-toi pour y accéder'); }
+
+// ── Profil (choix d'avatar ; stats à venir) ──
+function openProfil(){
   const AV = window.AVATARS || {};
   const total = Object.keys(AV).length || 10;
-  let idx = (typeof n === 'number' && n >= 0) ? n
-          : ((typeof fallbackIndex === 'number' ? fallbackIndex : 0) % total);
-  return AV[idx] || AV[0] || '';
+  let grid = `<img data-av="def" class="${myAvatar===null?'sel':''}" src="${DEFAULT_AVATAR}" alt="défaut">`;
+  for (let n=0;n<total;n++) grid += `<img data-av="${n}" class="${myAvatar===n?'sel':''}" src="${AV[n]||''}" alt="Avatar ${n+1}">`;
+  qid('modal-root').innerHTML = `<div class="modal-bg"><div class="modal-box">
+    <h3>👤 Profil</h3>
+    <p style="margin-bottom:8px">Choisis ton avatar (il te suit en partie) :</p>
+    <div class="profil-grid" id="profil-grid">${grid}</div>
+    <p style="font-size:12px;color:rgba(255,255,255,.4);margin:14px 0 6px">Nom &amp; statistiques — bientôt disponibles.</p>
+    <button class="set-btn ghost" onclick="qid('modal-root').innerHTML=''">Fermer</button>
+  </div></div>`;
+  qid('profil-grid').querySelectorAll('img').forEach(img=>{
+    img.addEventListener('click', ()=>{
+      const v = img.dataset.av;
+      selectAvatar(v==='def' ? null : parseInt(v,10));
+      qid('profil-grid').querySelectorAll('img').forEach(i=>i.classList.remove('sel'));
+      img.classList.add('sel');
+    });
+  });
 }
-
-function renderAvatarGrid() {
-  const grid = qid('avatar-grid');
-  if (!grid) return;
-  const AV = window.AVATARS || {};
-  const total = Object.keys(AV).length || 10;
-  const active = (typeof myAvatar === 'number') ? myAvatar : -1;
-  grid.innerHTML = '';
-  for (let n = 0; n < total; n++) {
-    const img = document.createElement('img');
-    img.className = 'av-opt' + (n === active ? ' sel' : '');
-    img.src = AV[n] || '';
-    img.alt = 'Avatar ' + (n + 1);
-    img.addEventListener('click', () => selectAvatar(n));
-    grid.appendChild(img);
-  }
-  updateAvatarToggle();
-}
-
-// The face button shows a face icon until an avatar is chosen, then the avatar.
-function updateAvatarToggle() {
-  const face = qid('avatar-toggle-face'), im = qid('avatar-toggle-img');
-  if (!face || !im) return;
-  if (typeof myAvatar === 'number') {
-    im.src = avatarImg(myAvatar, myIndex);
-    im.style.display = 'block';
-    face.style.display = 'none';
-  } else {
-    im.style.display = 'none';
-    face.style.display = 'flex';
-  }
-}
-
-function toggleAvatarGrid() {
-  const grid = qid('avatar-grid'), btn = qid('avatar-toggle');
-  if (!grid) return;
-  const show = (grid.style.display === 'none' || !grid.style.display);
-  grid.style.display = show ? 'grid' : 'none';
-  if (btn) btn.classList.toggle('open', show);
-}
-
-function selectAvatar(n) {
+function selectAvatar(n){
   myAvatar = n;
-  renderAvatarGrid();          // refresh highlight + toggle image
-  const grid = qid('avatar-grid'), btn = qid('avatar-toggle');
-  if (grid) grid.style.display = 'none';   // collapse after choosing
-  if (btn) btn.classList.remove('open');
+  persistAvatar();
+  refreshMyAvatarUI();
   if (socket && myRoom) socket.emit('setAvatar', { code: myRoom, playerIndex: myIndex, avatar: n });
 }
+
+// ── Connexion / Inscription (visuel — la mécanique arrive à l'étape suivante) ──
+function openAuth(mode){
+  closeProfileDrawer();
+  const login = mode !== 'register';
+  qid('modal-root').innerHTML = `<div class="modal-bg"><div class="modal-box">
+    <div class="auth-tabs">
+      <button class="auth-tab ${login?'on':''}" onclick="openAuth('login')">Connexion</button>
+      <button class="auth-tab ${!login?'on':''}" onclick="openAuth('register')">Inscription</button>
+    </div>
+    <input class="auth-field" placeholder="Identifiant" maxlength="20">
+    <input class="auth-field" type="password" placeholder="Mot de passe">
+    ${login ? '' : '<input class="auth-field" type="password" placeholder="Confirmer le mot de passe">'}
+    <button class="set-btn" onclick="showToast('🔒 Les comptes arrivent très bientôt !')">${login?'Se connecter':"S'inscrire"}</button>
+    <button class="set-btn ghost" onclick="qid('modal-root').innerHTML=''">Fermer</button>
+    <p style="font-size:12px;color:rgba(255,255,255,.4);text-align:center;margin-top:10px">À l'inscription, un code ami unique sera généré.</p>
+  </div></div>`;
+}
+
+// ── Navigation accueil (invité) ──
+function playGuest(){ qid('home-account').style.display='none'; qid('lobby-main').style.display='block'; }
+function backToHome(){ qid('lobby-main').style.display='none'; qid('home-account').style.display='block'; }
+function copyFriendCode(){ const v=qid('pd-code-val'); if(v && navigator.clipboard){ navigator.clipboard.writeText(v.textContent).then(()=>showToast('Code copié')).catch(()=>{}); } }
+function logoutAccount(){ showToast('Déconnexion — bientôt'); }
+function sendMyAvatar(){ if (socket && myRoom && typeof myAvatar === 'number') socket.emit('setAvatar', { code: myRoom, playerIndex: myIndex, avatar: myAvatar }); }
 
 // ══ SOCKET ══
 function initSocket() {
@@ -1798,8 +1869,8 @@ function initSocket() {
   socket.on('playerConn', ({pi, connected, name}) => {
     if (name && pi !== myIndex) showToast(connected ? `✅ ${name} est de retour` : `⚠️ ${name} s'est déconnecté`);
   });
-  socket.on('roomCreated', ({code, playerIndex}) => { myIndex=playerIndex; myRoom=code; _hasJoinedOnce=true; showWaiting(code,true); });
-  socket.on('roomJoined',  ({code, playerIndex}) => { myIndex=playerIndex; myRoom=code; _hasJoinedOnce=true; showWaiting(code,false); });
+  socket.on('roomCreated', ({code, playerIndex}) => { myIndex=playerIndex; myRoom=code; _hasJoinedOnce=true; showWaiting(code,true); sendMyAvatar(); });
+  socket.on('roomJoined',  ({code, playerIndex}) => { myIndex=playerIndex; myRoom=code; _hasJoinedOnce=true; showWaiting(code,false); sendMyAvatar(); });
   socket.on('lobbyUpdate', ({players, host}) => { updateLobbyPlayers(players, host); });
   socket.on('hostChanged', ({host}) => {
     if (typeof host === 'number') hostIndex = host;
@@ -1876,12 +1947,12 @@ function joinRoom() {
 
 function showWaiting(code, host) {
   isHost = host;
+  qid('home-account').style.display='none';
   qid('lobby-main').style.display='none';
   qid('lobby-waiting').style.display='block';
   qid('lobby-code-display').textContent = code;
   qid('host-controls').style.display = host ? 'block' : 'none';
   qid('waiting-msg').style.display = host ? 'none' : 'block';
-  renderAvatarGrid();
 }
 
 let selectedCC = 4;
@@ -1894,17 +1965,14 @@ function updateLobbyPlayers(players, host) {
   qid('lobby-players-list').innerHTML = norm.map((p,i) =>
     `<div style="background:rgba(255,255,255,.08);border-radius:8px;padding:8px 14px;font-size:14px;display:flex;align-items:center;gap:8px">
       <span>${i+1}.</span>
-      ${typeof p.avatar === 'number'
-        ? `<img class="lobby-av" src="${avatarImg(p.avatar, i)}" alt="">`
-        : ''}
+      <img class="lobby-av" src="${avatarImg(typeof p.avatar==='number'?p.avatar:null)}" alt="">
       <strong>${p.name}</strong>
       ${i===hostIndex?'<span style="margin-left:auto;font-size:11px;color:var(--gold-light)">Hôte</span>':''}
     </div>`).join('');
   // Garde myAvatar en phase avec le serveur (utile après reconnexion)
   if (myIndex >= 0 && norm[myIndex] && typeof norm[myIndex].avatar === 'number') {
-    myAvatar = norm[myIndex].avatar;
+    myAvatar = norm[myIndex].avatar; refreshMyAvatarUI();
   }
-  renderAvatarGrid();
   // Reflect host status on the lobby controls (handles host transfer)
   const waiting = qid('lobby-waiting');
   if (waiting && waiting.style.display !== 'none') {
@@ -2294,9 +2362,7 @@ function buildPlayerRow(state, pi) {
   header.className = 'prow-header';
   header.innerHTML = `
     <div class="prow-name">${isActive ? '<div class="adot"></div>' : ''}
-      ${typeof pl.avatar === 'number'
-        ? `<span class="pav-wrap"><img id="pav-${pi}" class="pav" src="${avatarImg(pl.avatar, pi)}" alt="">${(state.turnActive && isActive) ? `<svg class="turn-ring" viewBox="0 0 52 52"><circle cx="26" cy="26" r="23" style="animation-duration:${state.turnMs||20000}ms;animation-delay:-${Math.max(0, Math.min((state.turnMs||20000), Date.now()-_ringStart))}ms"></circle></svg>` : ''}</span>`
-        : ''}
+      <span class="pav-wrap"><img id="pav-${pi}" class="pav" src="${avatarImg(typeof pl.avatar==='number'?pl.avatar:null)}" alt="">${(state.turnActive && isActive) ? `<svg class="turn-ring" viewBox="0 0 52 52"><circle cx="26" cy="26" r="23" style="animation-duration:${state.turnMs||20000}ms;animation-delay:-${Math.max(0, Math.min((state.turnMs||20000), Date.now()-_ringStart))}ms"></circle></svg>` : ''}</span>
       ${isMe ? '<span style="color:var(--gold-light)">Vous</span>' : pl.name}
       ${pl.connected === false ? '<span class="offline-tag">🔌 déconnecté</span>' : ''}
       <span class="cbadge">${pl.cardCount}🃏</span>
@@ -2705,6 +2771,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
   setupChat();
   renderReactionStrip();
   preloadSounds();
+  document.body.dataset.screen = 'lobby';   // accueil actif par défaut
+  refreshMyAvatarUI();                       // avatar du bouton profil (cactus par défaut)
   // Warm up the audio context on first interaction so sound buffers are decoded
   // and ready before the first game starts (avoids a skipped first sound).
   const _warmAudio = () => { _userInteracted = true; _audio(); if(_musicVolume>0) startMusic(); };
