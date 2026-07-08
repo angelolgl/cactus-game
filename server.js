@@ -287,7 +287,7 @@ function inRange(n, len){ return Number.isInteger(n) && n >= 0 && n < len; }
 // ── Socket events ──
 // ══════════════ ACCOUNTS (register / login / stats / history) ══════════════
 const ACCOUNTS_FILE = process.env.ACCOUNTS_FILE || path.join(DATA_DIR, 'cactus-accounts.json');
-let accounts = {};     // usernameLower -> { username, salt, hash, friendCode, createdAt, stats, history }
+let accounts = {};     // emailLower -> { email, username, salt, hash, friendCode, createdAt, stats, history }
 let authTokens = {};   // token -> usernameLower
 let _accDirty = false;
 function loadAccounts(){
@@ -309,32 +309,34 @@ function _genFriendCode(){
 }
 function _genToken(){ return crypto.randomBytes(24).toString('hex'); }
 function _newToken(key){ const t = _genToken(); authTokens[t] = key; _accDirty = true; return t; }
-function _pubUser(a){ return { username: a.username, friendCode: a.friendCode, stats: a.stats || {games:0,wins:0,cactus:0}, history: (a.history||[]).slice(0,20) }; }
-function _validUser(u){ return typeof u === 'string' && /^[A-Za-z0-9_]{3,20}$/.test(u); }
+function _pubUser(a){ return { email: a.email, username: a.username, friendCode: a.friendCode, stats: a.stats || {games:0,wins:0,cactus:0}, history: (a.history||[]).slice(0,20) }; }
+function _validEmail(e){ return typeof e === 'string' && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e.trim()); }
 function _validPw(p){ return typeof p === 'string' && p.length >= 6 && p.length <= 100; }
 
 // ── Socket events ──
 io.on('connection', socket => {
   socket.username = null;
 
-  socket.on('register', ({ username, password } = {}) => {
+  socket.on('register', ({ email, username, password } = {}) => {
     if (!allow(socket, 'register')) return;
-    if (!_validUser(username)) return socket.emit('authResult', { ok:false, mode:'register', error:"Identifiant : 3 à 20 caractères (lettres, chiffres, _)." });
-    if (!_validPw(password))   return socket.emit('authResult', { ok:false, mode:'register', error:"Mot de passe : 6 caractères minimum." });
-    const key = username.toLowerCase();
-    if (accounts[key]) return socket.emit('authResult', { ok:false, mode:'register', error:"Cet identifiant est déjà pris." });
+    email = (email||'').trim().toLowerCase();
+    username = (username||'').trim();
+    if (!_validEmail(email)) return socket.emit('authResult', { ok:false, mode:'register', error:'Adresse email invalide.' });
+    if (!username || username.length < 2 || username.length > 20) return socket.emit('authResult', { ok:false, mode:'register', error:'Pseudo : 2 à 20 caractères.' });
+    if (!_validPw(password)) return socket.emit('authResult', { ok:false, mode:'register', error:'Mot de passe : 6 caractères minimum.' });
+    if (accounts[email]) return socket.emit('authResult', { ok:false, mode:'register', error:'Cette adresse email est déjà utilisée.' });
     const salt = crypto.randomBytes(16).toString('hex');
-    accounts[key] = { username, salt, hash: _hashPw(password, salt), friendCode: _genFriendCode(), createdAt: Date.now(), stats:{games:0,wins:0,cactus:0}, history:[] };
+    accounts[email] = { email, username, salt, hash: _hashPw(password, salt), friendCode: _genFriendCode(), createdAt: Date.now(), stats:{games:0,wins:0,cactus:0}, history:[] };
     _accDirty = true; saveAccounts();
-    socket.username = key;
-    socket.emit('authResult', { ok:true, user:_pubUser(accounts[key]), token:_newToken(key) });
+    socket.username = email;
+    socket.emit('authResult', { ok:true, user:_pubUser(accounts[email]), token:_newToken(email) });
   });
 
-  socket.on('login', ({ username, password } = {}) => {
+  socket.on('login', ({ email, password } = {}) => {
     if (!allow(socket, 'login')) return;
-    const key = (username || '').toLowerCase();
+    const key = (email || '').trim().toLowerCase();
     const a = accounts[key];
-    const fail = () => socket.emit('authResult', { ok:false, mode:'login', error:"Identifiant ou mot de passe incorrect." });
+    const fail = () => socket.emit('authResult', { ok:false, mode:'login', error:'Email ou mot de passe incorrect.' });
     if (!a || typeof password !== 'string') return fail();
     const h = _hashPw(password, a.salt);
     let same = false;
