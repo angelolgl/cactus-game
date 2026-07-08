@@ -267,7 +267,8 @@ body[data-screen="lobby"] #profile-btn,body[data-screen="game"] #profile-btn{dis
 .pd-item:hover{background:rgba(212,168,75,.14)}
 .pd-ic{font-size:17px;width:22px;text-align:center}
 .pd-lock{margin-left:auto;font-size:11px;font-weight:700;color:var(--gold-light);opacity:.85}
-.pd-item.locked{opacity:.55}
+.pd-item.locked .pd-lock{ display:inline; }
+.pd-item:not(.locked) .pd-lock{ display:none; }
 /* Profil / auth modal reuse .modal-box; avatar grid inside profil */
 .profil-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0 4px;justify-items:center}
 .profil-grid img{width:100%;max-width:64px;aspect-ratio:1/1;border-radius:50%;object-fit:cover;cursor:pointer;border:2px solid transparent;transition:transform .1s,border-color .1s}
@@ -1830,16 +1831,26 @@ function openAuth(mode){
       <button class="auth-tab ${!login?'on':''}" onclick="openAuth('register')">Inscription</button>
     </div>
     <input id="auth-email" class="auth-field" type="email" placeholder="Adresse email" autocomplete="email" inputmode="email">
-    ${!login ? '<input id="auth-username" class="auth-field" placeholder="Pseudo (2–20 caractères)" maxlength="20" autocomplete="nickname">' : ''}
+    ${!login ? '<input id="auth-username" class="auth-field" placeholder="Pseudo (lettres uniquement, sans espace)" maxlength="20" autocomplete="nickname">' : ''}
     <input id="auth-pw" class="auth-field" type="password" placeholder="Mot de passe" autocomplete="${login?'current-password':'new-password'}">
     ${!login ? '<input id="auth-pw2" class="auth-field" type="password" placeholder="Confirmer le mot de passe">' : ''}
     <div id="auth-error" style="color:#ff7a63;font-size:13px;text-align:center;min-height:16px;margin:4px 0"></div>
-    <button class="set-btn" id="auth-submit">${login?'Se connecter':"S'inscrire"}</button>
+    <button class="set-btn" id="auth-submit" style="transition:filter .15s,opacity .15s">${login?'Se connecter':"S'inscrire"}</button>
     <button class="set-btn ghost" onclick="qid('modal-root').innerHTML=''">Fermer</button>
     ${!login ? '<p style="font-size:12px;color:rgba(255,255,255,.4);text-align:center;margin-top:10px">Un code ami unique sera généré à l\'inscription.</p>' : ''}
   </div></div>`;
-  qid('auth-submit').addEventListener('click', ()=>submitAuth(mode));
-  ['auth-email','auth-username','auth-pw','auth-pw2'].forEach(id=>{ const el=qid(id); if(el) el.addEventListener('keydown', e=>{ if(e.key==='Enter') submitAuth(mode); }); });
+  // Light up submit when all fields are filled
+  const fields = ['auth-email', !login&&'auth-username', 'auth-pw', !login&&'auth-pw2'].filter(Boolean);
+  const btn = qid('auth-submit');
+  const checkFilled = () => {
+    const filled = fields.every(id=>{ const el=qid(id); return el && el.value.trim().length>0; });
+    btn.style.opacity = filled ? '1' : '.5';
+    btn.style.pointerEvents = filled ? 'auto' : 'none';
+    btn.style.filter = filled ? 'brightness(1.1)' : '';
+  };
+  if(!login) checkFilled(); // initial state: disabled
+  fields.forEach(id=>{ const el=qid(id); if(el){ el.addEventListener('input', checkFilled); el.addEventListener('keydown', e=>{ if(e.key==='Enter') submitAuth(mode); }); } });
+  btn.addEventListener('click', ()=>submitAuth(mode));
   setTimeout(()=>{ const u=qid('auth-email'); if(u) u.focus(); }, 30);
 }
 
@@ -1852,7 +1863,7 @@ function submitAuth(mode){
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ err.textContent='Adresse email invalide.'; return; }
   if(!login){
     const un=(qid('auth-username').value||'').trim();
-    if(!un||un.length<2||un.length>20){ err.textContent='Pseudo : 2 à 20 caractères.'; return; }
+    if(!un || !/^[A-Za-zÀ-ÿ]{2,20}$/.test(un)){ err.textContent='Pseudo : lettres uniquement (2–20 caractères), sans chiffres ni espaces.'; return; }
     if(pw.length<6){ err.textContent='Mot de passe : 6 caractères minimum.'; return; }
     if(pw !== qid('auth-pw2').value){ err.textContent='Les mots de passe ne correspondent pas.'; return; }
     err.textContent='…'; initSocket();
@@ -1872,8 +1883,21 @@ function updateAuthUI(){
   if(!guest){ const cv = qid('pd-code-val'); if(cv) cv.textContent = '#' + currentUser.friendCode; }
   const cta = qid('pd-cta'); if(cta) cta.style.display = guest ? 'block' : 'none';
   const lo = qid('pd-logout'); if(lo) lo.style.display = guest ? 'none' : 'flex';
-  ['pd-history','pd-friends'].forEach(id=>{ const el = qid(id); if(el) el.classList.toggle('locked', guest); });
-  if(!guest){ const nameEl = qid('player-name'); if(nameEl && !nameEl.value) nameEl.value = currentUser.username || ''; }
+
+  // Lock badges on history/friends: hidden when connected
+  ['pd-history','pd-friends'].forEach(id=>{
+    const el = qid(id); if(!el) return;
+    el.classList.toggle('locked', guest);
+    const lk = el.querySelector('.pd-lock'); if(lk) lk.style.display = guest ? '' : 'none';
+  });
+
+  // When connected → bypass the Se connecter / S'inscrire screen, go straight to lobby
+  if(!guest){
+    qid('home-account').style.display = 'none';
+    qid('lobby-main').style.display = 'block';
+    const nameEl = qid('player-name');
+    if(nameEl && !nameEl.value) nameEl.value = currentUser.username || '';
+  }
 }
 
 function openHistory(){
@@ -1931,6 +1955,9 @@ function logoutAccount(){
   if (socket) socket.emit('logout', { token: t });
   try { localStorage.removeItem('cactus_token'); } catch(e){}
   currentUser = null;
+  // Back to login screen
+  qid('lobby-main').style.display = 'none';
+  qid('home-account').style.display = 'block';
   updateAuthUI();
   closeProfileDrawer();
   showToast('Déconnecté');
