@@ -3,6 +3,18 @@ const { createServer } = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
+// Durable storage dir. Mount a Railway Volume at /data (or set DATA_DIR) so accounts
+// + games survive redeploys. Falls back to a temp dir (ephemeral) if not writable.
+const DATA_DIR = (() => {
+  const dir = process.env.DATA_DIR || '/data';
+  try { fs.mkdirSync(dir, { recursive: true }); fs.accessSync(dir, fs.constants.W_OK); return dir; }
+  catch (e) {
+    const t = require('os').tmpdir();
+    console.warn('[storage] ' + dir + ' non inscriptible → repli sur ' + t + ' (données NON persistantes ; ajoute un Volume Railway monté sur /data).');
+    return t;
+  }
+})();
 
 const app = express();
 const httpServer = createServer(app);
@@ -244,6 +256,7 @@ const ACTION_COOLDOWN = {      // min ms between two of the SAME action (per con
   jackActivate:150, jackIgnore:150, jackPick:120, jackConfirm:200,
   cactus:400, peekDone:300, setAvatar:150, startGame:600, nextRound:600,
   createRoom:500, joinRoom:400, chatMessage:700, reaction:300, rejoin:0,
+  register:1500, login:800, authToken:400, logout:400,
 };
 const _rl = new Map(); // socket.id -> { times:[], last:{}, rejected:0, snapLock:0 }
 function _rlState(socket){
@@ -272,7 +285,79 @@ function allow(socket, action){
 function inRange(n, len){ return Number.isInteger(n) && n >= 0 && n < len; }
 
 // ── Socket events ──
+// ══════════════ ACCOUNTS (register / login / stats / history) ══════════════
+const ACCOUNTS_FILE = process.env.ACCOUNTS_FILE || path.join(DATA_DIR, 'cactus-accounts.json');
+let accounts = {};     // usernameLower -> { username, salt, hash, friendCode, createdAt, stats, history }
+let authTokens = {};   // token -> usernameLower
+let _accDirty = false;
+function loadAccounts(){
+  try { const j = JSON.parse(fs.readFileSync(ACCOUNTS_FILE, 'utf8')); accounts = j.users || {}; authTokens = j.tokens || {}; }
+  catch(e){ accounts = {}; authTokens = {}; }
+}
+function saveAccounts(){
+  try { fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify({ users: accounts, tokens: authTokens })); _accDirty = false; }
+  catch(e){ console.error('accounts save failed:', e.message); }
+}
+loadAccounts();
+setInterval(() => { if (_accDirty) saveAccounts(); }, 5000);
+function _hashPw(pw, salt){ return crypto.scryptSync(String(pw), salt, 32).toString('hex'); }
+function _genFriendCode(){
+  const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let c; do { c = 'CACT-' + Array.from({length:5}, () => A[Math.floor(Math.random()*A.length)]).join(''); }
+  while (Object.values(accounts).some(a => a.friendCode === c));
+  return c;
+}
+function _genToken(){ return crypto.randomBytes(24).toString('hex'); }
+function _newToken(key){ const t = _genToken(); authTokens[t] = key; _accDirty = true; return t; }
+function _pubUser(a){ return { username: a.username, friendCode: a.friendCode, stats: a.stats || {games:0,wins:0,cactus:0}, history: (a.history||[]).slice(0,20) }; }
+function _validUser(u){ return typeof u === 'string' && /^[A-Za-z0-9_]{3,20}$/.test(u); }
+function _validPw(p){ return typeof p === 'string' && p.length >= 6 && p.length <= 100; }
+
+// ── Socket events ──
 io.on('connection', socket => {
+  socket.username = null;
+
+  socket.on('register', ({ username, password } = {}) => {
+    if (!allow(socket, 'register')) return;
+    if (!_validUser(username)) return socket.emit('authResult', { ok:false, mode:'register', error:"Identifiant : 3 à 20 caractères (lettres, chiffres, _)." });
+    if (!_validPw(password))   return socket.emit('authResult', { ok:false, mode:'register', error:"Mot de passe : 6 caractères minimum." });
+    const key = username.toLowerCase();
+    if (accounts[key]) return socket.emit('authResult', { ok:false, mode:'register', error:"Cet identifiant est déjà pris." });
+    const salt = crypto.randomBytes(16).toString('hex');
+    accounts[key] = { username, salt, hash: _hashPw(password, salt), friendCode: _genFriendCode(), createdAt: Date.now(), stats:{games:0,wins:0,cactus:0}, history:[] };
+    _accDirty = true; saveAccounts();
+    socket.username = key;
+    socket.emit('authResult', { ok:true, user:_pubUser(accounts[key]), token:_newToken(key) });
+  });
+
+  socket.on('login', ({ username, password } = {}) => {
+    if (!allow(socket, 'login')) return;
+    const key = (username || '').toLowerCase();
+    const a = accounts[key];
+    const fail = () => socket.emit('authResult', { ok:false, mode:'login', error:"Identifiant ou mot de passe incorrect." });
+    if (!a || typeof password !== 'string') return fail();
+    const h = _hashPw(password, a.salt);
+    let same = false;
+    try { same = h.length === a.hash.length && crypto.timingSafeEqual(Buffer.from(h), Buffer.from(a.hash)); } catch(e){}
+    if (!same) return fail();
+    socket.username = key;
+    socket.emit('authResult', { ok:true, user:_pubUser(a), token:_newToken(key) });
+  });
+
+  socket.on('authToken', ({ token } = {}) => {
+    if (!allow(socket, 'authToken')) return;
+    const key = token && authTokens[token];
+    const a = key && accounts[key];
+    if (!a) return socket.emit('authResult', { ok:false, expired:true });
+    socket.username = key;
+    socket.emit('authResult', { ok:true, user:_pubUser(a), token });
+  });
+
+  socket.on('logout', ({ token } = {}) => {
+    if (token && authTokens[token]) { delete authTokens[token]; _accDirty = true; }
+    socket.username = null;
+  });
+
   console.log('connect', socket.id);
 
   // ── Lobby ──
@@ -281,7 +366,7 @@ io.on('connection', socket => {
     const code = makeCode();
     rooms[code] = {
       code, cardCount: 4,
-      players: [{ socketId: socket.id, name, hand: [], ready: false, connected: true, avatar: null }],
+      players: [{ socketId: socket.id, name, hand: [], ready: false, connected: true, avatar: null, username: socket.username || null }],
       hostIndex: 0,
       started: false,
       totals: null,
@@ -302,7 +387,7 @@ io.on('connection', socket => {
     if (room.started) { socket.emit('error', 'Partie déjà commencée'); return; }
     if (room.players.length >= 5) { socket.emit('error', 'Partie pleine (5 max)'); return; }
     const pi = room.players.length;
-    room.players.push({ socketId: socket.id, name, hand: [], ready: false, connected: true, avatar: null });
+    room.players.push({ socketId: socket.id, name, hand: [], ready: false, connected: true, avatar: null, username: socket.username || null });
     socket.join(code);
     socket.emit('roomJoined', { code, playerIndex: pi });
     io.to(code).emit('lobbyUpdate', { players: room.players.map(p => ({ name: p.name, avatar: p.avatar })), host: room.hostIndex });
@@ -316,8 +401,8 @@ io.on('connection', socket => {
     if (!room || room.started) return;              // only before launch
     const pi = resolvePlayer(room, socket, playerIndex);
     if (pi < 0) return;
-    if (typeof avatar !== 'number' || avatar < 0 || avatar > 9) return;
-    room.players[pi].avatar = avatar;
+    if (avatar !== null && (typeof avatar !== 'number' || avatar < 0 || avatar > 9)) return;
+    room.players[pi].avatar = avatar;   // null = default cactus
     io.to(code).emit('lobbyUpdate', { players: room.players.map(p => ({ name: p.name, avatar: p.avatar })), host: room.hostIndex });
   });
 
@@ -334,8 +419,7 @@ io.on('connection', socket => {
     else cc = 4; // 4-5 players
     room.cardCount = cc;
     room.started = true;
-    // Avatars are mandatory in-game: anyone who didn't pick gets a random one.
-    room.players.forEach(p => { if (typeof p.avatar !== 'number') p.avatar = Math.floor(Math.random() * 10); });
+    // Players without a chosen avatar keep the default cactus (rendered client-side).
     initGame(room);
     io.to(code).emit('gameStarted');
     broadcastRoom(code);
@@ -968,6 +1052,27 @@ function endRound(room) {
     }
   }
   room.players.forEach((_, i) => { room.totals[i] += finalScores[i]; });
+
+  // Game over? record stats + history for logged-in players (once).
+  if (room.totals.some(t => t >= 100) && !room._statsSaved) {
+    room._statsSaved = true;
+    let winner = 0;
+    for (let i = 1; i < room.totals.length; i++) if (room.totals[i] < room.totals[winner]) winner = i;
+    room.players.forEach((p, i) => {
+      if (!p.username || !accounts[p.username]) return;
+      const a = accounts[p.username];
+      a.stats = a.stats || { games:0, wins:0, cactus:0 };
+      a.stats.games++;
+      if (i === winner) a.stats.wins++;
+      a.history = a.history || [];
+      a.history.unshift({ date: Date.now(), result: (i === winner ? 'win' : 'loss'), total: room.totals[i], winner: room.players[winner].name, players: room.players.map(x => x.name) });
+      if (a.history.length > 20) a.history.length = 20;
+      _accDirty = true;
+      if (p.socketId) io.to(p.socketId).emit('accountUpdate', { user: _pubUser(a) });
+    });
+    saveAccounts();
+  }
+
   room.phase = 'score';
   room._rawScores = rawScores;
   room._finalScores = finalScores;
@@ -997,7 +1102,7 @@ setInterval(() => {
 // Snapshot the in-memory rooms to disk and restore them on boot. On Railway the
 // filesystem is ephemeral: this survives in-container restarts/crashes, and also
 // redeploys IF a persistent Volume is mounted and STATE_FILE points to it.
-const STATE_FILE = process.env.STATE_FILE || path.join(require('os').tmpdir(), 'cactus-state.json');
+const STATE_FILE = process.env.STATE_FILE || path.join(DATA_DIR, 'cactus-state.json');
 let _persistDirty = false;
 
 function _saveState() {
