@@ -964,8 +964,8 @@ body.anim-lock #react-dock{ pointer-events:auto; }
   <nav class="pd-nav">
     <button class="pd-item" onclick="openProfil()"><span class="pd-ic">👤</span> Profil</button>
     <button class="pd-item" onclick="closeProfileDrawer(); showSettings()"><span class="pd-ic">⚙️</span> Paramètres</button>
-    <button class="pd-item" id="pd-history" onclick="lockedRubric('Historique')"><span class="pd-ic">🕓</span> Historique <span class="pd-lock">Se connecter</span></button>
-    <button class="pd-item" id="pd-friends" onclick="lockedRubric('Mes amis')"><span class="pd-ic">👥</span> Mes amis <span class="pd-lock">Se connecter</span></button>
+    <button class="pd-item" id="pd-history" onclick="openHistory()"><span class="pd-ic">🕓</span> Historique <span class="pd-lock">Se connecter</span></button>
+    <button class="pd-item" id="pd-friends" onclick="openFriends()"><span class="pd-ic">👥</span> Mes amis <span class="pd-lock">Se connecter</span></button>
     <button class="pd-item" id="pd-logout" style="display:none" onclick="logoutAccount()"><span class="pd-ic">🚪</span> Déconnexion</button>
   </nav>
 </aside>
@@ -1819,6 +1819,8 @@ function selectAvatar(n){
 }
 
 // ── Connexion / Inscription (visuel — la mécanique arrive à l'étape suivante) ──
+let currentUser = null;   // null = invité ; sinon { username, friendCode, stats, history }
+
 function openAuth(mode){
   closeProfileDrawer();
   const login = mode !== 'register';
@@ -1827,33 +1829,146 @@ function openAuth(mode){
       <button class="auth-tab ${login?'on':''}" onclick="openAuth('login')">Connexion</button>
       <button class="auth-tab ${!login?'on':''}" onclick="openAuth('register')">Inscription</button>
     </div>
-    <input class="auth-field" placeholder="Identifiant" maxlength="20">
-    <input class="auth-field" type="password" placeholder="Mot de passe">
-    ${login ? '' : '<input class="auth-field" type="password" placeholder="Confirmer le mot de passe">'}
-    <button class="set-btn" onclick="showToast('🔒 Les comptes arrivent très bientôt !')">${login?'Se connecter':"S'inscrire"}</button>
+    <input id="auth-email" class="auth-field" type="email" placeholder="Adresse email" autocomplete="email" inputmode="email">
+    ${!login ? '<input id="auth-username" class="auth-field" placeholder="Pseudo (2–20 caractères)" maxlength="20" autocomplete="nickname">' : ''}
+    <input id="auth-pw" class="auth-field" type="password" placeholder="Mot de passe" autocomplete="${login?'current-password':'new-password'}">
+    ${!login ? '<input id="auth-pw2" class="auth-field" type="password" placeholder="Confirmer le mot de passe">' : ''}
+    <div id="auth-error" style="color:#ff7a63;font-size:13px;text-align:center;min-height:16px;margin:4px 0"></div>
+    <button class="set-btn" id="auth-submit">${login?'Se connecter':"S'inscrire"}</button>
     <button class="set-btn ghost" onclick="qid('modal-root').innerHTML=''">Fermer</button>
-    <p style="font-size:12px;color:rgba(255,255,255,.4);text-align:center;margin-top:10px">À l'inscription, un code ami unique sera généré.</p>
+    ${!login ? '<p style="font-size:12px;color:rgba(255,255,255,.4);text-align:center;margin-top:10px">Un code ami unique sera généré à l\'inscription.</p>' : ''}
   </div></div>`;
+  qid('auth-submit').addEventListener('click', ()=>submitAuth(mode));
+  ['auth-email','auth-username','auth-pw','auth-pw2'].forEach(id=>{ const el=qid(id); if(el) el.addEventListener('keydown', e=>{ if(e.key==='Enter') submitAuth(mode); }); });
+  setTimeout(()=>{ const u=qid('auth-email'); if(u) u.focus(); }, 30);
+}
+
+function submitAuth(mode){
+  const login = mode !== 'register';
+  const email = (qid('auth-email').value||'').trim();
+  const pw = qid('auth-pw').value;
+  const err = qid('auth-error');
+  if(!email || !pw){ err.textContent='Remplis tous les champs.'; return; }
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ err.textContent='Adresse email invalide.'; return; }
+  if(!login){
+    const un=(qid('auth-username').value||'').trim();
+    if(!un||un.length<2||un.length>20){ err.textContent='Pseudo : 2 à 20 caractères.'; return; }
+    if(pw.length<6){ err.textContent='Mot de passe : 6 caractères minimum.'; return; }
+    if(pw !== qid('auth-pw2').value){ err.textContent='Les mots de passe ne correspondent pas.'; return; }
+    err.textContent='…'; initSocket();
+    socket.emit('register', { email, username: un, password: pw });
+  } else {
+    err.textContent='…'; initSocket();
+    socket.emit('login', { email, password: pw });
+  }
+}
+
+// Reflète l'état invité/connecté dans le tiroir + préremplit le nom
+function updateAuthUI(){
+  const guest = !currentUser;
+  const displayName = guest ? 'Invité' : (currentUser.username || currentUser.email);
+  const nm = qid('pd-name'); if(nm) nm.textContent = displayName;
+  const code = qid('pd-code'); if(code) code.style.display = guest ? 'none' : 'flex';
+  if(!guest){ const cv = qid('pd-code-val'); if(cv) cv.textContent = '#' + currentUser.friendCode; }
+  const cta = qid('pd-cta'); if(cta) cta.style.display = guest ? 'block' : 'none';
+  const lo = qid('pd-logout'); if(lo) lo.style.display = guest ? 'none' : 'flex';
+  ['pd-history','pd-friends'].forEach(id=>{ const el = qid(id); if(el) el.classList.toggle('locked', guest); });
+  if(!guest){ const nameEl = qid('player-name'); if(nameEl && !nameEl.value) nameEl.value = currentUser.username || ''; }
+}
+
+function openHistory(){
+  if(!currentUser){ openAuth('login'); return; }
+  const h = currentUser.history || [];
+  const rows = h.length ? h.map(g=>{
+    const d = new Date(g.date); const dd = d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'});
+    const res = g.result==='win' ? '<span style="color:#6ee7a0">Victoire</span>' : '<span style="color:#ff9a8a">Défaite</span>';
+    return `<div style="display:flex;justify-content:space-between;padding:8px 4px;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px">
+      <span>${dd} · ${res}</span><span style="color:rgba(255,255,255,.5)">${(g.players||[]).length} joueurs · ${g.total} pts</span></div>`;
+  }).join('') : '<p style="color:rgba(255,255,255,.5);text-align:center;padding:16px">Aucune partie terminée pour l\'instant.</p>';
+  closeProfileDrawer();
+  qid('modal-root').innerHTML = `<div class="modal-bg"><div class="modal-box">
+    <h3>🕓 20 dernières parties</h3><div style="max-height:50vh;overflow:auto">${rows}</div>
+    <button class="set-btn ghost" onclick="qid('modal-root').innerHTML=''" style="margin-top:14px">Fermer</button>
+  </div></div>`;
+}
+
+function openFriends(){
+  if(!currentUser){ openAuth('login'); return; }
+  closeProfileDrawer();
+  const code = '#' + currentUser.friendCode;
+  qid('modal-root').innerHTML = `<div class="modal-bg"><div class="modal-box">
+    <h3>👥 Mes amis</h3>
+    <p style="color:rgba(255,255,255,.6);text-align:center;margin-bottom:4px">Ton code ami</p>
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:16px">
+      <span style="font-size:20px;font-weight:700;color:var(--gold-light)">${code}</span>
+      <button class="set-link" id="friend-copy">copier</button>
+    </div>
+    <p style="color:rgba(255,255,255,.6);text-align:center;margin-bottom:6px">Ajouter un ami</p>
+    <input id="friend-input" class="auth-field" value="#" placeholder="#CACT-XXXXX" maxlength="11" autocapitalize="characters" spellcheck="false">
+    <button class="set-btn" id="friend-add">Ajouter</button>
+    <button class="set-btn ghost" onclick="qid('modal-root').innerHTML=''" style="margin-top:10px">Fermer</button>
+    <p style="font-size:12px;color:rgba(255,255,255,.4);text-align:center;margin-top:10px">La liste d'amis arrive bientôt.</p>
+  </div></div>`;
+  qid('friend-copy').addEventListener('click', ()=>{ if(navigator.clipboard) navigator.clipboard.writeText(code).then(()=>showToast('Code copié')).catch(()=>{}); });
+  const fi = qid('friend-input');
+  // Always keep a leading '#'
+  fi.addEventListener('input', ()=>{ let v = fi.value.replace(/#/g,'').toUpperCase(); fi.value = '#' + v; });
+  fi.addEventListener('focus', ()=>{ if(!fi.value) fi.value = '#'; });
+  setTimeout(()=>{ fi.focus(); try{ fi.setSelectionRange(fi.value.length, fi.value.length); }catch(e){} }, 30);
+  qid('friend-add').addEventListener('click', ()=>{
+    const v = fi.value.trim();
+    if(v.length < 2 || v === '#'){ showToast("Entre le code de ton ami"); return; }
+    showToast("Ajout d'amis — bientôt disponible");   // friends backend to come
+  });
 }
 
 // ── Navigation accueil (invité) ──
 function playGuest(){ qid('home-account').style.display='none'; qid('lobby-main').style.display='block'; }
 function backToHome(){ qid('lobby-main').style.display='none'; qid('home-account').style.display='block'; }
 function copyFriendCode(){ const v=qid('pd-code-val'); if(v && navigator.clipboard){ navigator.clipboard.writeText(v.textContent).then(()=>showToast('Code copié')).catch(()=>{}); } }
-function logoutAccount(){ showToast('Déconnexion — bientôt'); }
+function logoutAccount(){
+  let t = null; try { t = localStorage.getItem('cactus_token'); } catch(e){}
+  if (socket) socket.emit('logout', { token: t });
+  try { localStorage.removeItem('cactus_token'); } catch(e){}
+  currentUser = null;
+  updateAuthUI();
+  closeProfileDrawer();
+  showToast('Déconnecté');
+}
 function sendMyAvatar(){ if (socket && myRoom && typeof myAvatar === 'number') socket.emit('setAvatar', { code: myRoom, playerIndex: myIndex, avatar: myAvatar }); }
 
 // ══ SOCKET ══
 function initSocket() {
-  if (socket && socket.connected) return;
+  if (typeof io === 'undefined') {
+    initSocket._tries = (initSocket._tries || 0) + 1;
+    if (initSocket._tries <= 60) setTimeout(initSocket, 150);
+    return;
+  }
+  if (socket && socket.connected) return;   // already connected, handlers already attached
   socket = io();
-  socket.on('connect_error', () => { qid('lobby-error').textContent = 'Erreur de connexion'; });
+  _registerSocketHandlers();
+}
+
+function _registerSocketHandlers() {
+  socket.on('connect_error', () => { const e=qid('lobby-error'); if(e) e.textContent = 'Erreur de connexion'; });
   socket.on('connect', () => {
-    // Auto-rejoin after a network drop (socket.io reconnected with a new id)
-    if (_hasJoinedOnce && myRoom) {
-      socket.emit('rejoin', { code: myRoom, name: myName, playerIndex: myIndex });
+    try { const t = localStorage.getItem('cactus_token'); if (t) socket.emit('authToken', { token: t }); } catch(e){}
+    if (_hasJoinedOnce && myRoom) socket.emit('rejoin', { code: myRoom, name: myName, playerIndex: myIndex });
+  });
+  socket.on('authResult', ({ ok, user, token, error, expired }) => {
+    if (ok) {
+      currentUser = user;
+      if (token) { try { localStorage.setItem('cactus_token', token); } catch(e){} }
+      updateAuthUI();
+      qid('modal-root').innerHTML = '';
+      showToast('Connecté 👋 ' + (user.username || user.email));
+    } else if (expired) {
+      try { localStorage.removeItem('cactus_token'); } catch(e){}
+    } else {
+      const e = qid('auth-error'); if (e) e.textContent = error || 'Erreur.';
     }
   });
+  socket.on('accountUpdate', ({ user }) => { if (currentUser) { currentUser = user; updateAuthUI(); } });
   socket.on('disconnect', () => {
     if (_hasJoinedOnce) showReconnecting(true);
   });
@@ -2771,6 +2886,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
   setupChat();
   renderReactionStrip();
   preloadSounds();
+  initSocket();                              // connect early: login + auto-login work from the home screen
+  updateAuthUI();
   document.body.dataset.screen = 'lobby';   // accueil actif par défaut
   refreshMyAvatarUI();                       // avatar du bouton profil (cactus par défaut)
   // Warm up the audio context on first interaction so sound buffers are decoded
