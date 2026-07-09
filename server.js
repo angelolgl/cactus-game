@@ -303,7 +303,7 @@ setInterval(() => { if (_accDirty) saveAccounts(); }, 5000);
 function _hashPw(pw, salt){ return crypto.scryptSync(String(pw), salt, 32).toString('hex'); }
 function _genFriendCode(){
   const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let c; do { c = 'CACT-' + Array.from({length:5}, () => A[Math.floor(Math.random()*A.length)]).join(''); }
+  let c; do { c = Array.from({length:6}, () => A[Math.floor(Math.random()*A.length)]).join(''); }
   while (Object.values(accounts).some(a => a.friendCode === c));
   return c;
 }
@@ -323,8 +323,12 @@ io.on('connection', socket => {
     username = (username||'').trim();
     if (!_validEmail(email)) return socket.emit('authResult', { ok:false, mode:'register', error:'Adresse email invalide.' });
     if (!username || username.length < 2 || username.length > 20) return socket.emit('authResult', { ok:false, mode:'register', error:'Pseudo : 2 à 20 caractères.' });
+    if (!/^[A-Za-z\u00C0-\u00FF]+$/.test(username)) return socket.emit('authResult', { ok:false, mode:'register', error:'Pseudo : lettres uniquement, sans chiffre ni espace.' });
     if (!_validPw(password)) return socket.emit('authResult', { ok:false, mode:'register', error:'Mot de passe : 6 caractères minimum.' });
     if (accounts[email]) return socket.emit('authResult', { ok:false, mode:'register', error:'Cette adresse email est déjà utilisée.' });
+    const usernameLower = username.toLowerCase();
+    if (Object.values(accounts).some(a => (a.username||'').toLowerCase() === usernameLower))
+      return socket.emit('authResult', { ok:false, mode:'register', error:'Ce pseudo est déjà pris, choisis-en un autre.' });
     const salt = crypto.randomBytes(16).toString('hex');
     accounts[email] = { email, username, salt, hash: _hashPw(password, salt), friendCode: _genFriendCode(), createdAt: Date.now(), stats:{games:0,wins:0,cactus:0}, history:[] };
     _accDirty = true; saveAccounts();
