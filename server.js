@@ -285,21 +285,69 @@ function allow(socket, action){
 function inRange(n, len){ return Number.isInteger(n) && n >= 0 && n < len; }
 
 // ── Socket events ──
-// ══════════════ ACCOUNTS (register / login / stats / history) ══════════════
-const ACCOUNTS_FILE = process.env.ACCOUNTS_FILE || path.join(DATA_DIR, 'cactus-accounts.json');
-let accounts = {};     // emailLower -> { email, username, salt, hash, friendCode, createdAt, stats, history }
-let authTokens = {};   // token -> usernameLower
-let _accDirty = false;
-function loadAccounts(){
-  try { const j = JSON.parse(fs.readFileSync(ACCOUNTS_FILE, 'utf8')); accounts = j.users || {}; authTokens = j.tokens || {}; }
-  catch(e){ accounts = {}; authTokens = {}; }
+// ══════════════ ACCOUNTS (register / login / stats / history) — Supabase ══════════════
+const SUPABASE_URL = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
+const SUPABASE_KEY = process.env.SUPABASE_KEY || '';
+const SUPABASE_ENABLED = !!(SUPABASE_URL && SUPABASE_KEY);
+if (!SUPABASE_ENABLED) console.warn('[storage] SUPABASE_URL / SUPABASE_KEY manquants — comptes NON persistants (mémoire uniquement, perdus au redéploiement).');
+
+async function sbFetch(pathAndQuery, options = {}) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${pathAndQuery}`, {
+    ...options,
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation',
+      ...(options.headers || {}),
+    },
+  });
+  if (!res.ok) { const txt = await res.text().catch(()=>''); throw new Error(`Supabase ${res.status}: ${txt}`); }
+  const ct = res.headers.get('content-type') || '';
+  return ct.includes('application/json') ? res.json() : null;
 }
-function saveAccounts(){
-  try { fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify({ users: accounts, tokens: authTokens })); _accDirty = false; }
-  catch(e){ console.error('accounts save failed:', e.message); }
+function dbRowToAccount(r){
+  return { email: r.email, username: r.username, salt: r.salt, hash: r.hash, friendCode: r.friend_code,
+    createdAt: r.created_at, stats: r.stats || {games:0,wins:0,cactus:0}, history: r.history || [],
+    nickname: r.nickname || null, level: r.level || 1, avatar: (r.avatar ?? null) };
 }
-loadAccounts();
-setInterval(() => { if (_accDirty) saveAccounts(); }, 5000);
+function accountToDbRow(a){
+  return { email: a.email, username: a.username, salt: a.salt, hash: a.hash, friend_code: a.friendCode,
+    created_at: a.createdAt, stats: a.stats || {games:0,wins:0,cactus:0}, history: a.history || [],
+    nickname: a.nickname || null, level: a.level || 1, avatar: (a.avatar ?? null) };
+}
+
+let accounts = {};     // emailLower -> { email, username, salt, hash, friendCode, createdAt, stats, history, nickname, level, avatar }
+let authTokens = {};   // token -> emailLower
+
+async function loadAccounts(){
+  if (!SUPABASE_ENABLED) return;
+  try {
+    const users = await sbFetch('users?select=*');
+    accounts = {};
+    (users || []).forEach(r => { accounts[r.email] = dbRowToAccount(r); });
+    const toks = await sbFetch('tokens?select=*');
+    authTokens = {};
+    (toks || []).forEach(t => { authTokens[t.token] = t.email; });
+    console.log(`[storage] ${Object.keys(accounts).length} compte(s) chargé(s) depuis Supabase.`);
+  } catch (e) { console.error('[storage] échec du chargement Supabase:', e.message); }
+}
+async function upsertAccount(a){
+  if (!SUPABASE_ENABLED) return;
+  try {
+    await sbFetch('users?on_conflict=email', { method:'POST', headers:{ 'Prefer':'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify(accountToDbRow(a)) });
+  } catch (e) { console.error('[storage] upsert compte échoué:', e.message); }
+}
+async function saveToken(token, email){
+  if (!SUPABASE_ENABLED) return;
+  try { await sbFetch('tokens', { method:'POST', headers:{ 'Prefer':'return=minimal' }, body: JSON.stringify({ token, email, created_at: Date.now() }) }); }
+  catch (e) { console.error('[storage] sauvegarde token échouée:', e.message); }
+}
+async function deleteToken(token){
+  if (!SUPABASE_ENABLED) return;
+  try { await sbFetch(`tokens?token=eq.${encodeURIComponent(token)}`, { method:'DELETE', headers:{ 'Prefer':'return=minimal' } }); }
+  catch (e) { console.error('[storage] suppression token échouée:', e.message); }
+}
 function _hashPw(pw, salt){ return crypto.scryptSync(String(pw), salt, 32).toString('hex'); }
 function _genFriendCode(){
   const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -308,7 +356,7 @@ function _genFriendCode(){
   return c;
 }
 function _genToken(){ return crypto.randomBytes(24).toString('hex'); }
-function _newToken(key){ const t = _genToken(); authTokens[t] = key; _accDirty = true; return t; }
+function _newToken(key){ const t = _genToken(); authTokens[t] = key; saveToken(t, key); return t; }
 function _pubUser(a){ return { email: a.email, username: a.username, friendCode: a.friendCode, stats: a.stats || {games:0,wins:0,cactus:0}, history: (a.history||[]).slice(0,20) }; }
 function _validEmail(e){ return typeof e === 'string' && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e.trim()); }
 function _validPw(p){ return typeof p === 'string' && p.length >= 6 && p.length <= 100; }
@@ -317,7 +365,7 @@ function _validPw(p){ return typeof p === 'string' && p.length >= 6 && p.length 
 io.on('connection', socket => {
   socket.username = null;
 
-  socket.on('register', ({ email, username, password } = {}) => {
+  socket.on('register', async ({ email, username, password } = {}) => {
     if (!allow(socket, 'register')) return;
     email = (email||'').trim().toLowerCase();
     username = (username||'').trim();
@@ -331,7 +379,7 @@ io.on('connection', socket => {
       return socket.emit('authResult', { ok:false, mode:'register', error:'Ce pseudo est déjà pris, choisis-en un autre.' });
     const salt = crypto.randomBytes(16).toString('hex');
     accounts[email] = { email, username, salt, hash: _hashPw(password, salt), friendCode: _genFriendCode(), createdAt: Date.now(), stats:{games:0,wins:0,cactus:0}, history:[] };
-    _accDirty = true; saveAccounts();
+    await upsertAccount(accounts[email]);
     socket.username = email;
     socket.emit('authResult', { ok:true, user:_pubUser(accounts[email]), token:_newToken(email) });
   });
@@ -360,7 +408,7 @@ io.on('connection', socket => {
   });
 
   socket.on('logout', ({ token } = {}) => {
-    if (token && authTokens[token]) { delete authTokens[token]; _accDirty = true; }
+    if (token && authTokens[token]) { delete authTokens[token]; deleteToken(token); }
     socket.username = null;
   });
 
@@ -1073,10 +1121,9 @@ function endRound(room) {
       a.history = a.history || [];
       a.history.unshift({ date: Date.now(), result: (i === winner ? 'win' : 'loss'), total: room.totals[i], winner: room.players[winner].name, players: room.players.map(x => x.name) });
       if (a.history.length > 20) a.history.length = 20;
-      _accDirty = true;
+      upsertAccount(a);
       if (p.socketId) io.to(p.socketId).emit('accountUpdate', { user: _pubUser(a) });
     });
-    saveAccounts();
   }
 
   room.phase = 'score';
@@ -1158,4 +1205,6 @@ setInterval(() => {
 _loadState();  // restore before accepting connections
 
 const PORT = process.env.PORT || 3000;
-httpServer.listen(PORT, () => console.log(`Cactus server running on port ${PORT}`));
+loadAccounts().finally(() => {
+  httpServer.listen(PORT, () => console.log(`Cactus server running on port ${PORT}`));
+});
