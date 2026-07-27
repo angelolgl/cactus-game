@@ -84,7 +84,10 @@ body{font-family:'Inter',sans-serif;background:#0f3020;color:white;font-size:14p
 @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(46,204,113,.6)}70%{box-shadow:0 0 0 7px rgba(46,204,113,0)}100%{box-shadow:0 0 0 0 rgba(46,204,113,0)}}
 .g-playername{font-size:15px;font-weight:600;color:var(--gold-light)}
 .g-instruction{font-size:11px;color:rgba(255,255,255,.45);margin-top:1px}
-.g-log{font-size:11px;color:rgba(255,255,255,.65);line-height:1.7}
+.g-log{font-size:14px;color:rgba(255,255,255,.85);line-height:1.5}
+.g-log .log-entry{padding:5px 0;border-bottom:1px solid rgba(255,255,255,.07)}
+.g-log .log-entry:last-child{border-bottom:none;padding-bottom:0}
+.g-log .log-entry:first-child{padding-top:0}
 .piles-row{display:flex;align-items:center;justify-content:center;gap:20px}
 .plabel{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:5px;text-align:center}
 .draw-count{font-size:10px;color:rgba(255,255,255,.3);margin-top:3px;text-align:center}
@@ -96,10 +99,12 @@ body{font-family:'Inter',sans-serif;background:#0f3020;color:white;font-size:14p
 .abtn.gold:hover{background:rgba(212,168,75,.35)}
 .power-note{background:rgba(212,168,75,.12);border:1px solid rgba(212,168,75,.3);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--gold-light)}
 
-.log-toggle-btn{position:fixed;bottom:14px;right:14px;width:46px;height:46px;border-radius:50%;border:2px solid var(--gold);background:rgba(0,0,0,.35);color:var(--gold-light);font-size:20px;line-height:1;cursor:pointer;z-index:700;box-shadow:0 2px 10px rgba(0,0,0,.45);transition:transform .12s,box-shadow .12s;display:none;align-items:center;justify-content:center}
+.log-toggle-btn{position:fixed;bottom:14px;right:14px;width:46px;height:46px;border-radius:50%;border:2px solid var(--gold);background:linear-gradient(160deg,rgba(30,40,30,.9),rgba(0,0,0,.5));color:var(--gold-light);font-size:20px;line-height:1;cursor:pointer;z-index:900;box-shadow:0 2px 10px rgba(0,0,0,.45);transition:transform .12s,box-shadow .12s;display:none;align-items:center;justify-content:center}
 .log-toggle-btn:hover{transform:scale(1.06);box-shadow:0 0 16px rgba(212,168,75,.5)}
+.log-toggle-btn.open{border-color:#fff;box-shadow:0 0 0 3px rgba(212,168,75,.3),0 2px 10px rgba(0,0,0,.45)}
 body[data-screen="game"] .log-toggle-btn{display:flex}
-.log-panel{position:fixed;bottom:66px;right:14px;width:250px;max-width:calc(100vw - 28px);background:rgba(8,11,17,.96);border:1px solid rgba(212,168,75,.4);border-radius:10px;padding:10px 12px;z-index:699;box-shadow:0 6px 24px rgba(0,0,0,.5);max-height:180px;overflow-y:auto}
+.log-panel{position:fixed;bottom:70px;right:14px;width:270px;max-width:calc(100vw - 28px);background:rgba(10,14,10,.97);border:1px solid rgba(212,168,75,.45);border-radius:14px;padding:12px 14px 10px;z-index:800;box-shadow:0 10px 30px rgba(0,0,0,.55);max-height:220px;overflow-y:auto}
+.log-panel-header{font-size:12px;font-weight:700;color:var(--gold-light);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;padding-bottom:7px;border-bottom:1px solid rgba(212,168,75,.3);display:flex;align-items:center;gap:6px}
 
 
 .prow.active{background:rgba(0,0,0,.35);border-color:rgba(212,168,75,.45);box-shadow:0 0 18px rgba(212,168,75,.08)}
@@ -423,6 +428,7 @@ body[data-screen="lobby"] #profile-btn{display:block}
   justify-content: center;
   gap: 18px;
   flex-wrap: nowrap;
+  margin-top: 22px;
 }
 .seat-left, .seat-right {
   display: flex;
@@ -444,50 +450,52 @@ body[data-screen="lobby"] #profile-btn{display:block}
 .seat-me {
   background: rgba(0,0,0,.22);
   border-radius: 16px;
-  padding: 10px 8px;
+  padding: 10px 12px;
   text-align: center;
   flex-shrink: 0;
 }
 .seat-me-wrap {
-  position: relative;
-  flex-shrink: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  align-self: center;
 }
 .cactus-corner {
-  position: absolute;
-  right: 14px;
-  bottom: 10px;
+  flex-shrink: 0;
 }
-.prow.me.me-row-flex {
+.prow.me.me-row-flex, .prow.top-row-flex {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   text-align: left;
   padding: 6px 10px;
 }
-.me-info-box {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  max-width: 130px;
-  flex-shrink: 0;
-}
-.me-name-pts {
+.seat-info-box {
   display: flex;
   flex-direction: column;
-  min-width: 0;
-  gap: 2px;
+  align-items: center;
+  gap: 4px;
+  max-width: 78px;
+  flex-shrink: 0;
 }
-.me-pseudo {
-  font-size: 13px;
+.seat-name-pts {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  gap: 1px;
+}
+.seat-pseudo {
+  font-size: 12px;
   font-weight: 600;
   color: var(--gold-light);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 95px;
+  max-width: 74px;
 }
-.me-pts {
-  font-size: 11px;
+.seat-pts {
+  font-size: 10px;
   color: rgba(255,255,255,.5);
 }
 .seat-me.active {
@@ -1041,6 +1049,7 @@ body.anim-lock #react-dock{ pointer-events:auto; }
   </div>
   <button class="log-toggle-btn" id="log-toggle-btn" onclick="toggleLogPanel()" title="Historique" aria-label="Historique">🌵</button>
   <div class="log-panel" id="log-panel" style="display:none">
+    <div class="log-panel-header">🌵 Historique</div>
     <div class="g-log" id="g-log"></div>
   </div>
   <!-- CHAT -->
@@ -2486,7 +2495,7 @@ function updateGame(state) {
   qid('g-name').textContent = isMyTurn ? '🎴 Votre tour' : `🎴 ${state.players[state.cur]?.name}`;
   qid('g-instr').textContent = getInstruction(state, isMyTurn);
   qid('g-log').innerHTML = (state.log||[]).slice(0,4).map((l,i)=>
-    `<span style="opacity:${1-i*.15};color:rgba(255,255,255,.95)">${l}</span>`).join(' · ');
+    `<div class="log-entry" style="opacity:${1-i*.15}">${l}</div>`).join('');
 
   if (state.phase==='peek' && state.players[myIndex]?.hand) {
     show('peek');
@@ -2688,7 +2697,7 @@ function renderPlayers(state) {
   else if (n === 5) { leftSlots = [opponents[0]]; topSlots = [opponents[1], opponents[2]]; rightSlots = [opponents[3]]; }
   else { topSlots = opponents; } // sécurité si jamais n sort de 2-5
 
-  topSlots.forEach(pi => seatTop.appendChild(buildPlayerRow(state, pi)));
+  topSlots.forEach(pi => seatTop.appendChild(buildPlayerRow(state, pi, 'top')));
   leftSlots.forEach(pi => seatLeft.appendChild(buildPlayerRow(state, pi, 'vertical')));
   rightSlots.forEach(pi => seatRight.appendChild(buildPlayerRow(state, pi, 'vertical')));
 
@@ -2701,35 +2710,22 @@ function buildPlayerRow(state, pi, orientation) {
   const pl = state.players[pi];
   const isActive = pi === state.cur;
   const isMe = pi === myIndex;
+  const isTop = orientation === 'top';
   const row = document.createElement('div');
   row.id = 'prow-' + pi;
-  row.className = 'prow' + (isActive ? ' active' : '') + (isMe ? ' me me-row-flex' : '') + (pl.connected === false ? ' offline' : '');
+  row.className = 'prow' + (isActive ? ' active' : '') + (isMe ? ' me me-row-flex' : '') + (isTop ? ' top-row-flex' : '') + (pl.connected === false ? ' offline' : '');
 
-  if (isMe) {
+  function buildInfoBox() {
     const info = document.createElement('div');
-    info.className = 'me-info-box';
+    info.className = 'seat-info-box';
     info.innerHTML = `
       <span class="pav-wrap"><img id="pav-${pi}" class="pav" src="${avatarImg(typeof pl.avatar==='number'?pl.avatar:null)}" alt="">${(state.turnActive && isActive) ? `<svg class="turn-ring" viewBox="0 0 52 52"><circle cx="26" cy="26" r="23" style="animation-duration:${state.turnMs||20000}ms;animation-delay:-${Math.max(0, Math.min((state.turnMs||20000), Date.now()-_ringStart))}ms"></circle></svg>` : ''}</span>
-      <div class="me-name-pts">
-        <div class="me-pseudo" title="${pl.name || ''}">${pl.name || 'Vous'}</div>
-        <div class="me-pts">${state.totals?.[pi] || 0} pts</div>
+      <div class="seat-name-pts">
+        <div class="seat-pseudo" title="${pl.name || ''}">${isMe ? (pl.name || 'Vous') : pl.name}</div>
+        <div class="seat-pts">${state.totals?.[pi] || 0} pts</div>
       </div>
       ${(isActive && state.phase === 'cactusWindow') ? '<span class="countdown-pill inline"><span id="cd-num">3</span></span>' : ''}`;
-    row.appendChild(info);
-  } else {
-    const header = document.createElement('div');
-    header.className = 'prow-header';
-    header.innerHTML = `
-      <div class="prow-name">${isActive ? '<div class="adot"></div>' : ''}
-        <span class="pav-wrap"><img id="pav-${pi}" class="pav" src="${avatarImg(typeof pl.avatar==='number'?pl.avatar:null)}" alt="">${(state.turnActive && isActive) ? `<svg class="turn-ring" viewBox="0 0 52 52"><circle cx="26" cy="26" r="23" style="animation-duration:${state.turnMs||20000}ms;animation-delay:-${Math.max(0, Math.min((state.turnMs||20000), Date.now()-_ringStart))}ms"></circle></svg>` : ''}</span>
-        ${pl.name}
-        ${pl.connected === false ? '<span class="offline-tag">🔌 déconnecté</span>' : ''}
-        <span class="cbadge">${pl.cardCount}🃏</span>
-        ${state.cactusRound && pi === state.cactusPl ? '<span style="color:#2ecc71;font-size:11px"> 🌵</span>' : ''}
-        ${(isActive && state.phase === 'cactusWindow') ? '<span class="countdown-pill inline"><span id="cd-num">3</span></span>' : ''}
-      </div>
-      <span class="pscore">${state.totals?.[pi] || 0} pts</span>`;
-    row.appendChild(header);
+    return info;
   }
 
   const hand = document.createElement('div');
@@ -2757,7 +2753,29 @@ function buildPlayerRow(state, pi, orientation) {
       }
     });
   }
-  row.appendChild(hand);
+
+  if (isMe) {
+    row.appendChild(buildInfoBox());
+    row.appendChild(hand);
+  } else if (isTop) {
+    row.appendChild(hand);
+    row.appendChild(buildInfoBox());
+  } else {
+    const header = document.createElement('div');
+    header.className = 'prow-header';
+    header.innerHTML = `
+      <div class="prow-name">${isActive ? '<div class="adot"></div>' : ''}
+        <span class="pav-wrap"><img id="pav-${pi}" class="pav" src="${avatarImg(typeof pl.avatar==='number'?pl.avatar:null)}" alt="">${(state.turnActive && isActive) ? `<svg class="turn-ring" viewBox="0 0 52 52"><circle cx="26" cy="26" r="23" style="animation-duration:${state.turnMs||20000}ms;animation-delay:-${Math.max(0, Math.min((state.turnMs||20000), Date.now()-_ringStart))}ms"></circle></svg>` : ''}</span>
+        ${pl.name}
+        ${pl.connected === false ? '<span class="offline-tag">🔌 déconnecté</span>' : ''}
+        <span class="cbadge">${pl.cardCount}🃏</span>
+        ${state.cactusRound && pi === state.cactusPl ? '<span style="color:#2ecc71;font-size:11px"> 🌵</span>' : ''}
+        ${(isActive && state.phase === 'cactusWindow') ? '<span class="countdown-pill inline"><span id="cd-num">3</span></span>' : ''}
+      </div>
+      <span class="pscore">${state.totals?.[pi] || 0} pts</span>`;
+    row.appendChild(header);
+    row.appendChild(hand);
+  }
   return row;
 }
 
@@ -2933,9 +2951,11 @@ function toggleDebug(btn) {
 
 function toggleLogPanel(){
   const p = qid('log-panel');
+  const btn = qid('log-toggle-btn');
   if (!p) return;
   const showing = p.style.display !== 'none';
   p.style.display = showing ? 'none' : 'block';
+  if (btn) btn.classList.toggle('open', !showing);
 }
 
 function returnToLobby() {
