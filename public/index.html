@@ -71,7 +71,7 @@ body{font-family:'Inter',sans-serif;background:#0f3020;color:white;font-size:14p
 .peek-btn:hover{transform:translateY(-2px)}
 
 /* ─── GAME ─── */
-#s-game{flex-direction:column;padding:10px 12px;gap:8px;overflow:hidden}
+#s-game{flex-direction:column;padding:10px 12px;gap:8px;overflow:hidden;--seat-side:78px;--seat-col:200px}
 .g-header{display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .g-title{font-family:'Playfair Display',serif;font-size:20px;color:var(--gold-light)}
 .g-btns{display:flex;gap:6px}
@@ -108,8 +108,6 @@ body[data-screen="game"] .log-toggle-btn{display:flex}
 
 
 .prow.active{background:rgba(0,0,0,.35);border-color:rgba(212,168,75,.45);box-shadow:0 0 18px rgba(212,168,75,.08)}
-.prow-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.prow-name{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:600}
 /* ── Avatars ── */
 .pav{width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;background:rgba(255,255,255,.06);border:2px solid var(--gold);box-shadow:0 1px 4px rgba(0,0,0,.35)}
 .pav-wrap{position:relative;display:inline-flex;width:40px;height:40px;flex-shrink:0}
@@ -131,9 +129,6 @@ body[data-screen="game"] .log-toggle-btn{display:flex}
 .av-opt:hover{transform:scale(1.06);border-color:rgba(212,168,75,.5)}
 .av-opt.sel{border-color:var(--gold-light);box-shadow:0 0 0 2px var(--gold),0 0 14px rgba(212,168,75,.55)}
 .av-label{font-size:12px;color:rgba(255,255,255,.5);text-align:center;margin-top:10px}
-.adot{width:7px;height:7px;border-radius:50%;background:#2ecc71;box-shadow:0 0 5px #2ecc71;flex-shrink:0}
-.cbadge{font-size:10px;background:rgba(255,255,255,.1);border-radius:20px;padding:2px 8px;color:rgba(255,255,255,.45)}
-.pscore{font-size:12px;color:rgba(255,255,255,.35)}
 .phand{display:flex;gap:7px;flex-wrap:wrap;align-items:flex-end;min-height:100px}
 
 /* ─── CARDS ─── */
@@ -428,16 +423,20 @@ body[data-screen="lobby"] #profile-btn{display:block}
   justify-content: center;
   gap: 18px;
   flex-wrap: nowrap;
-  margin-top: 22px;
 }
+/* Fixed, equal side widths: the centre column stays on the screen axis whatever
+   the length of the opponents' pseudos. */
 .seat-left, .seat-right {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  flex-shrink: 0;
+  flex: 0 0 var(--seat-col);
+  min-width: 0;
 }
+@media (max-width: 900px) { #s-game { --seat-col: 150px; } }
+@media (max-width: 600px) { #s-game { --seat-col: 104px; --seat-side: 52px; } }
 .table-center {
   display: flex;
   flex-direction: column;
@@ -447,28 +446,54 @@ body[data-screen="lobby"] #profile-btn{display:block}
   flex-shrink: 0;
   padding: 4px 0;
 }
+/* The mat hugs the cards, not the whole seat, so the avatar and the centring
+   counterweight sit outside it and the box never looks half-empty. */
 .seat-me {
-  background: rgba(0,0,0,.22);
-  border-radius: 16px;
-  padding: 10px 12px;
   text-align: center;
   flex-shrink: 0;
 }
+#seat-me .phand {
+  background: rgba(0,0,0,.22);
+  border-radius: 16px;
+  padding: 10px 12px;
+}
+/* Grid with two equal side columns so my hand sits exactly on the table axis,
+   the Cactus button hanging off its right without pushing it off-centre. */
 .seat-me-wrap {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: flex-end;
-  gap: 10px;
-  align-self: center;
+  pointer-events: none;
 }
+.seat-me-wrap > * { pointer-events: auto; }
+.seat-me-wrap > .seat-me { grid-column: 2; }
+/* Pulled back over my hand's counterweight so it mirrors the avatar opposite. */
 .cactus-corner {
+  grid-column: 3;
+  justify-self: start;
   flex-shrink: 0;
+  margin-left: calc(-1 * (var(--seat-side) + 10px));
 }
-.prow.me.me-row-flex, .prow.top-row-flex {
+.prow.me.me-row-flex, .prow.top-row-flex, .prow.side-row-flex {
   display: flex;
   align-items: center;
   gap: 12px;
   text-align: left;
   padding: 6px 10px;
+}
+/* Side seats follow the oval table: the avatar caps the card stack — above it on
+   the left, below it on the right (DOM order already puts it on the outer end). */
+.prow.side-row-flex { flex-direction: column; gap: 8px; }
+/* Hands sit on the table axis: the info box on one side is balanced by an equal
+   empty counterweight on the other, so cards, piles and my hand share one axis. */
+.prow.me.me-row-flex > .seat-info-box,
+.prow.top-row-flex > .seat-info-box,
+.prow.side-row-flex > .seat-info-box { width: var(--seat-side); }
+.prow.me.me-row-flex::after,
+.seat-top.single .prow.top-row-flex::before {
+  content: '';
+  width: var(--seat-side);
+  flex-shrink: 0;
 }
 .seat-info-box {
   display: flex;
@@ -498,7 +523,7 @@ body[data-screen="lobby"] #profile-btn{display:block}
   font-size: 10px;
   color: rgba(255,255,255,.5);
 }
-.seat-me.active {
+.seat-me.active .phand {
   background: rgba(212,168,75,.1);
   box-shadow: inset 0 0 0 1px rgba(212,168,75,.3);
 }
@@ -533,12 +558,13 @@ body[data-screen="lobby"] #profile-btn{display:block}
 #s-game.layout-2 .card { width: 78px; height: 112px; }
 #s-game.layout-2 .draw-wrap { width: 78px; height: 112px; }
 #s-game.layout-2 .pav, #s-game.layout-2 .pav-wrap { width: 48px; height: 48px; }
-#s-game.layout-2 .prow-name { font-size: 16px; }
-#s-game.layout-2 .cbadge, #s-game.layout-2 .pscore { font-size: 13px; }
 
 #s-game.layout-3 .card { width: 70px; height: 100px; }
 #s-game.layout-3 .draw-wrap { width: 70px; height: 100px; }
 #s-game.layout-3 .pav, #s-game.layout-3 .pav-wrap { width: 44px; height: 44px; }
+/* No top seat at 3 players: reserve its height so the table keeps the same
+   vertical rhythm as the 4/5-player layouts instead of floating up. */
+#s-game.layout-3 .seat-top { min-height: 120px; }
 
 #s-game.layout-4 .card { width: 65px; height: 94px; }
 #s-game.layout-4 .draw-wrap { width: 65px; height: 94px; }
@@ -546,9 +572,8 @@ body[data-screen="lobby"] #profile-btn{display:block}
 #s-game.layout-5 .card { width: 50px; height: 72px; }
 #s-game.layout-5 .draw-wrap { width: 50px; height: 72px; }
 #s-game.layout-5 .pav, #s-game.layout-5 .pav-wrap { width: 32px; height: 32px; }
-#s-game.layout-5 .prow-name { font-size: 12px; }
-#s-game.layout-5 .cbadge, #s-game.layout-5 .pscore { font-size: 10px; }
 #s-game.layout-5 .phand { gap: 4px; }
+#s-game.layout-5 .prow.side-row-flex { gap: 8px; }
 #s-game.layout-5 .seat-top { gap: 10px; }
 
 /* Ma main garde toujours la taille "2 joueurs", quel que soit le nombre de joueurs */
@@ -2697,9 +2722,13 @@ function renderPlayers(state) {
   else if (n === 5) { leftSlots = [opponents[0]]; topSlots = [opponents[1], opponents[2]]; rightSlots = [opponents[3]]; }
   else { topSlots = opponents; } // sécurité si jamais n sort de 2-5
 
-  topSlots.forEach(pi => seatTop.appendChild(buildPlayerRow(state, pi, 'top')));
-  leftSlots.forEach(pi => seatLeft.appendChild(buildPlayerRow(state, pi, 'vertical')));
-  rightSlots.forEach(pi => seatRight.appendChild(buildPlayerRow(state, pi, 'vertical')));
+  seatTop.classList.toggle('single', topSlots.length === 1);
+  // With two players up top, each one's info box goes on its outer side so the
+  // pair stays symmetric around the table axis.
+  topSlots.forEach((pi, i) => seatTop.appendChild(
+    buildPlayerRow(state, pi, topSlots.length === 1 ? 'top' : (i === 0 ? 'top-left' : 'top-right'))));
+  leftSlots.forEach(pi => seatLeft.appendChild(buildPlayerRow(state, pi, 'left')));
+  rightSlots.forEach(pi => seatRight.appendChild(buildPlayerRow(state, pi, 'right')));
 
   // My seat (bottom)
   seatMe.appendChild(buildPlayerRow(state, myIndex));
@@ -2710,10 +2739,12 @@ function buildPlayerRow(state, pi, orientation) {
   const pl = state.players[pi];
   const isActive = pi === state.cur;
   const isMe = pi === myIndex;
-  const isTop = orientation === 'top';
+  const isTop = orientation === 'top' || orientation === 'top-left' || orientation === 'top-right';
+  const isSide = orientation === 'left' || orientation === 'right';
+  const infoOnRight = orientation === 'top' || orientation === 'top-right' || orientation === 'right';
   const row = document.createElement('div');
   row.id = 'prow-' + pi;
-  row.className = 'prow' + (isActive ? ' active' : '') + (isMe ? ' me me-row-flex' : '') + (isTop ? ' top-row-flex' : '') + (pl.connected === false ? ' offline' : '');
+  row.className = 'prow' + (isActive ? ' active' : '') + (isMe ? ' me me-row-flex' : '') + (isTop ? ' top-row-flex' : '') + (isSide ? ' side-row-flex' : '') + (pl.connected === false ? ' offline' : '');
 
   function buildInfoBox() {
     const info = document.createElement('div');
@@ -2722,14 +2753,15 @@ function buildPlayerRow(state, pi, orientation) {
       <span class="pav-wrap"><img id="pav-${pi}" class="pav" src="${avatarImg(typeof pl.avatar==='number'?pl.avatar:null)}" alt="">${(state.turnActive && isActive) ? `<svg class="turn-ring" viewBox="0 0 52 52"><circle cx="26" cy="26" r="23" style="animation-duration:${state.turnMs||20000}ms;animation-delay:-${Math.max(0, Math.min((state.turnMs||20000), Date.now()-_ringStart))}ms"></circle></svg>` : ''}</span>
       <div class="seat-name-pts">
         <div class="seat-pseudo" title="${pl.name || ''}">${isMe ? (pl.name || 'Vous') : pl.name}</div>
-        <div class="seat-pts">${state.totals?.[pi] || 0} pts</div>
+        <div class="seat-pts">${state.totals?.[pi] || 0} pts${state.cactusRound && pi === state.cactusPl ? ' <span style="color:#2ecc71">🌵</span>' : ''}</div>
+        ${pl.connected === false ? '<span class="offline-tag">🔌 déconnecté</span>' : ''}
       </div>
       ${(isActive && state.phase === 'cactusWindow') ? '<span class="countdown-pill inline"><span id="cd-num">3</span></span>' : ''}`;
     return info;
   }
 
   const hand = document.createElement('div');
-  hand.className = 'phand' + (orientation === 'vertical' ? ' vertical' : '');
+  hand.className = 'phand' + (isSide ? ' vertical' : '');
   hand.id = `hand-${pi}`;
   if (pl.hand) {
     pl.hand.forEach((c, ci) => {
@@ -2737,7 +2769,7 @@ function buildPlayerRow(state, pi, orientation) {
       const inJack = state.jackSel?.some(s => s.p === pi && s.i === ci);
       // Cards always face down during play
       const el = mkCardEl({value:'?', suit:'?', uid:-pi*100-ci}, {flipped:false, selected:inJack});
-      if (orientation === 'vertical') el.classList.add('landscape');
+      if (isSide) el.classList.add('landscape');
       el.addEventListener('click', () => onCardClick(pi, ci, c, state));
       // Colored LED glow around cards changed by a Jack swap (own cards too).
       // Color depends on how many times the slot was swapped (1-4).
@@ -2754,26 +2786,12 @@ function buildPlayerRow(state, pi, orientation) {
     });
   }
 
-  if (isMe) {
-    row.appendChild(buildInfoBox());
-    row.appendChild(hand);
-  } else if (isTop) {
+  // The info box always sits on the outer side, so every hand faces the table centre.
+  if (infoOnRight) {
     row.appendChild(hand);
     row.appendChild(buildInfoBox());
   } else {
-    const header = document.createElement('div');
-    header.className = 'prow-header';
-    header.innerHTML = `
-      <div class="prow-name">${isActive ? '<div class="adot"></div>' : ''}
-        <span class="pav-wrap"><img id="pav-${pi}" class="pav" src="${avatarImg(typeof pl.avatar==='number'?pl.avatar:null)}" alt="">${(state.turnActive && isActive) ? `<svg class="turn-ring" viewBox="0 0 52 52"><circle cx="26" cy="26" r="23" style="animation-duration:${state.turnMs||20000}ms;animation-delay:-${Math.max(0, Math.min((state.turnMs||20000), Date.now()-_ringStart))}ms"></circle></svg>` : ''}</span>
-        ${pl.name}
-        ${pl.connected === false ? '<span class="offline-tag">🔌 déconnecté</span>' : ''}
-        <span class="cbadge">${pl.cardCount}🃏</span>
-        ${state.cactusRound && pi === state.cactusPl ? '<span style="color:#2ecc71;font-size:11px"> 🌵</span>' : ''}
-        ${(isActive && state.phase === 'cactusWindow') ? '<span class="countdown-pill inline"><span id="cd-num">3</span></span>' : ''}
-      </div>
-      <span class="pscore">${state.totals?.[pi] || 0} pts</span>`;
-    row.appendChild(header);
+    row.appendChild(buildInfoBox());
     row.appendChild(hand);
   }
   return row;
