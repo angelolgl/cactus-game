@@ -14,7 +14,20 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
-body{font-family:'Inter',sans-serif;background:#0f3020;color:white;font-size:14px;position:relative}
+body{font-family:'Inter',sans-serif;background:#0a1a12;color:white;font-size:14px;position:relative}
+/* The whole interface is laid out at a fixed 1664x936 and scaled as one block to
+   fit the window, so reducing the page shrinks everything together — buttons,
+   logo, chat and cards keep their exact relative positions at any size.
+   The table image lives on the stage too, so its painted border always lands
+   precisely on the stage edges instead of being cropped. */
+#stage{
+  position:fixed;top:50%;left:50%;
+  width:1664px;height:936px;
+  transform:translate(-50%,-50%) scale(var(--stage-scale,1));
+  transform-origin:center center;
+  background:#0f3020 url('/table-bg.webp') center/100% 100% no-repeat;
+  overflow:hidden;
+}
 .screen{position:fixed;inset:0;display:none;z-index:1}
 .screen.active{display:flex;animation:screenPop .3s cubic-bezier(.2,.7,.3,1) both}
 #s-game.active{animation:screenFade .3s ease both} /* no transform: keeps fixed chat/dock stable */
@@ -352,7 +365,6 @@ body[data-screen="lobby"] #profile-btn{display:block}
   gap:20px;
   padding:24px;
   overflow-y:auto;
-  background:var(--felt-dark);
 }
 .lobby-box{
   background:rgba(0,0,0,.4);
@@ -435,8 +447,6 @@ body[data-screen="lobby"] #profile-btn{display:block}
   flex: 0 0 var(--seat-col);
   min-width: 0;
 }
-@media (max-width: 900px) { #s-game { --seat-col: 150px; } }
-@media (max-width: 600px) { #s-game { --seat-col: 104px; --seat-side: 52px; } }
 .table-center {
   display: flex;
   flex-direction: column;
@@ -532,10 +542,6 @@ body[data-screen="lobby"] #profile-btn{display:block}
   align-items: center;
 }
 .card.landscape { width: 54px; height: 34px; }
-#s-game.layout-2 .card.landscape { width: 66px; height: 42px; }
-#s-game.layout-3 .card.landscape { width: 60px; height: 38px; }
-#s-game.layout-4 .card.landscape { width: 54px; height: 34px; }
-#s-game.layout-5 .card.landscape { width: 46px; height: 30px; }
 .prow {
   background: transparent;
   border: none;
@@ -554,29 +560,33 @@ body[data-screen="lobby"] #profile-btn{display:block}
   flex-wrap: wrap;
 }
 
-/* Player interface size scales down as player count goes up */
-#s-game.layout-2 .card { width: 78px; height: 112px; }
-#s-game.layout-2 .draw-wrap { width: 78px; height: 112px; }
+/* Card size scales down as the player count goes up. Window size is handled by
+   the #stage transform, so these stay fixed pixels in stage space. */
+#s-game.layout-2 { --card-w: 78px; }
+#s-game.layout-3 { --card-w: 70px; }
+#s-game.layout-4 { --card-w: 65px; }
+#s-game.layout-5 { --card-w: 50px; }
+#s-game .card, #s-game .draw-wrap {
+  width: var(--card-w);
+  height: calc(var(--card-w) * 1.436);
+}
+#s-game .card.landscape {
+  width: calc(var(--card-w) * .857);
+  height: calc(var(--card-w) * .543);
+}
 #s-game.layout-2 .pav, #s-game.layout-2 .pav-wrap { width: 48px; height: 48px; }
-
-#s-game.layout-3 .card { width: 70px; height: 100px; }
-#s-game.layout-3 .draw-wrap { width: 70px; height: 100px; }
 #s-game.layout-3 .pav, #s-game.layout-3 .pav-wrap { width: 44px; height: 44px; }
+#s-game.layout-5 .pav, #s-game.layout-5 .pav-wrap { width: 32px; height: 32px; }
 /* No top seat at 3 players: reserve its height so the table keeps the same
    vertical rhythm as the 4/5-player layouts instead of floating up. */
 #s-game.layout-3 .seat-top { min-height: 120px; }
-
-#s-game.layout-4 .card { width: 65px; height: 94px; }
-#s-game.layout-4 .draw-wrap { width: 65px; height: 94px; }
-
-#s-game.layout-5 .card { width: 50px; height: 72px; }
-#s-game.layout-5 .draw-wrap { width: 50px; height: 72px; }
-#s-game.layout-5 .pav, #s-game.layout-5 .pav-wrap { width: 32px; height: 32px; }
 #s-game.layout-5 .phand { gap: 4px; }
 #s-game.layout-5 .prow.side-row-flex { gap: 8px; }
 #s-game.layout-5 .seat-top { gap: 10px; }
 
-/* Ma main garde toujours la taille "2 joueurs", quel que soit le nombre de joueurs */
+/* Ma main garde toujours la taille "2 joueurs", quel que soit le nombre de joueurs.
+   Elle suit en revanche la taille de la fenêtre : figée à 78x112 elle débordait sur
+   le chat et rognait la table dès que la fenêtre n'était pas en plein écran. */
 #s-game #seat-me .card { width: 78px !important; height: 112px !important; }
 
 
@@ -975,6 +985,8 @@ body.anim-lock #react-dock{ pointer-events:auto; }
 </style>
 </head>
 <body>
+<!-- Fixed-ratio stage: see #stage in the CSS. -->
+<div id="stage">
 <div id="fly-layer"></div>
 <div id="modal-root"></div>
 <div id="cactus-announce" style="display:none"></div>
@@ -1138,6 +1150,7 @@ body.anim-lock #react-dock{ pointer-events:auto; }
     <button class="pd-item" id="pd-logout" style="display:none" onclick="logoutAccount()"><span class="pd-ic">🚪</span> Déconnexion</button>
   </nav>
 </aside>
+</div><!-- #stage -->
 
 <script src="/images1.js?v=3"></script>
 <script src="/images2.js?v=3"></script>
@@ -1255,7 +1268,18 @@ function mkFrontEl(card){
   return el;
 }
 
-function getRect(el){return el?el.getBoundingClientRect():null;}
+// Everything lives inside #stage, which is scaled to fit the window, and the
+// animation layers are inside it too — so positions have to be expressed in
+// stage units rather than in viewport pixels.
+const STAGE_W = 1664, STAGE_H = 936;
+function stageRect(el){
+  if(!el) return null;
+  const st = qid('stage').getBoundingClientRect();
+  const s = st.width / STAGE_W || 1;
+  const r = el.getBoundingClientRect();
+  return { left:(r.left-st.left)/s, top:(r.top-st.top)/s, width:r.width/s, height:r.height/s };
+}
+function getRect(el){return stageRect(el);}
 
 function flyCard(srcEl,dstEl,opts={},onDone){
   if(!srcEl||!dstEl){if(onDone)onDone();return;}
@@ -1460,7 +1484,7 @@ function showReaction(pi, emoji){
   const anchor = qid('pav-'+pi) || qid('prow-'+pi);
   const layer = qid('fly-layer');
   if(!anchor || !layer) return;
-  const r = anchor.getBoundingClientRect();
+  const r = stageRect(anchor);
   if(r.width===0 && r.height===0) return;
   const el=document.createElement('div');
   el.className='reaction-float';
@@ -1501,8 +1525,8 @@ function unlockInput(){ _animLock = Math.max(0, _animLock-1); if(_animLock===0) 
 function flyAnim(fromEl, toEl, opts={}, onDone){
   if(!fromEl || !toEl){ if(onDone) onDone(); return; }
   const layer=qid('fly-layer');
-  const fromR=fromEl.getBoundingClientRect();
-  const toR=toEl.getBoundingClientRect();
+  const fromR=stageRect(fromEl);
+  const toR=stageRect(toEl);
   if((fromR.width===0&&fromR.height===0)||(toR.width===0&&toR.height===0)){ if(onDone) onDone(); return; }
   const dur = _reduceMotion ? 160 : (opts.dur||ANIM_DUR);
   const CW=65, CH=94;
@@ -1774,8 +1798,8 @@ function doSnap(pi,ci,el,card){
   if(!top)return; // défausse vide, pas de snap possible
   // Capturer le rect de destination AVANT tout changement d'état ou de DOM
   const dstEl=qid('discard-card');
-  const dstRect=dstEl?dstEl.getBoundingClientRect():null;
-  const srcRect=el?el.getBoundingClientRect():null;
+  const dstRect=stageRect(dstEl);
+  const srcRect=stageRect(el);
   // Snap: même valeur ET même couleur (rouge/noir) pour éviter 9♠↔9♥
   const sameColor=(c1,c2)=>(c1.suit==='♥'||c1.suit==='♦')===(c2.suit==='♥'||c2.suit==='♦');
   if(card.value===top.value){ // même valeur uniquement
@@ -2446,11 +2470,11 @@ function dealPeekCards() {
   const peekH = qid('peek-h');
   if (peekH) peekH.textContent = 'Distribution…';
   const okBtn = qid('btn-peek-ok'); if (okBtn) okBtn.style.display = 'none';
-  const rowR = row.getBoundingClientRect();
+  const rowR = stageRect(row);
   // Invisible origin (a "deck") above the row — only used for its position.
   const origin = document.createElement('div');
-  origin.style.cssText = `position:fixed;width:65px;height:94px;left:${rowR.left + rowR.width/2 - 32}px;top:${Math.max(8, rowR.top - 104)}px;opacity:0;pointer-events:none;z-index:1;`;
-  document.body.appendChild(origin);
+  origin.style.cssText = `position:absolute;width:65px;height:94px;left:${rowR.left + rowR.width/2 - 32}px;top:${Math.max(8, rowR.top - 104)}px;opacity:0;pointer-events:none;z-index:1;`;
+  qid('stage').appendChild(origin);
 
   cards.forEach(c => { c.style.visibility = 'hidden'; });
   const STAG = 280;
@@ -3186,13 +3210,15 @@ document.addEventListener('DOMContentLoaded', ()=>{
   // and ready before the first game starts (avoids a skipped first sound).
   const _warmAudio = () => { _userInteracted = true; _audio(); if(_musicVolume>0) startMusic(); };
   document.addEventListener('pointerdown', _warmAudio, { once: true });
-  if (typeof TABLE_BG !== 'undefined') {
-    document.body.style.backgroundImage='url('+TABLE_BG+')';
-    document.body.style.backgroundSize='cover';
-    document.body.style.backgroundPosition='center';
-    document.body.style.backgroundAttachment='fixed';
-  }
 });
+
+// Scale the fixed-size stage to fit the window (see #stage in the CSS).
+function fitStage(){
+  const s = Math.min(innerWidth / STAGE_W, innerHeight / STAGE_H);
+  document.documentElement.style.setProperty('--stage-scale', s);
+}
+addEventListener('resize', fitStage);
+fitStage();
 </script>
 </body>
 </html>
