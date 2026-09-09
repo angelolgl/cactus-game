@@ -568,7 +568,7 @@ body[data-screen="lobby"] #profile-btn{display:block}
 /* Card size scales down as the player count goes up. Window size is handled by
    the #stage transform, so these stay fixed pixels in stage space. */
 #s-game.layout-2 { --card-w: 100px; }
-#s-game.layout-3 { --card-w: 92px; }
+#s-game.layout-3 { --card-w: 104px; }
 #s-game.layout-4 { --card-w: 84px; }
 #s-game.layout-5 { --card-w: 66px; }
 #s-game .card, #s-game .draw-wrap {
@@ -576,8 +576,8 @@ body[data-screen="lobby"] #profile-btn{display:block}
   height: calc(var(--card-w) * 1.436);
 }
 #s-game .card.landscape {
-  width: calc(var(--card-w) * .857);
-  height: calc(var(--card-w) * .543);
+  width: var(--card-w);
+  height: calc(var(--card-w) * .63);
 }
 #s-game .pav, #s-game .pav-wrap { width: 52px; height: 52px; }
 #s-game.layout-2 .pav, #s-game.layout-2 .pav-wrap { width: 60px; height: 60px; }
