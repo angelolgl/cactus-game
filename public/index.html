@@ -1274,6 +1274,7 @@ function mkFrontEl(card){
 const STAGE_W = 1664, STAGE_H = 936;
 function stageRect(el){
   if(!el) return null;
+  if(!el.nodeType) return el;            // already a stage-space rect
   const st = qid('stage').getBoundingClientRect();
   const s = st.width / STAGE_W || 1;
   const r = el.getBoundingClientRect();
@@ -1529,7 +1530,10 @@ function flyAnim(fromEl, toEl, opts={}, onDone){
   const toR=stageRect(toEl);
   if((fromR.width===0&&fromR.height===0)||(toR.width===0&&toR.height===0)){ if(onDone) onDone(); return; }
   const dur = _reduceMotion ? 160 : (opts.dur||ANIM_DUR);
-  const CW=65, CH=94;
+  // Match the card it leaves from, and grow/shrink into the one it lands on —
+  // a fixed size made the card visibly bigger than the pile it came out of.
+  const CW=fromR.width||65, CH=fromR.height||94;
+  const endScale = toR.width ? toR.width/CW : 1;
   const fromX=fromR.left + fromR.width/2 - CW/2;
   const fromY=fromR.top + fromR.height/2 - CH/2;
   const toX=toR.left + toR.width/2 - CW/2;
@@ -1553,12 +1557,12 @@ function flyAnim(fromEl, toEl, opts={}, onDone){
   // Subtle upward arc scaled to distance (feels like a real card toss)
   const lift = _reduceMotion ? 0 : Math.min(46, Math.max(10, Math.hypot(dx,dy)*0.09));
   const frames = _reduceMotion ? [
-    { transform:'translate3d(0,0,0)' },
-    { transform:`translate3d(${dx}px,${dy}px,0)` }
+    { transform:'translate3d(0,0,0) scale(1)' },
+    { transform:`translate3d(${dx}px,${dy}px,0) scale(${endScale})` }
   ] : [
     { transform:'translate3d(0,0,0) scale(1)', offset:0 },
-    { transform:`translate3d(${dx*0.5}px, ${dy*0.5 - lift}px, 0) scale(1.05)`, offset:0.55 },
-    { transform:`translate3d(${dx}px, ${dy}px, 0) scale(1)`, offset:1 }
+    { transform:`translate3d(${dx*0.5}px, ${dy*0.5 - lift}px, 0) scale(${((1+endScale)/2)*1.05})`, offset:0.55 },
+    { transform:`translate3d(${dx}px, ${dy}px, 0) scale(${endScale})`, offset:1 }
   ];
   const anim = fly.animate(frames, { duration:dur, easing:'cubic-bezier(.34,0,.22,1)', fill:'forwards' });
   anim.onfinish = ()=>{ if(fly.parentNode) fly.parentNode.removeChild(fly); if(onDone) onDone(); };
@@ -1572,7 +1576,18 @@ function elHand(pi){ return qid('hand-'+pi); }
 function elDrawnSlot(){ return qid('drawn-card-el'); }
 // Central "drawn card" zone next to the discard. For the drawer it's their drawn-card
 // slot; for everyone else it's the action area beside the discard (NOT their hand).
-function elDrawnArea(){ return qid('drawn-card-el') || qid('action-area') || qid('discard-slot'); }
+// Observers have no drawn-card element and the bare action area is a zero-height
+// container, so cards appeared to fly to and from a point in empty space: fall back
+// to a card-sized rect at that exact spot instead.
+function elDrawnArea(){
+  const real = qid('drawn-card-el');
+  if (real) return real;
+  const area = qid('action-area');
+  if (!area) return qid('discard-slot');
+  const r = stageRect(area), deck = stageRect(elDrawPile());
+  const w = (deck && deck.width) || 65, h = (deck && deck.height) || 94;
+  return { left: r.left + r.width / 2 - w / 2, top: r.top, width: w, height: h };
+}
 
 // Keep the real discard top hidden while a card is flying toward it (avoids the
 // "double card" flash where the new discard appears before the animation lands).
