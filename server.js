@@ -254,7 +254,7 @@ const ACTION_COOLDOWN = {      // min ms between two of the SAME action (per con
   draw:250, takeDiscard:250, discardDrawn:200, exchange:250, cancelExchange:150,
   snap:225, sevenActivate:150, sevenLook:150, sevenSkip:150,
   jackActivate:150, jackIgnore:150, jackPick:120, jackConfirm:200,
-  cactus:400, peekDone:300, setAvatar:150, startGame:600, nextRound:600,
+  cactus:400, peekDone:300, setAvatar:150, setNickname:300, startGame:600, nextRound:600,
   createRoom:500, joinRoom:400, chatMessage:700, reaction:300, rejoin:0,
   register:1500, login:800, authToken:400, logout:400,
 };
@@ -357,7 +357,15 @@ function _genFriendCode(){
 }
 function _genToken(){ return crypto.randomBytes(24).toString('hex'); }
 function _newToken(key){ const t = _genToken(); authTokens[t] = key; saveToken(t, key); return t; }
-function _pubUser(a){ return { email: a.email, username: a.username, friendCode: a.friendCode, stats: a.stats || {games:0,wins:0,cactus:0}, history: (a.history||[]).slice(0,20) }; }
+// Titles the player can wear under their name. All of them are selectable for now;
+// unlock conditions come later.
+const TITLES = ['Le Piquant','Roi du Désert','Reine du Désert','Le Stratège','Sniper',
+  'Intouchable','Mémoire de Cactus','Le Bluffeur','Main de Fer','Le Vétéran'];
+
+function _pubUser(a){ return { email: a.email, username: a.username, friendCode: a.friendCode,
+  nickname: a.nickname || null, level: a.level || 1, avatar: (a.avatar ?? null),
+  stats: a.stats || {games:0,wins:0,cactus:0,streak:0,bestStreak:0},
+  history: (a.history||[]).slice(0,20) }; }
 function _validEmail(e){ return typeof e === 'string' && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e.trim()); }
 function _validPw(p){ return typeof p === 'string' && p.length >= 6 && p.length <= 100; }
 
@@ -410,6 +418,18 @@ io.on('connection', socket => {
   socket.on('logout', ({ token } = {}) => {
     if (token && authTokens[token]) { delete authTokens[token]; deleteToken(token); }
     socket.username = null;
+  });
+
+  socket.emit('titles', TITLES);
+
+  socket.on('setNickname', async ({ nickname } = {}) => {
+    if (!allow(socket, 'setNickname')) return;
+    const a = socket.username && accounts[socket.username];
+    if (!a) return;
+    if (nickname !== null && !TITLES.includes(nickname)) return;
+    a.nickname = nickname;
+    await upsertAccount(a);
+    socket.emit('accountUpdate', { user: _pubUser(a) });
   });
 
   console.log('connect', socket.id);
@@ -816,6 +836,9 @@ io.on('connection', socket => {
     if (room._cactusTimer) clearTimeout(room._cactusTimer);
     room.cactusRound = true;
     room.cactusPl = pi;
+    // Counted per room and flushed with the other stats when the game ends.
+    room.cactusCalls = room.cactusCalls || {};
+    room.cactusCalls[pi] = (room.cactusCalls[pi] || 0) + 1;
     addLog(room, `🌵 CACTUS ! ${room.players[pi].name}`);
     // Broadcast a big "CACTUS" announcement to all players
     io.to(code).emit('cactusAnnounce', { playerName: room.players[pi].name });
@@ -1117,7 +1140,14 @@ function endRound(room) {
       const a = accounts[p.username];
       a.stats = a.stats || { games:0, wins:0, cactus:0 };
       a.stats.games++;
-      if (i === winner) a.stats.wins++;
+      a.stats.cactus = (a.stats.cactus || 0) + ((room.cactusCalls && room.cactusCalls[i]) || 0);
+      if (i === winner) {
+        a.stats.wins++;
+        a.stats.streak = (a.stats.streak || 0) + 1;
+        a.stats.bestStreak = Math.max(a.stats.bestStreak || 0, a.stats.streak);
+      } else {
+        a.stats.streak = 0;
+      }
       a.history = a.history || [];
       a.history.unshift({ date: Date.now(), result: (i === winner ? 'win' : 'loss'), total: room.totals[i], winner: room.players[winner].name, players: room.players.map(x => x.name) });
       if (a.history.length > 20) a.history.length = 20;
