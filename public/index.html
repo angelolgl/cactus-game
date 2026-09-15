@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>🌵 Cactus</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap');
 :root{
   --felt:#1a5c35;--felt-dark:#0d3520;--felt-light:#236b40;
   --gold:#d4a84b;--gold-light:#f0c96e;
@@ -291,32 +291,38 @@ body[data-screen="lobby"] #profile-btn{display:block}
 .pd-item.locked .pd-lock{ display:inline; }
 .pd-item:not(.locked) .pd-lock{ display:none; }
 /* ── Profile identity card ── */
-.profil-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;z-index:800;backdrop-filter:blur(10px);animation:fadeIn .2s ease;padding:16px}
-.profil-card{position:relative;background:linear-gradient(160deg,#f5ecd4 0%,#e8d5aa 60%,#d4b87a 100%);border:3px solid #b8860b;border-radius:22px;max-width:640px;width:100%;display:flex;flex-direction:row;gap:0;overflow:hidden;box-shadow:0 0 0 6px rgba(180,130,30,.25),0 24px 60px rgba(0,0,0,.7);animation:slideUp .3s cubic-bezier(.34,1.56,.64,1) both}
-/* left: avatar panel */
-.pc-left{width:44%;background:linear-gradient(180deg,#e8d5a8,#c9a85c);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 16px 24px;position:relative;border-right:2px solid rgba(180,130,30,.4);cursor:pointer}
-.pc-av-frame{position:relative;width:160px;height:192px;background:linear-gradient(180deg,#f0dea0,#c8a050);border:3px solid #b8860b;border-radius:50% 50% 45% 45%;display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 0 0 5px rgba(180,130,30,.3),inset 0 -4px 12px rgba(0,0,0,.2)}
-.pc-av-frame img{width:100%;height:100%;object-fit:cover}
-.pc-av-hint{margin-top:14px;font-size:11px;color:rgba(80,40,10,.65);font-style:italic;text-align:center}
-/* right: info */
-.pc-right{flex:1;padding:24px 24px 18px;display:flex;flex-direction:column;background:transparent}
-.pc-name{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:#3d1a05;line-height:1.1;margin-top:4px}
-.pc-sep{display:flex;align-items:center;gap:8px;margin:6px 0 10px}
-.pc-sep::before,.pc-sep::after{content:'';flex:1;height:1px;background:rgba(140,90,30,.35)}
-.pc-nickname{font-size:13px;color:#7a4a1a;font-style:italic}
-.pc-nickname[onclick]{cursor:pointer;border-bottom:1px dashed rgba(140,90,30,.5)}
-.pc-nickname[onclick]:hover{color:#5a3410}
+.profil-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;z-index:800;backdrop-filter:blur(6px);animation:fadeIn .2s ease}
+/* The card artwork is a fixed 1473x794 image (public/profile-card-bg.webp). Every slot below
+   is placed on a frame painted in it, so these values must be re-measured if the image changes. */
+.profil-card{position:relative;width:1473px;height:794px;flex-shrink:0;background:url('/profile-card-bg.webp') center/100% 100% no-repeat;filter:drop-shadow(0 24px 50px rgba(0,0,0,.6));font-family:'Playfair Display',serif;color:#0b221c;font-variant-numeric:lining-nums;animation:slideUp .3s cubic-bezier(.34,1.56,.64,1) both}
+.pc-close{position:absolute;top:28px;right:34px;width:44px;height:44px;border-radius:50%;border:1px solid rgba(11,34,28,.3);background:rgba(255,248,230,.5);color:#0b221c;font-size:20px;line-height:1;cursor:pointer}
+.pc-close:hover{background:rgba(255,248,230,.9)}
+/* Portrait = the oval's inner photo area, minus the cactus medallion overlapping its bottom. */
+.pc-av-frame{position:absolute;left:107px;top:104px;width:376px;height:532px;border-radius:50%;overflow:hidden;cursor:pointer;-webkit-mask:radial-gradient(circle at 186.5px 550.5px,transparent 50px,#000 51px);mask:radial-gradient(circle at 186.5px 550.5px,transparent 50px,#000 51px)}
+.pc-av-frame img{width:100%;height:100%;object-fit:cover;display:block}
+.pc-av-frame::after{content:"Changer d’avatar";position:absolute;left:0;right:0;bottom:150px;padding:10px 0;text-align:center;font-weight:600;font-size:24px;color:#f6ead0;background:rgba(11,34,28,.6);opacity:0;transition:opacity .2s}
+.pc-av-frame:hover::after{opacity:1}
+.pc-name,.pc-nickname{position:absolute;display:flex;align-items:center;justify-content:center;white-space:nowrap}
+.pc-name{left:578px;top:75px;width:480px;height:140px;font-weight:700;font-size:100px;line-height:1}
+.pc-nickname{left:668px;top:205px;width:300px;height:56px;font-weight:600;font-size:36px;line-height:1}
+.pc-nickname.empty{font-style:italic;font-weight:400;font-size:28px;color:#4a5a50}
+.pc-nickname[onclick]{cursor:pointer}
+.pc-nickname[onclick]:hover span{border-bottom:2px solid rgba(11,34,28,.45)}
 .nick-grid{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
 .nick-opt{background:rgba(255,255,255,.06);border:1px solid rgba(212,168,75,.35);border-radius:20px;color:rgba(255,255,255,.85);font-family:inherit;font-size:13px;padding:7px 14px;cursor:pointer;transition:border-color .15s,background .15s}
 .nick-opt:hover{border-color:var(--gold);background:rgba(212,168,75,.15)}
 .nick-opt.sel{border-color:var(--gold-light);background:rgba(212,168,75,.25);color:var(--gold-light)}
-.pc-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
-.pc-stat{background:rgba(255,255,255,.55);border:1px solid rgba(180,130,30,.3);border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px}
-.pc-stat-ic{font-size:22px;flex-shrink:0}
-.pc-stat-info .val{font-size:18px;font-weight:700;color:#3d1a05;display:block}
-.pc-stat-info .lbl{font-size:10px;color:#7a4a1a}
-.pc-code{margin-top:auto;padding-top:12px;font-size:11px;color:#9a6a2a;text-align:center;font-weight:600}
-.pc-close{position:absolute;top:10px;right:14px;background:none;border:none;font-size:22px;cursor:pointer;color:#7a4a1a;line-height:1}
+/* padding-left balances the trailing letter-spacing so the title stays centred between the diamonds */
+.pc-stats-title{position:absolute;left:852px;top:342px;width:294px;height:40px;padding-left:.17em;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:26px;letter-spacing:.17em;text-transform:uppercase}
+.pc-stat{position:absolute;height:110px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:2px;white-space:nowrap}
+.pc-stat-lbl{font-weight:600;font-size:21px;line-height:1.15}
+.pc-stat-val{font-weight:700;font-size:48px;line-height:1}
+.pc-stat.s1{left:717px;top:410px;width:125px}
+.pc-stat.s2{left:985px;top:410px;width:136px}
+.pc-stat.s3{left:1269px;top:410px;width:126px}
+.pc-stat.s4{left:841px;top:561px;width:127px}
+.pc-stat.s5{left:1154px;top:561px;width:150px}
+.pc-code{position:absolute;left:852px;top:748px;width:294px;text-align:center;font-weight:600;font-size:18px;letter-spacing:.04em;color:#5b4a2c}
 /* avatar picker (card grid) */
 .av-picker-bg{position:fixed;inset:0;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;z-index:900;animation:fadeIn .18s ease;padding:16px}
 .av-picker-box{background:linear-gradient(160deg,#1e4a2e,#0f2c1a);border:2px solid var(--gold);border-radius:20px;padding:22px;max-width:520px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.8)}
@@ -327,7 +333,7 @@ body[data-screen="lobby"] #profile-btn{display:block}
 .av-card:hover{transform:scale(1.04);border-color:var(--gold)}
 .av-card.sel{border-color:var(--gold-light);box-shadow:0 0 0 2px var(--gold)}
 .av-card-def{display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.04);color:rgba(255,255,255,.4);font-size:12px}
-@media(max-width:600px){.profil-card{flex-direction:column}.pc-left{width:100%;border-right:none;border-bottom:2px solid rgba(180,130,30,.4);padding:20px 16px 16px}.pc-av-frame{width:120px;height:144px}.pc-name{font-size:22px}.av-card-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:600px){.av-card-grid{grid-template-columns:repeat(3,1fr)}}
 .profil-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0 4px;justify-items:center}
 .profil-grid img{width:100%;max-width:64px;aspect-ratio:1/1;border-radius:50%;object-fit:cover;cursor:pointer;border:2px solid transparent;transition:transform .1s,border-color .1s}
 .profil-grid img:hover{transform:scale(1.06);border-color:rgba(212,168,75,.5)}
@@ -2007,38 +2013,53 @@ function closeProfileDrawer(){
 }
 function lockedRubric(name){ showToast('🔒 ' + name + ' — connecte-toi pour y accéder'); }
 
-// ── Profil (choix d'avatar ; stats à venir) ──
+// ── Profil ──
 function openProfil(){
   closeProfileDrawer();
   const u = currentUser;
   const avSrc = avatarImg(myAvatar, 0);
   const stats = u && u.stats ? u.stats : {games:0, wins:0, cactus:0, bestStreak:0};
   const winPct = stats.games > 0 ? Math.round(stats.wins/stats.games*1000)/10 : 0;
-  const nickname = u && u.nickname ? u.nickname : 'Choisir un surnom';
-  const friendCode = u ? '#'+u.friendCode : '';
+  const nickname = u ? (u.nickname || 'Choisir un surnom') : 'Joueur invité';
+  const stat = (slot, label, value) =>
+    `<div class="pc-stat ${slot}"><span class="pc-stat-lbl">${label}</span><span class="pc-stat-val">${value}</span></div>`;
   qid('modal-root').innerHTML = `<div class="profil-modal-bg" id="profil-bg" onclick="_closeProfil(event)">
     <div class="profil-card" onclick="event.stopPropagation()">
-      <button class="pc-close" onclick="qid('modal-root').innerHTML=''">✕</button>
-      <!-- LEFT: avatar -->
-      <div class="pc-left" onclick="openAvatarPicker()" title="Changer d'avatar">
-        <div class="pc-av-frame"><img src="${avSrc}" alt="avatar"></div>
-        <div class="pc-av-hint">Cliquez pour changer</div>
-      </div>
-      <!-- RIGHT: infos + stats -->
-      <div class="pc-right">
-        <div class="pc-name">${u ? u.username : 'Invité'}</div>
-        <div class="pc-sep"><span class="pc-nickname" ${u ? 'onclick="openNicknamePicker()" title="Changer de surnom"' : ''}>${nickname}</span></div>
-        <div class="pc-stats">
-          <div class="pc-stat"><span class="pc-stat-ic">🏆</span><div class="pc-stat-info"><span class="val">${stats.wins}</span><span class="lbl">Victoires</span></div></div>
-          <div class="pc-stat"><span class="pc-stat-ic">🌵</span><div class="pc-stat-info"><span class="val">${stats.cactus||0}</span><span class="lbl">Cactus annoncés</span></div></div>
-          <div class="pc-stat"><span class="pc-stat-ic">📊</span><div class="pc-stat-info"><span class="val">${winPct}%</span><span class="lbl">% de victoire</span></div></div>
-          <div class="pc-stat"><span class="pc-stat-ic">⭐</span><div class="pc-stat-info"><span class="val">${u ? (u.level||1) : 1}</span><span class="lbl">Niveau</span></div></div>
-          <div class="pc-stat"><span class="pc-stat-ic">🔥</span><div class="pc-stat-info"><span class="val">${stats.bestStreak||0}</span><span class="lbl">Meilleure série</span></div></div>
-        </div>
-        ${friendCode ? `<div class="pc-code">${friendCode}</div>` : ''}
-      </div>
+      <button class="pc-close" onclick="qid('modal-root').innerHTML=''" aria-label="Fermer">✕</button>
+      <div class="pc-av-frame" onclick="openAvatarPicker()" title="Changer d'avatar"><img src="${avSrc}" alt="avatar"></div>
+      <div class="pc-name"><span>${u ? u.username : 'Invité'}</span></div>
+      <div class="pc-nickname${u && !u.nickname ? ' empty' : ''}" ${u ? 'onclick="openNicknamePicker()" title="Changer de surnom"' : ''}><span>${nickname}</span></div>
+      <div class="pc-stats-title">Statistiques</div>
+      ${stat('s1', 'Victoires', stats.wins || 0)}
+      ${stat('s2', 'Cactus annoncés', stats.cactus || 0)}
+      ${stat('s3', '% de victoire', String(winPct).replace('.', ',') + '%')}
+      ${stat('s4', 'Niveau', u ? (u.level || 1) : 1)}
+      ${stat('s5', 'Meilleure série', stats.bestStreak || 0)}
+      ${u ? `<div class="pc-code">Code ami · ${u.friendCode}</div>` : ''}
     </div>
   </div>`;
+  fitProfilText();
+  if (document.fonts) document.fonts.ready.then(fitProfilText);
+}
+// Shrinks any text wider than the frame painted for it (long pseudos, big numbers).
+function fitProfilText(){
+  const fit = (el, max) => {
+    el.style.fontSize = '';
+    const w = el.offsetWidth;
+    if (w > max) el.style.fontSize = (parseFloat(getComputedStyle(el).fontSize) * max / w) + 'px';
+  };
+  document.querySelectorAll('.profil-card .pc-name, .profil-card .pc-nickname').forEach(box => {
+    if (box.firstElementChild) fit(box.firstElementChild, box.clientWidth);
+  });
+  document.querySelectorAll('.profil-card .pc-stat').forEach(box => {
+    [...box.children].forEach(c => fit(c, box.clientWidth));
+  });
+  // The artwork's labels all share one size: keep them uniform at the smallest fitted size.
+  const labels = [...document.querySelectorAll('.profil-card .pc-stat-lbl')];
+  if (labels.length) {
+    const min = Math.min(...labels.map(l => parseFloat(getComputedStyle(l).fontSize)));
+    labels.forEach(l => { l.style.fontSize = min + 'px'; });
+  }
 }
 function _closeProfil(e){ if(e.target.id==='profil-bg') qid('modal-root').innerHTML=''; }
 
@@ -2103,7 +2124,12 @@ function pickNickname(i){
   socket.emit('setNickname', { nickname: t });
   if (currentUser) currentUser.nickname = t;
   const el = document.querySelector('.pc-nickname');
-  if (el) el.textContent = t;
+  if (el) {
+    el.classList.remove('empty');
+    el.innerHTML = '<span></span>';
+    el.firstElementChild.textContent = t;
+    fitProfilText();
+  }
   document.querySelectorAll('.nick-opt').forEach(b => b.classList.remove('sel'));
   setTimeout(() => { const bg = qid('nick-pick-bg'); if (bg) bg.remove(); }, 300);
 }
