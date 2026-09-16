@@ -326,14 +326,17 @@ body[data-screen="lobby"] #profile-btn{display:block}
 .pc-stat.s5{left:1154px;top:561px;width:150px}
 /* avatar picker (card grid) */
 .av-picker-bg{position:fixed;inset:0;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;z-index:900;animation:fadeIn .18s ease;padding:16px}
-.av-picker-box{background:linear-gradient(160deg,#1e4a2e,#0f2c1a);border:2px solid var(--gold);border-radius:20px;padding:22px;max-width:520px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.8)}
+.av-picker-box{background:linear-gradient(160deg,#1e4a2e,#0f2c1a);border:2px solid var(--gold);border-radius:20px;padding:22px;max-width:600px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.8)}
 .av-picker-box h3{text-align:center;color:var(--gold-light);font-size:18px;margin-bottom:16px}
-.av-card-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-.av-card{background:rgba(255,255,255,.06);border:2px solid rgba(212,168,75,.25);border-radius:12px;overflow:hidden;cursor:pointer;transition:transform .12s,border-color .12s;aspect-ratio:3/4;position:relative}
-.av-card img{width:100%;height:100%;object-fit:cover}
-.av-card:hover{transform:scale(1.04);border-color:var(--gold)}
-.av-card.sel{border-color:var(--gold-light);box-shadow:0 0 0 2px var(--gold)}
-.av-card-def{display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.04);color:rgba(255,255,255,.4);font-size:12px}
+.av-card-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 14px}
+.av-card{display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer}
+/* Same proportions as the profile oval, so the picker previews exactly what the card will show. */
+.av-oval{width:100%;aspect-ratio:376/532;border-radius:50%;overflow:hidden;border:2px solid rgba(212,168,75,.35);background:#f4ece0;transition:transform .12s,border-color .12s,box-shadow .12s}
+.av-oval img{width:100%;height:100%;object-fit:cover;display:block}
+.av-card:hover .av-oval{transform:scale(1.04);border-color:var(--gold)}
+.av-card.sel .av-oval{border-color:var(--gold-light);box-shadow:0 0 0 3px var(--gold),0 0 16px rgba(212,168,75,.5)}
+.av-name{font-family:'Playfair Display',serif;font-weight:600;font-size:13px;line-height:1.2;text-align:center;color:rgba(255,255,255,.85)}
+.av-card.sel .av-name{color:var(--gold-light)}
 @media(max-width:600px){.av-card-grid{grid-template-columns:repeat(3,1fr)}}
 .profil-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0 4px;justify-items:center}
 .profil-grid img{width:100%;max-width:64px;aspect-ratio:1/1;border-radius:50%;object-fit:cover;cursor:pointer;border:2px solid transparent;transition:transform .1s,border-color .1s}
@@ -1993,6 +1996,10 @@ const DEFAULT_AVATAR = "data:image/webp;base64,UklGRpo2AABXRUJQVlA4WAoAAAAQAAAA/
 let myAvatar = null;                // null = cactus par défaut ; 0..9 = avatar choisi
 try { const _a = localStorage.getItem('cactus_avatar'); if (_a !== null) myAvatar = (_a === 'null' ? null : parseInt(_a,10)); } catch(e){}
 
+// Names follow the index order of public/avatars/N.webp (see avatars.js).
+const DEFAULT_AVATAR_NAME = 'CACTUS';
+const AVATAR_NAMES = ['Le Conductus', "L'Hotus", "L'Historius", 'Le Piratus', 'Espacus',
+  'Cactussette', 'Sportus', 'Chillus', 'Reine des cactus', 'Roi des cactus'];
 function avatarImg(n) {
   const AV = window.AVATARS || {};
   if (typeof n === 'number' && n >= 0 && AV[n]) return AV[n];
@@ -2069,13 +2076,14 @@ function _closeProfil(e){ if(e.target.id==='profil-bg') qid('modal-root').innerH
 function openAvatarPicker(){
   const AV = window.AVATARS || {};
   const total = Object.keys(AV).length || 10;
-  let cards = `<div class="av-card av-card-def ${myAvatar===null?'sel':''}" data-av="def" onclick="pickAvatar(null,this)" title="Cactus par défaut">
-    <img src="${DEFAULT_AVATAR}" alt="défaut" style="width:100%;height:100%;object-fit:cover">
-  </div>`;
-  for(let n=0;n<total;n++){
-    cards += `<div class="av-card ${myAvatar===n?'sel':''}" data-av="${n}" onclick="pickAvatar(${n},this)" title="Avatar ${n+1}">
-      <img src="${AV[n]||''}" alt="Avatar ${n+1}">
+  const card = (key, src, name, selected, onclick) =>
+    `<div class="av-card ${selected ? 'sel' : ''}" data-av="${key}" onclick="${onclick}" title="${name}">
+      <div class="av-oval"><img src="${src}" alt=""></div>
+      <div class="av-name">${name}</div>
     </div>`;
+  let cards = card('def', DEFAULT_AVATAR, DEFAULT_AVATAR_NAME, myAvatar === null, 'pickAvatar(null,this)');
+  for(let n=0;n<total;n++){
+    cards += card(n, AV[n] || '', AVATAR_NAMES[n] || ('Avatar ' + (n+1)), myAvatar === n, `pickAvatar(${n},this)`);
   }
   const root = document.createElement('div');
   root.innerHTML = `<div class="av-picker-bg" id="av-pick-bg" onclick="_closePickerBg(event)">
@@ -2084,7 +2092,7 @@ function openAvatarPicker(){
       <div class="av-card-grid">${cards}</div>
     </div>
   </div>`;
-  document.body.appendChild(root.firstElementChild);
+  qid('stage').appendChild(root.firstElementChild);
 }
 function _closePickerBg(e){ if(e.target.id==='av-pick-bg'){ const el=document.getElementById('av-pick-bg'); if(el) el.remove(); } }
 function pickAvatar(n, el){
@@ -2118,7 +2126,7 @@ function openNicknamePicker(){
       <div class="nick-grid">${items || '<div class="av-label">Aucun surnom disponible</div>'}</div>
     </div>
   </div>`;
-  document.body.appendChild(root.firstElementChild);
+  qid('stage').appendChild(root.firstElementChild);
 }
 function _closeNickBg(e){ if(e.target.id==='nick-pick-bg') e.target.remove(); }
 function pickNickname(i){
