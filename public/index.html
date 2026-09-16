@@ -329,6 +329,10 @@ body[data-screen="lobby"] #profile-btn{display:block}
 .av-picker-box{background:linear-gradient(160deg,#1e4a2e,#0f2c1a);border:2px solid var(--gold);border-radius:20px;padding:22px;max-width:600px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.8)}
 .av-picker-box h3{text-align:center;color:var(--gold-light);font-size:18px;margin-bottom:16px}
 .av-card-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 14px}
+.av-picker-box.avatars{max-width:1180px;padding:28px 32px}
+.av-picker-box.avatars h3{font-size:26px;margin-bottom:22px}
+.av-picker-box.avatars .av-card-grid{grid-template-columns:repeat(6,1fr);gap:22px 18px}
+.av-picker-box.avatars .av-name{font-size:18px}
 .av-card{display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer}
 /* Same proportions as the profile oval, so the picker previews exactly what the card will show. */
 .av-oval{width:100%;aspect-ratio:376/532;border-radius:50%;overflow:hidden;border:2px solid rgba(212,168,75,.35);background:#f4ece0;transition:transform .12s,border-color .12s,box-shadow .12s}
@@ -2087,7 +2091,7 @@ function openAvatarPicker(){
   }
   const root = document.createElement('div');
   root.innerHTML = `<div class="av-picker-bg" id="av-pick-bg" onclick="_closePickerBg(event)">
-    <div class="av-picker-box" onclick="event.stopPropagation()">
+    <div class="av-picker-box avatars" onclick="event.stopPropagation()">
       <h3>Choisir un avatar</h3>
       <div class="av-card-grid">${cards}</div>
     </div>
