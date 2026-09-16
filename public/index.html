@@ -303,7 +303,9 @@ body[data-screen="lobby"] #profile-btn{display:block}
 .pc-av-frame::after{content:"Changer d’avatar";position:absolute;left:0;right:0;bottom:150px;padding:10px 0;text-align:center;font-weight:600;font-size:24px;color:#f6ead0;background:rgba(11,34,28,.6);opacity:0;transition:opacity .2s}
 .pc-av-frame:hover::after{opacity:1}
 .pc-name,.pc-nickname{position:absolute;display:flex;align-items:center;justify-content:center;white-space:nowrap}
-.pc-name{left:578px;top:75px;width:480px;height:140px;font-weight:700;font-size:100px;line-height:1}
+.pc-name{left:578px;top:75px;width:480px;height:140px;font-weight:700;font-size:100px;line-height:1;gap:16px;overflow:hidden}
+.pc-name>*{flex-shrink:0}
+.pc-id{font-size:.3em;font-weight:600;letter-spacing:.03em;color:#5b4a2c;position:relative;top:.12em}
 .pc-nickname{left:668px;top:205px;width:300px;height:56px;font-weight:600;font-size:36px;line-height:1}
 .pc-nickname.empty{font-style:italic;font-weight:400;font-size:28px;color:#4a5a50}
 .pc-nickname[onclick]{cursor:pointer}
@@ -322,7 +324,6 @@ body[data-screen="lobby"] #profile-btn{display:block}
 .pc-stat.s3{left:1269px;top:410px;width:126px}
 .pc-stat.s4{left:841px;top:561px;width:127px}
 .pc-stat.s5{left:1154px;top:561px;width:150px}
-.pc-code{position:absolute;left:852px;top:748px;width:294px;text-align:center;font-weight:600;font-size:18px;letter-spacing:.04em;color:#5b4a2c}
 /* avatar picker (card grid) */
 .av-picker-bg{position:fixed;inset:0;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;z-index:900;animation:fadeIn .18s ease;padding:16px}
 .av-picker-box{background:linear-gradient(160deg,#1e4a2e,#0f2c1a);border:2px solid var(--gold);border-radius:20px;padding:22px;max-width:520px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.8)}
@@ -338,6 +339,10 @@ body[data-screen="lobby"] #profile-btn{display:block}
 .profil-grid img{width:100%;max-width:64px;aspect-ratio:1/1;border-radius:50%;object-fit:cover;cursor:pointer;border:2px solid transparent;transition:transform .1s,border-color .1s}
 .profil-grid img:hover{transform:scale(1.06);border-color:rgba(212,168,75,.5)}
 .profil-grid img.sel{border-color:var(--gold-light);box-shadow:0 0 0 2px var(--gold),0 0 12px rgba(212,168,75,.5)}
+/* The avatars are full-body characters on a transparent background: the profile oval and the
+   picker show them whole, while the small round badges frame the head instead of the belly. */
+.pc-av-frame img,.av-card img,.av-opt,.profil-grid img{object-fit:contain}
+.pav,.lobby-av,.vo-avatar,#profile-btn img{object-fit:cover;object-position:top}
 .auth-field{width:100%;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:12px 14px;color:#fff;font-size:15px;margin-bottom:10px;outline:none}
 .auth-field:focus{border-color:rgba(212,168,75,.5)}
 .auth-tabs{display:flex;gap:6px;margin-bottom:14px}
@@ -1172,7 +1177,7 @@ body.anim-lock #react-dock{ pointer-events:auto; }
 
 <script src="/images1.js?v=3"></script>
 <script src="/images2.js?v=3"></script>
-<script src="/avatars.js?v=1"></script>
+<script src="/avatars.js?v=2"></script>
 <script src="/music.js?v=1"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script>
@@ -2027,7 +2032,7 @@ function openProfil(){
     <div class="profil-card" onclick="event.stopPropagation()">
       <button class="pc-close" onclick="qid('modal-root').innerHTML=''" aria-label="Fermer">✕</button>
       <div class="pc-av-frame" onclick="openAvatarPicker()" title="Changer d'avatar"><img src="${avSrc}" alt="avatar"></div>
-      <div class="pc-name"><span>${u ? u.username : 'Invité'}</span></div>
+      <div class="pc-name"><span>${u ? u.username : 'Invité'}</span>${u ? `<span class="pc-id">#${u.friendCode}</span>` : ''}</div>
       <div class="pc-nickname${u && !u.nickname ? ' empty' : ''}" ${u ? 'onclick="openNicknamePicker()" title="Changer de surnom"' : ''}><span>${nickname}</span></div>
       <div class="pc-stats-title">Statistiques</div>
       ${stat('s1', 'Victoires', stats.wins || 0)}
@@ -2035,7 +2040,6 @@ function openProfil(){
       ${stat('s3', '% de victoire', String(winPct).replace('.', ',') + '%')}
       ${stat('s4', 'Niveau', u ? (u.level || 1) : 1)}
       ${stat('s5', 'Meilleure série', stats.bestStreak || 0)}
-      ${u ? `<div class="pc-code">Code ami · ${u.friendCode}</div>` : ''}
     </div>
   </div>`;
   fitProfilText();
@@ -2043,16 +2047,16 @@ function openProfil(){
 }
 // Shrinks any text wider than the frame painted for it (long pseudos, big numbers).
 function fitProfilText(){
-  const fit = (el, max) => {
-    el.style.fontSize = '';
-    const w = el.offsetWidth;
+  const fit = (el, w, max) => {
     if (w > max) el.style.fontSize = (parseFloat(getComputedStyle(el).fontSize) * max / w) + 'px';
   };
+  // Name and nickname scale as a block, so the identifier shrinks along with the pseudo.
   document.querySelectorAll('.profil-card .pc-name, .profil-card .pc-nickname').forEach(box => {
-    if (box.firstElementChild) fit(box.firstElementChild, box.clientWidth);
+    box.style.fontSize = '';
+    fit(box, box.scrollWidth, box.clientWidth);
   });
   document.querySelectorAll('.profil-card .pc-stat').forEach(box => {
-    [...box.children].forEach(c => fit(c, box.clientWidth));
+    [...box.children].forEach(c => { c.style.fontSize = ''; fit(c, c.offsetWidth, box.clientWidth); });
   });
   // The artwork's labels all share one size: keep them uniform at the smallest fitted size.
   const labels = [...document.querySelectorAll('.profil-card .pc-stat-lbl')];
