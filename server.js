@@ -475,7 +475,7 @@ io.on('connection', socket => {
     if (!room || room.started) return;              // only before launch
     const pi = resolvePlayer(room, socket, playerIndex);
     if (pi < 0) return;
-    if (avatar !== null && (typeof avatar !== 'number' || avatar < 0 || avatar > 9)) return;
+    if (avatar !== null && (typeof avatar !== 'number' || avatar < 0 || avatar > 10 || !Number.isInteger(avatar))) return;
     room.players[pi].avatar = avatar;   // null = default cactus
     io.to(code).emit('lobbyUpdate', { players: room.players.map(p => ({ name: p.name, avatar: p.avatar })), host: room.hostIndex });
   });

@@ -345,7 +345,6 @@ body[data-screen="lobby"] #profile-btn{display:block}
 .av-card:hover .av-oval{transform:scale(1.04);border-color:var(--gold)}
 .av-card.sel .av-oval{border-color:var(--gold-light);box-shadow:0 0 0 3px var(--gold),0 0 16px rgba(212,168,75,.5)}
 .av-name{font-family:'Playfair Display',serif;font-weight:600;font-size:13px;line-height:1.2;text-align:center;color:rgba(255,255,255,.85)}
-.av-card.sel .av-name{color:var(--gold-light)}
 @media(max-width:600px){.av-card-grid{grid-template-columns:repeat(3,1fr)}}
 .profil-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0 4px;justify-items:center}
 .profil-grid img{width:100%;max-width:64px;aspect-ratio:1/1;border-radius:50%;object-fit:cover;cursor:pointer;border:2px solid transparent;transition:transform .1s,border-color .1s}
@@ -1188,7 +1187,7 @@ body.anim-lock #react-dock{ pointer-events:auto; }
 
 <script src="/images1.js?v=3"></script>
 <script src="/images2.js?v=3"></script>
-<script src="/avatars.js?v=3"></script>
+<script src="/avatars.js?v=5"></script>
 <script src="/music.js?v=1"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script>
@@ -2006,9 +2005,9 @@ let myAvatar = null;                // null = cactus par défaut ; 0..9 = avatar
 try { const _a = localStorage.getItem('cactus_avatar'); if (_a !== null) myAvatar = (_a === 'null' ? null : parseInt(_a,10)); } catch(e){}
 
 // Names follow the index order of public/avatars/N.webp (see avatars.js).
-const DEFAULT_AVATAR_NAME = 'CACTUS';
-const AVATAR_NAMES = ['Le Conductus', "L'Hotus", "L'Historius", 'Le Piratus', 'Espacus',
-  'Cactussette', 'Sportus', 'Chillus', 'Reine des cactus', 'Roi des cactus'];
+const DEFAULT_AVATAR_NAME = 'Cactus';
+const AVATAR_NAMES = ['Le Conductus', "L'Hotus", "L'Historius", 'Le Piratus', "L'Espacus",
+  'La Cactussette', 'Le Sportus', 'Le Chillus', 'La Reine des cactus', 'Le Roi des cactus', 'La Cow-Ctus'];
 function avatarImg(n) {
   const AV = window.AVATARS || {};
   if (typeof n === 'number' && n >= 0 && AV[n]) return AV[n];

@@ -1,1 +1,1 @@
-window.AVATARS = {0:"/avatars/0.webp?v=3", 1:"/avatars/1.webp?v=3", 2:"/avatars/2.webp?v=3", 3:"/avatars/3.webp?v=3", 4:"/avatars/4.webp?v=3", 5:"/avatars/5.webp?v=3", 6:"/avatars/6.webp?v=3", 7:"/avatars/7.webp?v=3", 8:"/avatars/8.webp?v=3", 9:"/avatars/9.webp?v=3"};
+window.AVATARS = {0:"/avatars/0.webp?v=5", 1:"/avatars/1.webp?v=5", 2:"/avatars/2.webp?v=5", 3:"/avatars/3.webp?v=5", 4:"/avatars/4.webp?v=5", 5:"/avatars/5.webp?v=5", 6:"/avatars/6.webp?v=5", 7:"/avatars/7.webp?v=5", 8:"/avatars/8.webp?v=5", 9:"/avatars/9.webp?v=5", 10:"/avatars/10.webp?v=5"};
