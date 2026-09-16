@@ -248,7 +248,7 @@ body.anim-lock #chat-widget{pointer-events:auto}
 /* ─── MODAL ─── */
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:800;backdrop-filter:blur(5px);animation:fadeIn .2s ease}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-.modal-box{background:linear-gradient(150deg,#1e4a2e,#0f2c1a);border:1px solid rgba(212,168,75,.3);border-radius:20px;padding:28px 32px;max-width:380px;width:90%;text-align:center;animation:slideUp .25s cubic-bezier(.34,1.56,.64,1) both}
+.modal-box{position:relative;background:linear-gradient(150deg,#1e4a2e,#0f2c1a);border:1px solid rgba(212,168,75,.3);border-radius:20px;padding:28px 32px;max-width:380px;width:90%;text-align:center;animation:slideUp .25s cubic-bezier(.34,1.56,.64,1) both}
 @keyframes slideUp{from{transform:translateY(24px) scale(.95);opacity:0}to{transform:none;opacity:1}}
 .modal-box h3{font-family:'Playfair Display',serif;font-size:24px;color:var(--gold-light);margin-bottom:10px}
 .modal-box p{color:rgba(255,255,255,.6);font-size:14px;line-height:1.65;margin-bottom:18px}
@@ -300,6 +300,8 @@ body[data-screen="lobby"] #profile-btn{display:block}
 .cactus-close:active{transform:rotate(90deg) scale(.95)}
 .pc-close{top:30px;right:36px;width:72px;height:72px}
 .av-picker-box .cactus-close{top:14px;right:14px}
+.modal-box>.cactus-close{top:10px;right:10px;width:46px;height:46px}
+.modal-box:has(>.cactus-close)>h3,.modal-box:has(>.cactus-close)>.auth-tabs{margin-inline:40px}
 /* Portrait = the oval's inner photo area, minus the cactus medallion overlapping its bottom. */
 .pc-av-frame{position:absolute;left:107px;top:104px;width:376px;height:532px;border-radius:50%;overflow:hidden;cursor:pointer;-webkit-mask:radial-gradient(circle at 186.5px 550.5px,transparent 50px,#000 51px);mask:radial-gradient(circle at 186.5px 550.5px,transparent 50px,#000 51px)}
 .pc-av-frame img{width:100%;height:100%;object-fit:cover;display:block}
@@ -2162,6 +2164,7 @@ function openAuth(mode){
   closeProfileDrawer();
   const login = mode !== 'register';
   qid('modal-root').innerHTML = `<div class="modal-bg"><div class="modal-box">
+    <button class="cactus-close" onclick="qid('modal-root').innerHTML=''" aria-label="Fermer" title="Fermer"></button>
     <div class="auth-tabs">
       <button class="auth-tab ${login?'on':''}" onclick="openAuth('login')">Connexion</button>
       <button class="auth-tab ${!login?'on':''}" onclick="openAuth('register')">Inscription</button>
@@ -2172,7 +2175,6 @@ function openAuth(mode){
     ${!login ? '<input id="auth-pw2" class="auth-field" type="password" placeholder="Confirmer le mot de passe">' : ''}
     <div id="auth-error" style="color:#ff7a63;font-size:13px;text-align:center;min-height:16px;margin:4px 0"></div>
     <button class="set-btn" id="auth-submit" style="transition:filter .15s,opacity .15s">${login?'Se connecter':"S'inscrire"}</button>
-    <button class="set-btn ghost" onclick="qid('modal-root').innerHTML=''">Fermer</button>
     ${!login ? '<p style="font-size:12px;color:rgba(255,255,255,.4);text-align:center;margin-top:10px">Un code ami unique sera généré à l\'inscription.</p>' : ''}
   </div></div>`;
   // Light up submit when all fields are filled
@@ -2261,8 +2263,8 @@ function openHistory(){
   }).join('') : '<p style="color:rgba(255,255,255,.5);text-align:center;padding:16px">Aucune partie terminée pour l\'instant.</p>';
   closeProfileDrawer();
   qid('modal-root').innerHTML = `<div class="modal-bg"><div class="modal-box">
+    <button class="cactus-close" onclick="qid('modal-root').innerHTML=''" aria-label="Fermer" title="Fermer"></button>
     <h3>🕓 20 dernières parties</h3><div style="max-height:50vh;overflow:auto">${rows}</div>
-    <button class="set-btn ghost" onclick="qid('modal-root').innerHTML=''" style="margin-top:14px">Fermer</button>
   </div></div>`;
 }
 
@@ -2271,6 +2273,7 @@ function openFriends(){
   closeProfileDrawer();
   const code = '#' + currentUser.friendCode;
   qid('modal-root').innerHTML = `<div class="modal-bg"><div class="modal-box">
+    <button class="cactus-close" onclick="qid('modal-root').innerHTML=''" aria-label="Fermer" title="Fermer"></button>
     <h3>👥 Mes amis</h3>
     <p style="color:rgba(255,255,255,.6);text-align:center;margin-bottom:4px">Ton code ami</p>
     <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:16px">
@@ -2280,7 +2283,6 @@ function openFriends(){
     <p style="color:rgba(255,255,255,.6);text-align:center;margin-bottom:6px">Ajouter un ami</p>
     <input id="friend-input" class="auth-field" value="#" placeholder="#CACT-XXXXX" maxlength="11" autocapitalize="characters" spellcheck="false">
     <button class="set-btn" id="friend-add">Ajouter</button>
-    <button class="set-btn ghost" onclick="qid('modal-root').innerHTML=''" style="margin-top:10px">Fermer</button>
     <p style="font-size:12px;color:rgba(255,255,255,.4);text-align:center;margin-top:10px">La liste d'amis arrive bientôt.</p>
   </div></div>`;
   qid('friend-copy').addEventListener('click', ()=>{ if(navigator.clipboard) navigator.clipboard.writeText(code).then(()=>showToast('Code copié')).catch(()=>{}); });
@@ -3112,6 +3114,7 @@ function returnToLobby() {
 function showSettings(){
   const sfx = Math.round(_sfxVolume*100), mus = Math.round(_musicVolume*100);
   qid('modal-root').innerHTML = `<div class="modal-bg"><div class="modal-box settings-modal">
+    <button class="cactus-close" id="set-close" aria-label="Fermer" title="Fermer"></button>
     <h3>⚙️ Paramètres</h3>
     <div class="set-sound">
       <div class="set-row"><label>🔊 Effets sonores</label><span id="sfx-val">${sfx}%</span></div>
@@ -3125,7 +3128,6 @@ function showSettings(){
       <button class="set-link">Confidentialité</button>
       <button class="set-link">Conditions d'utilisation</button>
     </div>
-    <button class="set-btn ghost" id="set-close">Fermer</button>
   </div></div>`;
   const sfxS = qid('sfx-slider'), musS = qid('mus-slider');
   sfxS.addEventListener('input', ()=>{ setSfxVolume(sfxS.value/100); qid('sfx-val').textContent = sfxS.value+'%'; });
