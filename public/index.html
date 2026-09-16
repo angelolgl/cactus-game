@@ -295,8 +295,11 @@ body[data-screen="lobby"] #profile-btn{display:block}
 /* The card artwork is a fixed 1473x794 image (public/profile-card-bg.webp). Every slot below
    is placed on a frame painted in it, so these values must be re-measured if the image changes. */
 .profil-card{position:relative;width:1473px;height:794px;flex-shrink:0;background:url('/profile-card-bg.webp') center/100% 100% no-repeat;filter:drop-shadow(0 24px 50px rgba(0,0,0,.6));font-family:'Playfair Display',serif;color:#0b221c;font-variant-numeric:lining-nums;animation:slideUp .3s cubic-bezier(.34,1.56,.64,1) both}
-.pc-close{position:absolute;top:28px;right:34px;width:44px;height:44px;border-radius:50%;border:1px solid rgba(11,34,28,.3);background:rgba(255,248,230,.5);color:#0b221c;font-size:20px;line-height:1;cursor:pointer}
-.pc-close:hover{background:rgba(255,248,230,.9)}
+.cactus-close{position:absolute;width:56px;height:56px;padding:0;border:0;background:url('/close-cactus.webp') center/contain no-repeat;cursor:pointer;filter:drop-shadow(0 3px 5px rgba(0,0,0,.35));transition:transform .18s ease}
+.cactus-close:hover{transform:rotate(90deg) scale(1.1)}
+.cactus-close:active{transform:rotate(90deg) scale(.95)}
+.pc-close{top:30px;right:36px;width:72px;height:72px}
+.av-picker-box .cactus-close{top:14px;right:14px}
 /* Portrait = the oval's inner photo area, minus the cactus medallion overlapping its bottom. */
 .pc-av-frame{position:absolute;left:107px;top:104px;width:376px;height:532px;border-radius:50%;overflow:hidden;cursor:pointer;-webkit-mask:radial-gradient(circle at 186.5px 550.5px,transparent 50px,#000 51px);mask:radial-gradient(circle at 186.5px 550.5px,transparent 50px,#000 51px)}
 .pc-av-frame img{width:100%;height:100%;object-fit:cover;display:block}
@@ -326,7 +329,7 @@ body[data-screen="lobby"] #profile-btn{display:block}
 .pc-stat.s5{left:1154px;top:561px;width:150px}
 /* avatar picker (card grid) */
 .av-picker-bg{position:fixed;inset:0;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;z-index:900;animation:fadeIn .18s ease;padding:16px}
-.av-picker-box{background:linear-gradient(160deg,#1e4a2e,#0f2c1a);border:2px solid var(--gold);border-radius:20px;padding:22px;max-width:600px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.8)}
+.av-picker-box{position:relative;background:linear-gradient(160deg,#1e4a2e,#0f2c1a);border:2px solid var(--gold);border-radius:20px;padding:22px;max-width:600px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.8)}
 .av-picker-box h3{text-align:center;color:var(--gold-light);font-size:18px;margin-bottom:16px}
 .av-card-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 14px}
 .av-picker-box.avatars{max-width:1180px;padding:28px 32px}
@@ -1183,7 +1186,7 @@ body.anim-lock #react-dock{ pointer-events:auto; }
 
 <script src="/images1.js?v=3"></script>
 <script src="/images2.js?v=3"></script>
-<script src="/avatars.js?v=2"></script>
+<script src="/avatars.js?v=3"></script>
 <script src="/music.js?v=1"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script>
@@ -2040,7 +2043,7 @@ function openProfil(){
     `<div class="pc-stat ${slot}"><span class="pc-stat-lbl">${label}</span><span class="pc-stat-val">${value}</span></div>`;
   qid('modal-root').innerHTML = `<div class="profil-modal-bg" id="profil-bg" onclick="_closeProfil(event)">
     <div class="profil-card" onclick="event.stopPropagation()">
-      <button class="pc-close" onclick="qid('modal-root').innerHTML=''" aria-label="Fermer">✕</button>
+      <button class="cactus-close pc-close" onclick="qid('modal-root').innerHTML=''" aria-label="Fermer" title="Fermer"></button>
       <div class="pc-av-frame" onclick="openAvatarPicker()" title="Changer d'avatar"><img src="${avSrc}" alt="avatar"></div>
       <div class="pc-name"><span>${u ? u.username : 'Invité'}</span>${u ? `<span class="pc-id">#${u.friendCode}</span>` : ''}</div>
       <div class="pc-nickname${u && !u.nickname ? ' empty' : ''}" ${u ? 'onclick="openNicknamePicker()" title="Changer de surnom"' : ''}><span>${nickname}</span></div>
@@ -2092,6 +2095,7 @@ function openAvatarPicker(){
   const root = document.createElement('div');
   root.innerHTML = `<div class="av-picker-bg" id="av-pick-bg" onclick="_closePickerBg(event)">
     <div class="av-picker-box avatars" onclick="event.stopPropagation()">
+      <button class="cactus-close" onclick="qid('av-pick-bg').remove()" aria-label="Fermer" title="Fermer"></button>
       <h3>Choisir un avatar</h3>
       <div class="av-card-grid">${cards}</div>
     </div>
@@ -2126,6 +2130,7 @@ function openNicknamePicker(){
   const root = document.createElement('div');
   root.innerHTML = `<div class="av-picker-bg" id="nick-pick-bg" onclick="_closeNickBg(event)">
     <div class="av-picker-box" onclick="event.stopPropagation()">
+      <button class="cactus-close" onclick="qid('nick-pick-bg').remove()" aria-label="Fermer" title="Fermer"></button>
       <h3>Choisir un surnom</h3>
       <div class="nick-grid">${items || '<div class="av-label">Aucun surnom disponible</div>'}</div>
     </div>
