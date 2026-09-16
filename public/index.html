@@ -339,6 +339,9 @@ body[data-screen="lobby"] #profile-btn{display:block}
 .profil-grid img{width:100%;max-width:64px;aspect-ratio:1/1;border-radius:50%;object-fit:cover;cursor:pointer;border:2px solid transparent;transition:transform .1s,border-color .1s}
 .profil-grid img:hover{transform:scale(1.06);border-color:rgba(212,168,75,.5)}
 .profil-grid img.sel{border-color:var(--gold-light);box-shadow:0 0 0 2px var(--gold),0 0 12px rgba(212,168,75,.5)}
+/* The avatar files are portraits cropped for the profile oval; in the small round badges,
+   frame from the top so the face shows instead of the middle of the torso. */
+.pav,.lobby-av,.vo-avatar,#profile-btn img{object-position:center top}
 .auth-field{width:100%;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:12px 14px;color:#fff;font-size:15px;margin-bottom:10px;outline:none}
 .auth-field:focus{border-color:rgba(212,168,75,.5)}
 .auth-tabs{display:flex;gap:6px;margin-bottom:14px}
