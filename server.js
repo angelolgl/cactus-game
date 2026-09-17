@@ -257,6 +257,7 @@ const ACTION_COOLDOWN = {      // min ms between two of the SAME action (per con
   cactus:400, peekDone:300, setAvatar:150, setNickname:300, startGame:600, nextRound:600,
   createRoom:500, joinRoom:400, chatMessage:700, reaction:300, rejoin:0,
   register:1500, login:800, authToken:400, logout:400,
+  getFriends:300, friendRequest:600, friendAccept:300, friendDecline:300, friendRemove:400, getProfile:250,
 };
 const _rl = new Map(); // socket.id -> { times:[], last:{}, rejected:0, snapLock:0 }
 function _rlState(socket){
@@ -309,12 +310,15 @@ async function sbFetch(pathAndQuery, options = {}) {
 function dbRowToAccount(r){
   return { email: r.email, username: r.username, salt: r.salt, hash: r.hash, friendCode: r.friend_code,
     createdAt: r.created_at, stats: r.stats || {games:0,wins:0,cactus:0}, history: r.history || [],
-    nickname: r.nickname || null, level: r.level || 1, avatar: (r.avatar ?? null) };
+    nickname: r.nickname || null, level: r.level || 1, avatar: (r.avatar ?? null),
+    friends: Array.isArray(r.friends) ? r.friends : [],
+    requests: { in: (r.friend_requests && r.friend_requests.in) || [], out: (r.friend_requests && r.friend_requests.out) || [] } };
 }
 function accountToDbRow(a){
   return { email: a.email, username: a.username, salt: a.salt, hash: a.hash, friend_code: a.friendCode,
     created_at: a.createdAt, stats: a.stats || {games:0,wins:0,cactus:0}, history: a.history || [],
-    nickname: a.nickname || null, level: a.level || 1, avatar: (a.avatar ?? null) };
+    nickname: a.nickname || null, level: a.level || 1, avatar: (a.avatar ?? null),
+    friends: a.friends || [], friend_requests: a.requests || { in: [], out: [] } };
 }
 
 let accounts = {};     // emailLower -> { email, username, salt, hash, friendCode, createdAt, stats, history, nickname, level, avatar }
@@ -366,6 +370,51 @@ function _pubUser(a){ return { email: a.email, username: a.username, friendCode:
   nickname: a.nickname || null, level: a.level || 1, avatar: (a.avatar ?? null),
   stats: a.stats || {games:0,wins:0,cactus:0,streak:0,bestStreak:0},
   history: (a.history||[]).slice(0,20) }; }
+// ══ AMIS ══
+// Un compte est identifie par son code ami : deux joueurs peuvent porter le meme pseudo.
+const onlineEmails = new Map();   // email -> nombre de connexions ouvertes
+function _goOnline(email){ if(!email) return; onlineEmails.set(email, (onlineEmails.get(email)||0) + 1); if(onlineEmails.get(email) === 1) _pushFriendsOf(email); }
+function _goOffline(email){ if(!email || !onlineEmails.has(email)) return; const n = onlineEmails.get(email) - 1;
+  if(n > 0) onlineEmails.set(email, n); else { onlineEmails.delete(email); _pushFriendsOf(email); } }
+function _isOnline(a){ return !!a && onlineEmails.has(a.email); }
+function _accByCode(code){ if(typeof code !== 'string') return null;
+  const c = code.trim().replace(/^#/, '').toUpperCase();
+  return Object.values(accounts).find(a => a.friendCode === c) || null; }
+function _accByName(name){ if(typeof name !== 'string') return null;
+  const n = name.trim().toLowerCase();
+  return Object.values(accounts).find(a => (a.username||'').toLowerCase() === n) || null; }
+function _friendCard(a){ return a ? { code: a.friendCode, name: a.username, avatar: (a.avatar ?? null),
+  nickname: a.nickname || null, level: a.level || 1, online: _isOnline(a) } : null; }
+function _byName(x, y){ return (x.name||'').localeCompare(y.name||'', 'fr', { sensitivity:'base' }); }
+// En ligne d'abord, puis ordre alphabetique.
+function _sortFriends(list){ return list.sort((x, y) => (y.online - x.online) || _byName(x, y)); }
+function _cards(codes){ return (codes||[]).map(c => _friendCard(_accByCode(c))).filter(Boolean); }
+// Joueurs croises lors des 5 dernieres parties, sans doublon ni amis deja ajoutes.
+function _suggestions(a){
+  const seen = new Set(), out = [];
+  for (const g of (a.history||[]).slice(0, 5)) for (const c of (g.codes||[])) {
+    if (c === a.friendCode || seen.has(c)) continue;
+    seen.add(c);
+    if ((a.friends||[]).includes(c) || a.requests.out.includes(c) || a.requests.in.includes(c)) continue;
+    const card = _friendCard(_accByCode(c)); if (card) out.push(card);
+  }
+  return _sortFriends(out);
+}
+function _friendsPayload(a){ return {
+  me: a.friendCode,
+  friends: _sortFriends(_cards(a.friends)),
+  incoming: _sortFriends(_cards(a.requests.in)),
+  outgoing: _sortFriends(_cards(a.requests.out)),
+  suggestions: _suggestions(a) }; }
+function _socketsOf(email){ const out = [];
+  for (const [, s] of io.of('/').sockets) if (s.username === email) out.push(s);
+  return out; }
+function _pushFriends(email){ const a = accounts[email]; if(!a) return;
+  const data = _friendsPayload(a); _socketsOf(email).forEach(s => s.emit('friendsData', data)); }
+function _pushFriendsOf(email){ const a = accounts[email]; if(!a) return;
+  _pushFriends(email);
+  (a.friends||[]).forEach(c => { const f = _accByCode(c); if (f && _isOnline(f)) _pushFriends(f.email); }); }
+
 function _validEmail(e){ return typeof e === 'string' && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e.trim()); }
 function _validPw(p){ return typeof p === 'string' && p.length >= 6 && p.length <= 100; }
 
@@ -386,9 +435,10 @@ io.on('connection', socket => {
     if (Object.values(accounts).some(a => (a.username||'').toLowerCase() === usernameLower))
       return socket.emit('authResult', { ok:false, mode:'register', error:'Ce pseudo est déjà pris, choisis-en un autre.' });
     const salt = crypto.randomBytes(16).toString('hex');
-    accounts[email] = { email, username, salt, hash: _hashPw(password, salt), friendCode: _genFriendCode(), createdAt: Date.now(), stats:{games:0,wins:0,cactus:0}, history:[] };
+    accounts[email] = { email, username, salt, hash: _hashPw(password, salt), friendCode: _genFriendCode(), createdAt: Date.now(), stats:{games:0,wins:0,cactus:0}, history:[], friends:[], requests:{ in:[], out:[] } };
     await upsertAccount(accounts[email]);
     socket.username = email;
+    _goOnline(email);
     socket.emit('authResult', { ok:true, user:_pubUser(accounts[email]), token:_newToken(email) });
   });
 
@@ -403,6 +453,7 @@ io.on('connection', socket => {
     try { same = h.length === a.hash.length && crypto.timingSafeEqual(Buffer.from(h), Buffer.from(a.hash)); } catch(e){}
     if (!same) return fail();
     socket.username = key;
+    _goOnline(key);
     socket.emit('authResult', { ok:true, user:_pubUser(a), token:_newToken(key) });
   });
 
@@ -412,12 +463,96 @@ io.on('connection', socket => {
     const a = key && accounts[key];
     if (!a) return socket.emit('authResult', { ok:false, expired:true });
     socket.username = key;
+    _goOnline(key);
     socket.emit('authResult', { ok:true, user:_pubUser(a), token });
   });
 
   socket.on('logout', ({ token } = {}) => {
     if (token && authTokens[token]) { delete authTokens[token]; deleteToken(token); }
+    _goOffline(socket.username);
     socket.username = null;
+  });
+
+  // ── Amis : liste, demandes, suggestions ──
+  const _me = () => socket.username && accounts[socket.username];
+  const _save = async (...accs) => { for (const a of accs) await upsertAccount(a); };
+
+  socket.on('getFriends', () => {
+    if (!allow(socket, 'getFriends')) return;
+    const a = _me(); if (!a) return socket.emit('friendsData', null);
+    socket.emit('friendsData', _friendsPayload(a));
+  });
+
+  // Cherche par code ami (#ABC123) ou par pseudo exact.
+  socket.on('friendRequest', async ({ query } = {}) => {
+    if (!allow(socket, 'friendRequest')) return;
+    const a = _me(); if (!a) return;
+    const q = typeof query === 'string' ? query.trim() : '';
+    if (!q) return socket.emit('friendResult', { ok:false, error:'Entre un code ami ou un pseudo.' });
+    const b = _accByCode(q) || _accByName(q);
+    if (!b) return socket.emit('friendResult', { ok:false, error:'Aucun joueur trouvé avec ça.' });
+    if (b.email === a.email) return socket.emit('friendResult', { ok:false, error:'C’est toi !' });
+    if ((a.friends||[]).includes(b.friendCode)) return socket.emit('friendResult', { ok:false, error:`${b.username} est déjà ton ami.` });
+    if (a.requests.out.includes(b.friendCode)) return socket.emit('friendResult', { ok:false, error:'Demande déjà envoyée.' });
+    // Si la personne t'avait deja demande, on devient amis directement.
+    if (a.requests.in.includes(b.friendCode)) {
+      a.requests.in = a.requests.in.filter(c => c !== b.friendCode);
+      b.requests.out = b.requests.out.filter(c => c !== a.friendCode);
+      a.friends.push(b.friendCode); b.friends.push(a.friendCode);
+      await _save(a, b); _pushFriends(a.email); _pushFriends(b.email);
+      return socket.emit('friendResult', { ok:true, message:`${b.username} est maintenant ton ami !` });
+    }
+    a.requests.out.push(b.friendCode);
+    b.requests.in.push(a.friendCode);
+    await _save(a, b); _pushFriends(a.email); _pushFriends(b.email);
+    socket.emit('friendResult', { ok:true, message:`Demande envoyée à ${b.username}.` });
+  });
+
+  socket.on('friendAccept', async ({ code } = {}) => {
+    if (!allow(socket, 'friendAccept')) return;
+    const a = _me(); if (!a) return;
+    const b = _accByCode(code); if (!b || !a.requests.in.includes(b.friendCode)) return;
+    a.requests.in = a.requests.in.filter(c => c !== b.friendCode);
+    b.requests.out = b.requests.out.filter(c => c !== a.friendCode);
+    if (!a.friends.includes(b.friendCode)) a.friends.push(b.friendCode);
+    if (!b.friends.includes(a.friendCode)) b.friends.push(a.friendCode);
+    await _save(a, b); _pushFriends(a.email); _pushFriends(b.email);
+  });
+
+  // Refuse une demande recue, ou annule une demande envoyee.
+  socket.on('friendDecline', async ({ code } = {}) => {
+    if (!allow(socket, 'friendDecline')) return;
+    const a = _me(); if (!a) return;
+    const b = _accByCode(code); if (!b) return;
+    a.requests.in = a.requests.in.filter(c => c !== b.friendCode);
+    a.requests.out = a.requests.out.filter(c => c !== b.friendCode);
+    b.requests.in = b.requests.in.filter(c => c !== a.friendCode);
+    b.requests.out = b.requests.out.filter(c => c !== a.friendCode);
+    await _save(a, b); _pushFriends(a.email); _pushFriends(b.email);
+  });
+
+  socket.on('friendRemove', async ({ code } = {}) => {
+    if (!allow(socket, 'friendRemove')) return;
+    const a = _me(); if (!a) return;
+    const b = _accByCode(code); if (!b) return;
+    a.friends = (a.friends||[]).filter(c => c !== b.friendCode);
+    b.friends = (b.friends||[]).filter(c => c !== a.friendCode);
+    await _save(a, b); _pushFriends(a.email); _pushFriends(b.email);
+  });
+
+  // Mini profil public d'un joueur (depuis le lobby ou la liste d'amis).
+  socket.on('getProfile', ({ code } = {}) => {
+    if (!allow(socket, 'getProfile')) return;
+    const b = _accByCode(code); if (!b) return socket.emit('publicProfile', null);
+    const a = _me();
+    const st = b.stats || {};
+    socket.emit('publicProfile', { code: b.friendCode, name: b.username, avatar: (b.avatar ?? null),
+      nickname: b.nickname || null, level: b.level || 1, online: _isOnline(b),
+      stats: { games: st.games||0, wins: st.wins||0, cactus: st.cactus||0, bestStreak: st.bestStreak||0 },
+      relation: !a ? 'none' : a.friendCode === b.friendCode ? 'me'
+        : (a.friends||[]).includes(b.friendCode) ? 'friend'
+        : a.requests.out.includes(b.friendCode) ? 'sent'
+        : a.requests.in.includes(b.friendCode) ? 'received' : 'none' });
   });
 
   socket.emit('titles', TITLES);
@@ -449,7 +584,7 @@ io.on('connection', socket => {
     };
     socket.join(code);
     socket.emit('roomCreated', { code, playerIndex: 0 });
-    io.to(code).emit('lobbyUpdate', { players: rooms[code].players.map(p => ({ name: p.name, avatar: p.avatar })), host: rooms[code].hostIndex });
+    io.to(code).emit('lobbyUpdate', { players: rooms[code].players.map(p => ({ name: p.name, avatar: p.avatar, code: (p.username && accounts[p.username] ? accounts[p.username].friendCode : null) })), host: rooms[code].hostIndex });
     console.log(`Room ${code} created by ${name}`);
   });
 
@@ -464,7 +599,7 @@ io.on('connection', socket => {
     room.players.push({ socketId: socket.id, name, hand: [], ready: false, connected: true, avatar: null, username: socket.username || null });
     socket.join(code);
     socket.emit('roomJoined', { code, playerIndex: pi });
-    io.to(code).emit('lobbyUpdate', { players: room.players.map(p => ({ name: p.name, avatar: p.avatar })), host: room.hostIndex });
+    io.to(code).emit('lobbyUpdate', { players: room.players.map(p => ({ name: p.name, avatar: p.avatar, code: (p.username && accounts[p.username] ? accounts[p.username].friendCode : null) })), host: room.hostIndex });
     console.log(`${name} joined ${code}`);
   });
 
@@ -477,7 +612,7 @@ io.on('connection', socket => {
     if (pi < 0) return;
     if (avatar !== null && (typeof avatar !== 'number' || avatar < 0 || avatar > 10 || !Number.isInteger(avatar))) return;
     room.players[pi].avatar = avatar;   // null = default cactus
-    io.to(code).emit('lobbyUpdate', { players: room.players.map(p => ({ name: p.name, avatar: p.avatar })), host: room.hostIndex });
+    io.to(code).emit('lobbyUpdate', { players: room.players.map(p => ({ name: p.name, avatar: p.avatar, code: (p.username && accounts[p.username] ? accounts[p.username].friendCode : null) })), host: room.hostIndex });
   });
 
   socket.on('startGame', ({ code, cardCount }) => {
@@ -907,6 +1042,7 @@ io.on('connection', socket => {
 
   socket.on('disconnect', () => {
     _rl.delete(socket.id);
+    _goOffline(socket.username);
     // Keep the player's game state so they can reconnect; just mark them offline.
     for (const code in rooms) {
       const room = rooms[code];
@@ -935,7 +1071,7 @@ io.on('connection', socket => {
           if (wasHost) room.hostIndex = 0;
           else if (pi < room.hostIndex) room.hostIndex -= 1;
           if (room.hostIndex < 0 || room.hostIndex >= room.players.length) room.hostIndex = 0;
-          io.to(code).emit('lobbyUpdate', { players: room.players.map(p => ({ name: p.name, avatar: p.avatar })), host: room.hostIndex });
+          io.to(code).emit('lobbyUpdate', { players: room.players.map(p => ({ name: p.name, avatar: p.avatar, code: (p.username && accounts[p.username] ? accounts[p.username].friendCode : null) })), host: room.hostIndex });
         }
         break;
       }
@@ -1149,7 +1285,8 @@ function endRound(room) {
         a.stats.streak = 0;
       }
       a.history = a.history || [];
-      a.history.unshift({ date: Date.now(), result: (i === winner ? 'win' : 'loss'), total: room.totals[i], winner: room.players[winner].name, players: room.players.map(x => x.name) });
+      a.history.unshift({ date: Date.now(), result: (i === winner ? 'win' : 'loss'), total: room.totals[i], winner: room.players[winner].name, players: room.players.map(x => x.name),
+        codes: room.players.map(x => (x.username && accounts[x.username] ? accounts[x.username].friendCode : null)).filter(Boolean) });
       if (a.history.length > 20) a.history.length = 20;
       upsertAccount(a);
       if (p.socketId) io.to(p.socketId).emit('accountUpdate', { user: _pubUser(a) });

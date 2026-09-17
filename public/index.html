@@ -301,6 +301,31 @@ body[data-screen="lobby"] #profile-btn{display:block}
 .pc-close{top:30px;right:36px;width:72px;height:72px}
 .av-picker-box .cactus-close{top:14px;right:14px}
 .modal-box>.cactus-close{top:10px;right:10px;width:46px;height:46px}
+.friends-box{max-width:460px;text-align:left}
+.fr-tabs{display:flex;gap:6px;margin:14px 0 12px}
+.fr-tab{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(212,168,75,.25);color:rgba(255,255,255,.75);border-radius:10px;padding:8px 4px;font-size:13px;font-weight:600;cursor:pointer;position:relative}
+.fr-tab.on{background:linear-gradient(180deg,var(--gold),#b8860b);color:#1a1a1a;border-color:var(--gold)}
+.fr-badge{display:inline-block;min-width:18px;margin-left:5px;padding:0 5px;border-radius:9px;background:#c0392b;color:#fff;font-size:11px;line-height:18px;vertical-align:1px}
+.fr-list{max-height:46vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-right:4px}
+.fr-list::-webkit-scrollbar{width:7px}.fr-list::-webkit-scrollbar-thumb{background:rgba(212,168,75,.4);border-radius:4px}
+.fr-row{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.07);border-radius:12px;padding:8px 10px}
+.fr-row img{width:42px;height:42px;border-radius:50%;object-fit:cover;object-position:center top;border:2px solid var(--gold);background:rgba(255,255,255,.06);flex-shrink:0;cursor:pointer}
+.fr-id{min-width:0;flex:1;cursor:pointer}
+.fr-name{font-weight:700;font-size:14px;display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fr-code{font-size:11px;color:rgba(255,255,255,.4)}
+.fr-sub{font-size:11px;color:rgba(255,255,255,.5)}
+.fr-dot{width:8px;height:8px;border-radius:50%;background:#4b5a52;flex-shrink:0}
+.fr-dot.on{background:#57d98a;box-shadow:0 0 6px rgba(87,217,138,.8)}
+.fr-act{display:flex;gap:6px;flex-shrink:0}
+.fr-btn{border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;background:linear-gradient(180deg,var(--gold),#b8860b);color:#1a1a1a}
+.fr-btn.ghost{background:rgba(255,255,255,.1);color:rgba(255,255,255,.8)}
+.fr-empty{color:rgba(255,255,255,.45);text-align:center;padding:22px 10px;font-size:13px}
+.fr-code-box{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px}
+.lobby-menu{position:fixed;z-index:850;background:linear-gradient(160deg,#1e4a2e,#0f2c1a);border:1px solid var(--gold);border-radius:12px;padding:6px;box-shadow:0 12px 30px rgba(0,0,0,.6);display:flex;flex-direction:column;gap:4px;min-width:170px}
+.lobby-menu button{background:none;border:none;color:#f6ead0;font-size:14px;text-align:left;padding:8px 12px;border-radius:8px;cursor:pointer}
+.lobby-menu button:hover{background:rgba(212,168,75,.22)}
+.lobby-row{cursor:pointer}
+.lobby-row:hover{background:rgba(255,255,255,.14)!important}
 .modal-box:has(>.cactus-close)>h3,.modal-box:has(>.cactus-close)>.auth-tabs{margin-inline:40px}
 /* Portrait = the oval's inner photo area, minus the cactus medallion overlapping its bottom. */
 .pc-av-frame{position:absolute;left:107px;top:104px;width:376px;height:532px;border-radius:50%;overflow:hidden;cursor:pointer;-webkit-mask:radial-gradient(circle at 186.5px 550.5px,transparent 50px,#000 51px);mask:radial-gradient(circle at 186.5px 550.5px,transparent 50px,#000 51px)}
@@ -2265,34 +2290,115 @@ function openHistory(){
   </div></div>`;
 }
 
+let FRIENDS = null, _frTab = 'friends';
 function openFriends(){
   if(!currentUser){ openAuth('login'); return; }
   closeProfileDrawer();
+  _frTab = 'friends';
   const code = '#' + currentUser.friendCode;
-  qid('modal-root').innerHTML = `<div class="modal-bg"><div class="modal-box">
+  qid('modal-root').innerHTML = `<div class="modal-bg"><div class="modal-box friends-box">
     <button class="cactus-close" onclick="qid('modal-root').innerHTML=''" aria-label="Fermer" title="Fermer"></button>
-    <h3>👥 Mes amis</h3>
-    <p style="color:rgba(255,255,255,.6);text-align:center;margin-bottom:4px">Ton code ami</p>
-    <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:16px">
-      <span style="font-size:20px;font-weight:700;color:var(--gold-light)">${code}</span>
+    <h3 style="text-align:center">&#128101; Mes amis</h3>
+    <div class="fr-code-box">
+      <span class="fr-sub">Ton code</span>
+      <span style="font-size:18px;font-weight:700;color:var(--gold-light)">${code}</span>
       <button class="set-link" id="friend-copy">copier</button>
     </div>
-    <p style="color:rgba(255,255,255,.6);text-align:center;margin-bottom:6px">Ajouter un ami</p>
-    <input id="friend-input" class="auth-field" value="#" placeholder="#CACT-XXXXX" maxlength="11" autocapitalize="characters" spellcheck="false">
-    <button class="set-btn" id="friend-add">Ajouter</button>
-    <p style="font-size:12px;color:rgba(255,255,255,.4);text-align:center;margin-top:10px">La liste d'amis arrive bientôt.</p>
+    <div class="fr-tabs">
+      <button class="fr-tab" data-tab="friends" onclick="frTab('friends')">Amis</button>
+      <button class="fr-tab" data-tab="requests" onclick="frTab('requests')">Demandes</button>
+      <button class="fr-tab" data-tab="suggest" onclick="frTab('suggest')">Suggestions</button>
+    </div>
+    <div id="fr-body"></div>
   </div></div>`;
   qid('friend-copy').addEventListener('click', ()=>{ if(navigator.clipboard) navigator.clipboard.writeText(code).then(()=>showToast('Code copié')).catch(()=>{}); });
-  const fi = qid('friend-input');
-  // Always keep a leading '#'
-  fi.addEventListener('input', ()=>{ let v = fi.value.replace(/#/g,'').toUpperCase(); fi.value = '#' + v; });
-  fi.addEventListener('focus', ()=>{ if(!fi.value) fi.value = '#'; });
-  setTimeout(()=>{ fi.focus(); try{ fi.setSelectionRange(fi.value.length, fi.value.length); }catch(e){} }, 30);
-  qid('friend-add').addEventListener('click', ()=>{
-    const v = fi.value.trim();
-    if(v.length < 2 || v === '#'){ showToast("Entre le code de ton ami"); return; }
-    showToast("Ajout d'amis — bientôt disponible");   // friends backend to come
-  });
+  renderFriends();
+  if(socket) socket.emit('getFriends');
+}
+function frTab(tab){ _frTab = tab; renderFriends(); }
+
+function _frRow(c, actions){
+  return `<div class="fr-row" data-code="${c.code}">
+    <img src="${avatarImg(typeof c.avatar==='number'?c.avatar:null)}" alt="" onclick="openPublicProfile('${c.code}')">
+    <div class="fr-id" onclick="openPublicProfile('${c.code}')">
+      <div class="fr-name"><span class="fr-dot ${c.online?'on':''}"></span>${c.name}<span class="fr-code">#${c.code}</span></div>
+      <div class="fr-sub">${c.online ? 'En ligne' : (c.nickname || 'Hors ligne')}</div>
+    </div>
+    <div class="fr-act">${actions}</div>
+  </div>`;
+}
+function renderFriends(){
+  const body = qid('fr-body'); if(!body) return;
+  document.querySelectorAll('.fr-tab').forEach(b => b.classList.toggle('on', b.dataset.tab === _frTab));
+  const d = FRIENDS;
+  const inc = d ? d.incoming.length : 0;
+  const tabReq = document.querySelector('.fr-tab[data-tab="requests"]');
+  if(tabReq) tabReq.innerHTML = 'Demandes' + (inc ? `<span class="fr-badge">${inc}</span>` : '');
+  if(!d){ body.innerHTML = '<div class="fr-empty">Chargement…</div>'; return; }
+
+  if(_frTab === 'friends'){
+    body.innerHTML = d.friends.length
+      ? `<div class="fr-list">${d.friends.map(c => _frRow(c,
+          `<button class="fr-btn ghost" onclick="friendRemove('${c.code}')">Retirer</button>`)).join('')}</div>`
+      : `<div class="fr-empty">Tu n'as pas encore d'amis.<br>Ajoute-les avec leur code dans l'onglet Demandes.</div>`;
+    return;
+  }
+
+  if(_frTab === 'requests'){
+    const recu = d.incoming.length
+      ? d.incoming.map(c => _frRow(c, `<button class="fr-btn" onclick="friendAccept('${c.code}')">Accepter</button>
+          <button class="fr-btn ghost" onclick="friendDecline('${c.code}')">Refuser</button>`)).join('')
+      : '<div class="fr-empty">Aucune demande reçue.</div>';
+    const envoi = d.outgoing.length
+      ? `<div class="fr-sub" style="margin:14px 0 6px">Demandes envoyées</div>
+         <div class="fr-list">${d.outgoing.map(c => _frRow(c,
+           `<button class="fr-btn ghost" onclick="friendDecline('${c.code}')">Annuler</button>`)).join('')}</div>`
+      : '';
+    body.innerHTML = `<div style="display:flex;gap:8px;margin-bottom:12px">
+        <input id="friend-input" class="auth-field" style="margin:0" placeholder="Code ami ou pseudo" maxlength="20" spellcheck="false">
+        <button class="fr-btn" id="friend-add" style="padding:0 16px">Ajouter</button>
+      </div>
+      <div class="fr-list">${recu}</div>${envoi}`;
+    const fi = qid('friend-input');
+    const send = () => { const v = fi.value.trim(); if(!v) return showToast('Entre un code ami ou un pseudo'); socket.emit('friendRequest', { query: v }); fi.value=''; };
+    qid('friend-add').addEventListener('click', send);
+    fi.addEventListener('keydown', e => { if(e.key === 'Enter') send(); });
+    return;
+  }
+
+  body.innerHTML = d.suggestions.length
+    ? `<div class="fr-list">${d.suggestions.map(c => _frRow(c,
+        `<button class="fr-btn" onclick="friendAsk('${c.code}')">Ajouter</button>`)).join('')}</div>`
+    : `<div class="fr-empty">Personne à suggérer.<br>Joue quelques parties avec des joueurs connectés à leur compte.</div>`;
+}
+function friendAsk(code){ if(socket) socket.emit('friendRequest', { query: code }); }
+function friendAccept(code){ if(socket) socket.emit('friendAccept', { code }); }
+function friendDecline(code){ if(socket) socket.emit('friendDecline', { code }); }
+function friendRemove(code){
+  const f = FRIENDS && FRIENDS.friends.find(x => x.code === code);
+  if(confirm(`Retirer ${f ? f.name : 'ce joueur'} de tes amis ?`) && socket) socket.emit('friendRemove', { code });
+}
+
+// ── Mini profil d'un autre joueur (liste d'amis ou lobby) ──
+function openPublicProfile(code){ if(socket) socket.emit('getProfile', { code }); }
+function showPublicProfile(p){
+  if(!p) return showToast('Joueur introuvable');
+  const act = {
+    none: `<button class="set-btn" onclick="friendAsk('${p.code}');qid('modal-root').innerHTML=''">Demander en ami</button>`,
+    sent: '<div class="fr-sub" style="text-align:center">Demande envoyée</div>',
+    received: `<button class="set-btn" onclick="friendAccept('${p.code}');qid('modal-root').innerHTML=''">Accepter sa demande</button>`,
+    friend: '<div class="fr-sub" style="text-align:center">Vous êtes amis</div>',
+    me: '',
+  }[p.relation] || '';
+  const stat = (lbl, val) => `<div style="flex:1"><div style="font-size:22px;font-weight:700;color:var(--gold-light)">${val}</div><div class="fr-sub">${lbl}</div></div>`;
+  qid('modal-root').innerHTML = `<div class="modal-bg"><div class="modal-box">
+    <button class="cactus-close" onclick="qid('modal-root').innerHTML=''" aria-label="Fermer" title="Fermer"></button>
+    <img src="${avatarImg(typeof p.avatar==='number'?p.avatar:null)}" alt="" style="width:110px;height:110px;border-radius:50%;object-fit:cover;object-position:center top;border:3px solid var(--gold);margin:6px auto 10px;display:block">
+    <h3 style="margin-bottom:2px">${p.name}</h3>
+    <div class="fr-sub" style="text-align:center;margin-bottom:10px">#${p.code}${p.nickname ? ' · ' + p.nickname : ''} · ${p.online ? 'En ligne' : 'Hors ligne'}</div>
+    <div style="display:flex;text-align:center;margin:14px 0">${stat('Victoires', p.stats.wins)}${stat('Parties', p.stats.games)}${stat('Niveau', p.level)}</div>
+    ${act}
+  </div></div>`;
 }
 
 // ── Navigation accueil (invité) ──
@@ -2364,6 +2470,9 @@ function _registerSocketHandlers() {
   socket.on('roomCreated', ({code, playerIndex}) => { myIndex=playerIndex; myRoom=code; _hasJoinedOnce=true; showWaiting(code,true); sendMyAvatar(); });
   socket.on('roomJoined',  ({code, playerIndex}) => { myIndex=playerIndex; myRoom=code; _hasJoinedOnce=true; showWaiting(code,false); sendMyAvatar(); });
   socket.on('lobbyUpdate', ({players, host}) => { updateLobbyPlayers(players, host); });
+  socket.on('friendsData', d => { FRIENDS = d; renderFriends(); refreshFriendBadge(); });
+  socket.on('friendResult', r => { if(r) showToast(r.ok ? r.message : r.error); });
+  socket.on('publicProfile', p => showPublicProfile(p));
   socket.on('hostChanged', ({host}) => {
     if (typeof host === 'number') hostIndex = host;
     isHost = (myIndex === hostIndex);
@@ -2448,6 +2557,36 @@ function showWaiting(code, host) {
 }
 
 let selectedCC = 4;
+
+// Clic sur un joueur du lobby : profil / demande d'ami (les invités n'ont pas de code).
+function openLobbyMenu(ev, i){
+  closeLobbyMenu();
+  const p = lobbyPlayers[i]; if(!p) return;
+  const mine = currentUser && p.code === currentUser.friendCode;
+  if(!p.code) return showToast(p.name + ' joue en invité');
+  if(mine) return openProfil();
+  const m = document.createElement('div');
+  m.className = 'lobby-menu'; m.id = 'lobby-menu';
+  m.innerHTML = `<button onclick="closeLobbyMenu();openPublicProfile('${p.code}')">👤 Voir le profil</button>
+    <button onclick="closeLobbyMenu();friendAsk('${p.code}')">➕ Demander en ami</button>`;
+  document.body.appendChild(m);
+  const r = ev.currentTarget.getBoundingClientRect();
+  m.style.left = Math.min(r.left, innerWidth - m.offsetWidth - 8) + 'px';
+  m.style.top = Math.min(r.bottom + 4, innerHeight - m.offsetHeight - 8) + 'px';
+  setTimeout(()=>document.addEventListener('click', closeLobbyMenu, { once:true }), 0);
+}
+function closeLobbyMenu(){ const m = qid('lobby-menu'); if(m) m.remove(); }
+
+// Pastille de demandes en attente sur l'entrée "Mes amis" du menu latéral.
+function refreshFriendBadge(){
+  const b = qid('pd-friends'); if(!b) return;
+  const n = FRIENDS ? FRIENDS.incoming.length : 0;
+  let tag = b.querySelector('.fr-badge');
+  if(!n){ if(tag) tag.remove(); return; }
+  if(!tag){ tag = document.createElement('span'); tag.className = 'fr-badge'; b.appendChild(tag); }
+  tag.textContent = n;
+}
+
 function updateLobbyPlayers(players, host) {
   // players peut être un tableau de chaînes (ancien) ou d'objets {name, avatar}.
   const norm = (players || []).map(p => (typeof p === 'string') ? { name: p, avatar: null } : p);
@@ -2455,7 +2594,7 @@ function updateLobbyPlayers(players, host) {
   if (typeof host === 'number') hostIndex = host;
   isHost = (myIndex === hostIndex);
   qid('lobby-players-list').innerHTML = norm.map((p,i) =>
-    `<div style="background:rgba(255,255,255,.08);border-radius:8px;padding:8px 14px;font-size:14px;display:flex;align-items:center;gap:8px">
+    `<div class="lobby-row" onclick="openLobbyMenu(event, ${i})" style="background:rgba(255,255,255,.08);border-radius:8px;padding:8px 14px;font-size:14px;display:flex;align-items:center;gap:8px">
       <span>${i+1}.</span>
       <img class="lobby-av" src="${avatarImg(typeof p.avatar==='number'?p.avatar:null)}" alt="">
       <strong>${p.name}</strong>
