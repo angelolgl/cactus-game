@@ -295,9 +295,9 @@ body[data-screen="lobby"] #profile-btn{display:block}
 /* The card artwork is a fixed 1473x794 image (public/profile-card-bg.webp). Every slot below
    is placed on a frame painted in it, so these values must be re-measured if the image changes. */
 .profil-card{position:relative;width:1473px;height:794px;flex-shrink:0;background:url('/profile-card-bg.webp') center/100% 100% no-repeat;filter:drop-shadow(0 24px 50px rgba(0,0,0,.6));font-family:'Playfair Display',serif;color:#0b221c;font-variant-numeric:lining-nums;animation:slideUp .3s cubic-bezier(.34,1.56,.64,1) both}
-.cactus-close{position:absolute;width:56px;height:56px;padding:0;border:0;background:url('/close-cactus.webp') center/contain no-repeat;cursor:pointer;filter:drop-shadow(0 3px 5px rgba(0,0,0,.35));transition:transform .18s ease}
-.cactus-close:hover{transform:rotate(90deg) scale(1.1)}
-.cactus-close:active{transform:rotate(90deg) scale(.95)}
+.cactus-close{position:absolute;width:56px;height:56px;padding:0;border:0;background:url('/close-cactus.webp?v=2') center/contain no-repeat;cursor:pointer;filter:drop-shadow(0 3px 5px rgba(0,0,0,.35));transition:transform .18s ease}
+.cactus-close:hover{transform:scale(1.1)}
+.cactus-close:active{transform:scale(.95)}
 .pc-close{top:30px;right:36px;width:72px;height:72px}
 .av-picker-box .cactus-close{top:14px;right:14px}
 .modal-box>.cactus-close{top:10px;right:10px;width:46px;height:46px}
