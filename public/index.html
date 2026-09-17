@@ -360,10 +360,9 @@ body[data-screen="lobby"] #profile-btn{display:block}
 .lobby-row{cursor:pointer}
 .lobby-row:hover{background:rgba(255,255,255,.14)!important}
 #layer-root .profil-modal-bg{z-index:840}
-.pc-edit{font-size:inherit;flex-shrink:0;width:.42em;height:.42em;border:none;background:none;padding:0;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;opacity:.75;transition:opacity .15s,transform .15s}
-.pc-edit svg{width:100%;height:100%}
-.pc-edit:hover{opacity:1;transform:scale(1.08)}
+.pc-edit{font-size:inherit;flex-shrink:0;width:.44em;height:.44em;border:none;padding:0;cursor:pointer;
+  background:url('/pencil.webp') center/contain no-repeat;opacity:.7;transition:opacity .15s,transform .15s}
+.pc-edit:hover{opacity:1;transform:scale(1.1)}
 .pc-name input{font:inherit;color:inherit;width:100%;min-width:0;background:rgba(255,248,230,.6);border:2px solid #8a6420;border-radius:12px;padding:0 .15em;text-align:center;outline:none}
 .pc-more{position:absolute;top:34px;right:124px;width:44px;height:68px;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border-radius:12px;opacity:.8;transition:opacity .15s,transform .15s}
 .pc-more i{display:block;width:19px;height:19px;background:url('/tumbleweed.webp') center/contain no-repeat;filter:drop-shadow(0 1px 1px rgba(60,40,10,.45)) saturate(1.15) contrast(1.1)}
@@ -2146,7 +2145,6 @@ function closeProfileDrawer(){
 function lockedRubric(name){ showToast('Connecte-toi pour ouvrir « ' + name + ' »', 'warn'); }
 
 // ── Profil ──
-const PENCIL_SVG = '<svg viewBox="0 0 64 64" fill="none" stroke="#5b4a2c" stroke-width="2.6" stroke-linejoin="round"><path d="M45 4 60 19 24 55l-9 3-9 3 3-9 3-9z"/><path d="M15 58 24 46"/><path d="M50 9 22 37"/><path d="M55 14 27 42"/><path d="M6 61l9-3"/></svg>';
 
 // Carte parchemin : la sienne (modifiable) ou celle d'un autre joueur (lecture seule).
 function profileCardHTML(p, mine){
@@ -2156,8 +2154,8 @@ function profileCardHTML(p, mine){
     `<div class="pc-stat ${slot}"><span class="pc-stat-lbl">${label}</span><span class="pc-stat-val">${value}</span></div>`;
   const display = p.alias || p.username;
   const isFriend = !mine && p.relation === 'friend';
-  const nick = p.nickname || (mine ? (p.guest ? 'Joueur invité' : 'Choisir un surnom') : 'Sans surnom');
-  const nickAttrs = mine && !p.guest ? 'onclick="openNicknamePicker()" title="Changer de surnom"' : '';
+  const nick = p.nickname || (mine ? (p.guest ? 'Joueur invité' : 'Choisir un titre') : 'Sans titre');
+  const nickAttrs = mine && !p.guest ? 'onclick="openNicknamePicker()" title="Changer de titre"' : '';
   const closeFn = mine ? "qid('modal-root').innerHTML=''" : 'closeLayer()';
   return `<div class="profil-modal-bg" onclick="if(event.target===this){${closeFn}}">
     <div class="profil-card" data-code="${p.code || ''}" onclick="event.stopPropagation();closePcMenu(event)">
@@ -2165,7 +2163,7 @@ function profileCardHTML(p, mine){
       ${!mine && currentUser ? `<button class="pc-more" onclick="togglePcMenu(event)" aria-label="Options"><i></i><i></i><i></i></button>` : ''}
       <div class="pc-av-frame" ${mine ? 'onclick="openAvatarPicker()"' : 'style="cursor:default"'}><img src="${avatarImg(typeof p.avatar === 'number' ? p.avatar : null, 0)}" alt="avatar"></div>
       <div class="pc-name${p.alias ? ' with-real' : ''}">
-        <div class="pc-name-row"><span class="pc-display">${display}</span>${isFriend ? `<button class="pc-edit" onclick="startFriendRename()" title="Renommer">${PENCIL_SVG}</button>` : ''}${p.code ? `<span class="pc-id">#${p.code}</span>` : ''}</div>
+        <div class="pc-name-row"><span class="pc-display">${display}</span>${isFriend ? `<button class="pc-edit" onclick="startFriendRename()" title="Renommer" aria-label="Renommer"></button>` : ''}${p.code ? `<span class="pc-id">#${p.code}</span>` : ''}</div>
         ${p.alias ? `<div class="pc-real">${p.username}</div>` : ''}
       </div>
       <div class="pc-nickname${p.nickname ? '' : ' empty'}" ${nickAttrs}><span>${nick}</span></div>
@@ -2250,7 +2248,7 @@ function selectAvatar(n){
   if (socket && currentUser) socket.emit('setMyAvatar', { avatar: n });
 }
 
-// ── Surnom (titre affiché sous le nom) ──
+// ── Titre affiché sous le nom ──
 function openNicknamePicker(){
   if (!currentUser) return;
   const cur = currentUser.nickname || null;
@@ -2260,8 +2258,8 @@ function openNicknamePicker(){
   root.innerHTML = `<div class="av-picker-bg" id="nick-pick-bg" onclick="_closeNickBg(event)">
     <div class="av-picker-box" onclick="event.stopPropagation()">
       <button class="cactus-close" onclick="qid('nick-pick-bg').remove()" aria-label="Fermer" title="Fermer"></button>
-      <h3>Choisir un surnom</h3>
-      <div class="nick-grid">${items || '<div class="av-label">Aucun surnom disponible</div>'}</div>
+      <h3>Choisir un titre</h3>
+      <div class="nick-grid">${items || '<div class="av-label">Aucun titre disponible</div>'}</div>
     </div>
   </div>`;
   qid('stage').appendChild(root.firstElementChild);
@@ -2285,7 +2283,7 @@ function pickNickname(i){
 
 // ── Connexion / Inscription (visuel — la mécanique arrive à l'étape suivante) ──
 let currentUser = null;   // null = invité ; sinon { username, friendCode, stats, history }
-let TITLES = [];          // surnoms disponibles, envoyés par le serveur à la connexion
+let TITLES = [];          // titres disponibles, envoyés par le serveur à la connexion
 
 function openAuth(mode){
   closeProfileDrawer();
