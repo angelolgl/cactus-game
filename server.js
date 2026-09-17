@@ -255,7 +255,7 @@ const ACTION_COOLDOWN = {      // min ms between two of the SAME action (per con
   snap:225, sevenActivate:150, sevenLook:150, sevenSkip:150,
   jackActivate:150, jackIgnore:150, jackPick:120, jackConfirm:200,
   cactus:400, peekDone:300, setAvatar:150, setNickname:300, startGame:600, nextRound:600,
-  createRoom:500, joinRoom:400, chatMessage:700, reaction:300, rejoin:0,
+  createRoom:500, joinRoom:400, leaveRoom:400, chatMessage:700, reaction:300, rejoin:0,
   register:1500, login:800, authToken:400, logout:400,
   getFriends:300, friendRequest:600, friendAccept:300, friendDecline:300, friendRemove:400, getProfile:250,
   friendRename:400, reportPlayer:5000, setMyAvatar:150,
@@ -1083,6 +1083,24 @@ io.on('connection', socket => {
     io.to(code).emit('playerConn', { pi, connected: true, name: room.players[pi].name });
     socket.emit('rejoined', { playerIndex: pi, code });
     broadcastRoom(code);
+  });
+
+  // Quitter volontairement une salle d'attente (avant le lancement).
+  socket.on('leaveRoom', ({ code } = {}) => {
+    if (!allow(socket, 'leaveRoom')) return;
+    const room = rooms[code]; if (!room || room.started) return;
+    const pi = room.players.findIndex(p => p.socketId === socket.id);
+    if (pi < 0) return;
+    const wasHost = (pi === room.hostIndex);
+    room.players.splice(pi, 1);
+    socket.leave(code);
+    socket.emit('leftRoom');
+    if (room.players.length === 0) { delete rooms[code]; return; }
+    if (wasHost) room.hostIndex = 0;
+    else if (pi < room.hostIndex) room.hostIndex -= 1;
+    if (room.hostIndex < 0 || room.hostIndex >= room.players.length) room.hostIndex = 0;
+    io.to(code).emit('lobbyUpdate', { players: room.players.map(p => ({ name: p.name, avatar: p.avatar, code: (p.username && accounts[p.username] ? accounts[p.username].friendCode : null) })), host: room.hostIndex });
+    io.to(code).emit('hostChanged', { host: room.hostIndex });
   });
 
   socket.on('disconnect', () => {

@@ -348,6 +348,10 @@ body[data-screen="lobby"] #profile-btn{display:block}
 .fp-add input{flex:1;min-width:0;background:rgba(0,0,0,.35);border:1.5px solid rgba(212,168,75,.35);border-radius:10px;padding:10px 14px;
   font-family:system-ui,sans-serif;font-size:22px;letter-spacing:.12em;text-transform:uppercase;color:#f6ead0;outline:none}
 .fp-add input:focus{border-color:var(--gold-light)}
+.lw-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.lw-head h2{margin:0}
+.lw-quit{background:rgba(0,0,0,.28);border:1.5px solid rgba(246,234,208,.3);color:rgba(246,234,208,.85);border-radius:9px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer}
+.lw-quit:hover{border-color:#d9573f;color:#ffb9a8}
 .lobby-menu{position:absolute;z-index:850;min-width:210px;padding:8px;border-radius:14px;display:flex;flex-direction:column;gap:4px;
   background:linear-gradient(180deg,#1f4a31,#0f2c1d);border:1.5px solid var(--gold);box-shadow:0 14px 34px rgba(0,0,0,.6);animation:fadeIn .12s ease}
 .lobby-menu button{background:none;border:none;color:#f6ead0;font-family:'Playfair Display',serif;font-size:18px;font-weight:600;text-align:left;padding:10px 14px;border-radius:9px;cursor:pointer}
@@ -361,9 +365,9 @@ body[data-screen="lobby"] #profile-btn{display:block}
 .pc-edit svg{width:100%;height:100%}
 .pc-edit:hover{opacity:1;transform:scale(1.08)}
 .pc-name input{font:inherit;color:inherit;width:100%;min-width:0;background:rgba(255,248,230,.6);border:2px solid #8a6420;border-radius:12px;padding:0 .15em;text-align:center;outline:none}
-.pc-more{position:absolute;top:38px;right:126px;width:40px;height:58px;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border-radius:12px;opacity:.45;transition:opacity .15s}
-.pc-more i{display:block;width:15px;height:15px;background:url('/tumbleweed.webp') center/contain no-repeat}
-.pc-more:hover{opacity:.85}
+.pc-more{position:absolute;top:34px;right:124px;width:44px;height:68px;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border-radius:12px;opacity:.8;transition:opacity .15s,transform .15s}
+.pc-more i{display:block;width:19px;height:19px;background:url('/tumbleweed.webp') center/contain no-repeat;filter:drop-shadow(0 1px 1px rgba(60,40,10,.45)) saturate(1.15) contrast(1.1)}
+.pc-more:hover{opacity:1;transform:scale(1.06)}
 .pc-more-menu{position:absolute;top:100px;right:122px;min-width:260px;padding:10px;border-radius:16px;z-index:5;display:flex;flex-direction:column;gap:4px;
   background:#f6ead0;border:2px solid #8a6420;box-shadow:0 18px 40px rgba(0,0,0,.45);animation:fadeIn .12s ease}
 .pc-more-menu button{background:none;border:none;font-family:'Playfair Display',serif;font-size:26px;font-weight:600;color:#0b221c;text-align:left;padding:12px 18px;border-radius:10px;cursor:pointer}
@@ -404,10 +408,11 @@ body[data-screen="lobby"] #profile-btn{display:block}
 .pc-av-frame{position:absolute;left:107px;top:104px;width:376px;height:532px;border-radius:50%;overflow:hidden;cursor:pointer;-webkit-mask:radial-gradient(circle at 186.5px 550.5px,transparent 50px,#000 51px);mask:radial-gradient(circle at 186.5px 550.5px,transparent 50px,#000 51px)}
 .pc-av-frame img{width:100%;height:100%;object-fit:cover;display:block}
 .pc-name,.pc-nickname{position:absolute;display:flex;align-items:center;justify-content:center;white-space:nowrap}
-.pc-name{left:560px;top:72px;width:516px;height:146px;flex-direction:column;justify-content:center;gap:.04em;font-weight:700;font-size:100px;line-height:1;overflow:hidden}
+.pc-name{left:560px;top:66px;width:516px;height:130px;flex-direction:column;justify-content:center;gap:.06em;font-weight:700;font-size:100px;line-height:1;overflow:hidden}
+.pc-name.with-real{font-size:78px}
 .pc-name-row{display:flex;align-items:center;justify-content:center;gap:.16em;max-width:100%}
 .pc-name-row>*{flex-shrink:0}
-.pc-real{font-size:.26em;font-weight:600;color:#5b4a2c;letter-spacing:.01em}
+.pc-real{font-size:.36em;font-weight:600;color:#5b4a2c;letter-spacing:.01em}
 .pc-id{font-size:.3em;font-weight:600;letter-spacing:.03em;color:#5b4a2c;position:relative;top:.12em}
 .pc-nickname{left:668px;top:205px;width:300px;height:56px;font-weight:600;font-size:36px;line-height:1}
 .pc-nickname.empty{font-style:italic;font-weight:400;font-size:28px;color:#4a5a50}
@@ -1152,7 +1157,7 @@ body.anim-lock #react-dock{ pointer-events:auto; }
     <div class="error-msg" id="lobby-error"></div>
   </div>
   <div class="lobby-box" id="lobby-waiting" style="display:none">
-    <h2>Salle d'attente</h2>
+    <div class="lw-head"><h2>Salle d'attente</h2><button class="lw-quit" onclick="leaveWaiting()">Quitter</button></div>
     <div style="font-family:'Playfair Display',serif;font-size:42px;color:var(--gold-light);letter-spacing:.15em;text-align:center;text-shadow:0 2px 8px rgba(0,0,0,.5);margin:12px 0" id="lobby-code-display">----</div>
     <p style="color:rgba(255,255,255,.4);font-size:12px;text-align:center">Partagez ce code</p>
     <div style="display:flex;flex-direction:column;gap:8px;margin:16px 0;min-height:50px" id="lobby-players-list"></div>
@@ -2159,7 +2164,7 @@ function profileCardHTML(p, mine){
       <button class="cactus-close pc-close" onclick="${closeFn}" aria-label="Fermer" title="Fermer"></button>
       ${!mine && currentUser ? `<button class="pc-more" onclick="togglePcMenu(event)" aria-label="Options"><i></i><i></i><i></i></button>` : ''}
       <div class="pc-av-frame" ${mine ? 'onclick="openAvatarPicker()"' : 'style="cursor:default"'}><img src="${avatarImg(typeof p.avatar === 'number' ? p.avatar : null, 0)}" alt="avatar"></div>
-      <div class="pc-name">
+      <div class="pc-name${p.alias ? ' with-real' : ''}">
         <div class="pc-name-row"><span class="pc-display">${display}</span>${isFriend ? `<button class="pc-edit" onclick="startFriendRename()" title="Renommer">${PENCIL_SVG}</button>` : ''}${p.code ? `<span class="pc-id">#${p.code}</span>` : ''}</div>
         ${p.alias ? `<div class="pc-real">${p.username}</div>` : ''}
       </div>
@@ -2732,6 +2737,15 @@ function joinRoom() {
   const go = () => { errEl.textContent=''; socket.emit('joinRoom', {code, name:getName()}); };
   if (socket.connected) go();
   else { socket.once('connect', go); socket.once('connect_error', ()=>showToast('Connexion impossible', 'bad')); }
+}
+
+// Quitter la salle d'attente et revenir au menu Rejoindre / Créer.
+function leaveWaiting(){
+  if (socket && myRoom) socket.emit('leaveRoom', { code: myRoom });
+  myRoom = null; myIndex = -1; isHost = false; lobbyPlayers = [];
+  qid('lobby-waiting').style.display = 'none';
+  qid('lobby-main').style.display = 'block';
+  showToast('Tu as quitté la salle', 'info');
 }
 
 function showWaiting(code, host) {
