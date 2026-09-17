@@ -498,24 +498,24 @@ io.on('connection', socket => {
     if (!allow(socket, 'friendRequest')) return;
     const a = _me(); if (!a) return;
     const q = typeof query === 'string' ? query.trim() : '';
-    if (!q) return socket.emit('friendResult', { ok:false, error:'Entre un code ami.' });
+    if (!q) return socket.emit('friendResult', { ok:false, error:'Entre un code ami' });
     const b = _accByCode(q);
-    if (!b) return socket.emit('friendResult', { ok:false, error:'Aucun joueur avec ce code.' });
-    if (b.email === a.email) return socket.emit('friendResult', { ok:false, error:'C’est toi !' });
-    if ((a.friends||[]).includes(b.friendCode)) return socket.emit('friendResult', { ok:false, error:`${b.username} est déjà ton ami.` });
-    if (a.requests.out.includes(b.friendCode)) return socket.emit('friendResult', { ok:false, error:'Demande déjà envoyée.' });
+    if (!b) return socket.emit('friendResult', { ok:false, error:'Aucun joueur avec ce code' });
+    if (b.email === a.email) return socket.emit('friendResult', { ok:false, error:'C’est ton propre code !' });
+    if ((a.friends||[]).includes(b.friendCode)) return socket.emit('friendResult', { ok:false, error:`${b.username} est déjà ton ami` });
+    if (a.requests.out.includes(b.friendCode)) return socket.emit('friendResult', { ok:false, error:'Demande déjà envoyée' });
     // Si la personne t'avait deja demande, on devient amis directement.
     if (a.requests.in.includes(b.friendCode)) {
       a.requests.in = a.requests.in.filter(c => c !== b.friendCode);
       b.requests.out = b.requests.out.filter(c => c !== a.friendCode);
       a.friends.push(b.friendCode); b.friends.push(a.friendCode);
       await _save(a, b); _pushFriends(a.email); _pushFriends(b.email);
-      return socket.emit('friendResult', { ok:true, message:`${b.username} est maintenant ton ami !` });
+      return socket.emit('friendResult', { ok:true, message:`${b.username} et toi êtes maintenant amis !` });
     }
     a.requests.out.push(b.friendCode);
     b.requests.in.push(a.friendCode);
     await _save(a, b); _pushFriends(a.email); _pushFriends(b.email);
-    socket.emit('friendResult', { ok:true, message:`Demande envoyée à ${b.username}.` });
+    socket.emit('friendResult', { ok:true, message:`Demande envoyée à ${b.username}` });
   });
 
   socket.on('friendAccept', async ({ code } = {}) => {
@@ -628,8 +628,8 @@ io.on('connection', socket => {
     code = String(code).trim();
     const room = rooms[code];
     if (!room) { socket.emit('error', 'Partie introuvable'); return; }
-    if (room.started) { socket.emit('error', 'Partie déjà commencée'); return; }
-    if (room.players.length >= 5) { socket.emit('error', 'Partie pleine (5 max)'); return; }
+    if (room.started) { socket.emit('error', 'La partie a déjà commencé'); return; }
+    if (room.players.length >= 5) { socket.emit('error', 'Partie pleine : 5 joueurs maximum'); return; }
     const pi = room.players.length;
     room.players.push({ socketId: socket.id, name, hand: [], ready: false, connected: true, avatar: null, username: socket.username || null });
     socket.join(code);
@@ -654,7 +654,7 @@ io.on('connection', socket => {
     if (!allow(socket, 'startGame')) return;
     const room = rooms[code];
     if (!room || !isHostSocket(room, socket)) return;
-    if (room.players.length < 2) { socket.emit('error', 'Minimum 2 joueurs'); return; }
+    if (room.players.length < 2) { socket.emit('error', 'Il faut au moins 2 joueurs'); return; }
     // Validate card count based on player count
     const n = room.players.length;
     let cc = cardCount || 4;
@@ -978,7 +978,7 @@ io.on('connection', socket => {
         broadcastRoom(code);
         return;
       }
-      if (playerIndex === sel.p) { socket.emit('error', '2 joueurs différents requis'); return; }
+      if (playerIndex === sel.p) { socket.emit('error', 'Il faut 2 joueurs différents'); return; }
       room.jackSel = [sel, { p: playerIndex, i: cardIndex }];
       broadcastRoom(code);
     }

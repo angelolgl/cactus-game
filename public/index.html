@@ -372,6 +372,20 @@ body[data-screen="lobby"] #profile-btn{display:block}
 .pc-status .pc-id{font-size:1em;top:0}
 .pc-online{display:flex;align-items:center;gap:.35em;white-space:nowrap}
 .pc-online .fr-dot{width:.55em;height:.55em}
+.notif-stack{position:absolute;top:26px;left:50%;transform:translateX(-50%);z-index:960;display:flex;flex-direction:column;align-items:center;gap:10px;pointer-events:none}
+.notif{display:flex;align-items:center;gap:14px;max-width:760px;padding:14px 26px 14px 16px;border-radius:16px;
+  font-family:'Playfair Display',serif;font-size:24px;font-weight:600;color:#241a09;background:linear-gradient(180deg,#f8efd8,#e8d6ac);
+  border:2px solid #8a6420;box-shadow:0 0 0 4px rgba(11,34,22,.35),0 14px 30px rgba(0,0,0,.5);
+  animation:notifIn .3s cubic-bezier(.34,1.56,.64,1) both}
+.notif.out{animation:notifOut .25s ease forwards}
+.notif .ni{flex-shrink:0;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:22px;font-weight:700;color:#fff;background:#4a7d5a;box-shadow:inset 0 -2px 0 rgba(0,0,0,.25)}
+.notif.ok .ni{background:linear-gradient(180deg,#5fbe7d,#2f7a4a)}
+.notif.info .ni{background:linear-gradient(180deg,#f0c96e,#c89535);color:#241a09}
+.notif.warn .ni{background:linear-gradient(180deg,#eda94a,#c87b20)}
+.notif.bad .ni{background:linear-gradient(180deg,#d9573f,#9b2a1f)}
+@keyframes notifIn{from{opacity:0;transform:translateY(-34px) scale(.92)}to{opacity:1;transform:none}}
+@keyframes notifOut{to{opacity:0;transform:translateY(-22px) scale(.96)}}
 .g-dialog-bg{position:absolute;inset:0;z-index:870;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);animation:fadeIn .15s ease}
 .g-dialog{width:560px;padding:36px 40px 30px;border-radius:22px;text-align:center;font-family:'Playfair Display',serif;color:#0b221c;
   background:#f6ead0;border:3px solid #8a6420;box-shadow:0 0 0 6px rgba(246,234,208,.25),0 24px 60px rgba(0,0,0,.6);animation:slideUp .25s cubic-bezier(.34,1.56,.64,1) both}
@@ -467,8 +481,6 @@ body[data-screen="lobby"] #profile-btn{display:block}
 .sc-btn:hover{transform:translateY(-2px);box-shadow:0 6px 22px rgba(212,168,75,.45)}
 .sc-btn.sec{background:rgba(255,255,255,.1);color:white;border:1px solid rgba(255,255,255,.2);box-shadow:none}
 .sc-btn.sec:hover{background:rgba(255,255,255,.18);box-shadow:none}
-.snap-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:rgba(0,0,0,.8);border:1px solid var(--gold);border-radius:10px;padding:10px 20px;font-size:13px;color:var(--gold-light);z-index:600;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap}
-.snap-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
 @keyframes dealIn{from{opacity:0;transform:translateY(-30px) scale(.75) rotate(-6deg)}to{opacity:1;transform:none}}
 @keyframes penaltyIn{from{transform:translateX(30px) scale(.7);opacity:0}to{transform:none;opacity:1}}
@@ -1109,7 +1121,7 @@ body.anim-lock #react-dock{ pointer-events:auto; }
 <div id="layer-root"></div>
 <div id="cactus-announce" style="display:none"></div>
 <div id="yourturn-banner" style="display:none"></div>
-<div id="toast" class="snap-toast"></div>
+<div id="notif-stack" class="notif-stack"></div>
 
 <!-- LOBBY -->
 <div id="s-lobby" class="screen active">
@@ -1940,7 +1952,7 @@ function doSnap(pi,ci,el,card){
     G.players[pi].hand.splice(ci,1);
     G.discard.push(card);
     addLog('⚡ '+G.players[pi].name+' snap '+lbl(card)+' !');
-    showToast('✅ '+G.players[pi].name+' — Snap ! '+lbl(card));
+    showToast(G.players[pi].name + ' claque un snap : ' + lbl(card), 'ok');
     // Si un valet est snappé pendant jack-decide → on reste en phase decide (même valet, même état)
     if(card.value==='J'&&G.jackP&&G.jackTimerStep==='decide'){
       addLog('🃏 Valet snappé — toujours en attente de décision.');
@@ -2035,9 +2047,20 @@ function doJackSwapNow(){
 
 // ══ UI HELPERS ══
 
-function showToast(msg) {
-  const t = qid('toast'); t.textContent = msg; t.classList.add('show');
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+// Bannière de jeu. type : 'ok' (réussite), 'info', 'warn' (attention), 'bad' (échec).
+const NOTIF_ICON = { ok: '✓', info: '!', warn: '!', bad: '✕' };
+function showToast(msg, type = 'info') {
+  const stack = qid('notif-stack'); if (!stack) return;
+  // Un même message affiché deux fois de suite ne s'empile pas.
+  const last = stack.lastElementChild;
+  if (last && last.dataset.msg === msg) { last.remove(); }
+  while (stack.children.length >= 3) stack.firstElementChild.remove();
+  const el = document.createElement('div');
+  el.className = 'notif ' + type;
+  el.dataset.msg = msg;
+  el.innerHTML = `<span class="ni">${NOTIF_ICON[type] || '!'}</span><span>${msg}</span>`;
+  stack.appendChild(el);
+  setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 260); }, 3000);
 }
 
 function stopCountdown() {
@@ -2115,7 +2138,7 @@ function closeProfileDrawer(){
   qid('profile-drawer').classList.remove('open');
   qid('drawer-overlay').classList.remove('show');
 }
-function lockedRubric(name){ showToast('🔒 ' + name + ' — connecte-toi pour y accéder'); }
+function lockedRubric(name){ showToast('Connecte-toi pour ouvrir « ' + name + ' »', 'warn'); }
 
 // ── Profil ──
 const PENCIL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="#0b221c" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 3.5l4 4L8 20H4v-4z"/><path d="M13.5 6.5l4 4"/></svg>';
@@ -2390,7 +2413,7 @@ function openFriends(){
   if(socket) socket.emit('getFriends');
 }
 function copyMyCode(){
-  if(currentUser && navigator.clipboard) navigator.clipboard.writeText('#' + currentUser.friendCode).then(()=>showToast('Code copié')).catch(()=>{});
+  if(currentUser && navigator.clipboard) navigator.clipboard.writeText('#' + currentUser.friendCode).then(()=>showToast('Code ami copié', 'ok')).catch(()=>{});
 }
 function frTab(tab){ _frTab = tab; renderFriends(); }
 
@@ -2439,7 +2462,7 @@ function renderFriends(){
       <div class="fr-list">${rows.join('')}</div>`;
     const fi = qid('friend-input');
     fi.addEventListener('input', () => { fi.value = fi.value.replace(/[^a-z0-9]/gi, '').toUpperCase(); });
-    const send = () => { const v = fi.value.trim(); if(!v) return showToast('Entre le code ami'); socket.emit('friendRequest', { query: v }); fi.value=''; };
+    const send = () => { const v = fi.value.trim(); if(!v) return showToast('Entre d’abord un code ami', 'warn'); socket.emit('friendRequest', { query: v }); fi.value=''; };
     qid('friend-add').addEventListener('click', send);
     fi.addEventListener('keydown', e => { if(e.key === 'Enter') send(); });
     return;
@@ -2456,7 +2479,7 @@ function friendDecline(code){ if(socket) socket.emit('friendDecline', { code });
 // ── Profil d'un autre joueur, ouvert par-dessus la fenêtre en cours ──
 function openPublicProfile(code){ if(socket) socket.emit('getProfile', { code }); }
 function showPublicProfile(p){
-  if(!p) return showToast('Joueur introuvable');
+  if(!p) return showToast('Joueur introuvable', 'bad');
   _layerProfile = p;
   qid('layer-root').innerHTML = profileCardHTML(p, false);
   fitProfilText();
@@ -2554,7 +2577,7 @@ function gameDialog({ title, text, html, buttons }){
 // ── Navigation accueil (invité) ──
 function playGuest(){ qid('home-account').style.display='none'; qid('lobby-main').style.display='block'; }
 function backToHome(){ qid('lobby-main').style.display='none'; qid('home-account').style.display='block'; }
-function copyFriendCode(){ const v=qid('pd-code-val'); if(v && navigator.clipboard){ navigator.clipboard.writeText(v.textContent).then(()=>showToast('Code copié')).catch(()=>{}); } }
+function copyFriendCode(){ const v=qid('pd-code-val'); if(v && navigator.clipboard){ navigator.clipboard.writeText(v.textContent).then(()=>showToast('Code ami copié', 'ok')).catch(()=>{}); } }
 function logoutAccount(){
   let t = null; try { t = localStorage.getItem('cactus_token'); } catch(e){}
   if (socket) socket.emit('logout', { token: t });
@@ -2565,7 +2588,7 @@ function logoutAccount(){
   qid('home-account').style.display = 'block';
   updateAuthUI();
   closeProfileDrawer();
-  showToast('Déconnecté');
+  showToast('Tu es déconnecté, à bientôt', 'info');
 }
 function sendMyAvatar(){ if (socket && myRoom && typeof myAvatar === 'number') socket.emit('setAvatar', { code: myRoom, playerIndex: myIndex, avatar: myAvatar }); }
 
@@ -2582,7 +2605,7 @@ function initSocket() {
 }
 
 function _registerSocketHandlers() {
-  socket.on('connect_error', () => { const e=qid('lobby-error'); if(e) e.textContent = 'Erreur de connexion'; });
+  socket.on('connect_error', () => showToast('Connexion au serveur impossible', 'bad'));
   socket.on('connect', () => {
     try { const t = localStorage.getItem('cactus_token'); if (t) socket.emit('authToken', { token: t }); } catch(e){}
     if (_hasJoinedOnce && myRoom) socket.emit('rejoin', { code: myRoom, name: myName, playerIndex: myIndex });
@@ -2594,7 +2617,7 @@ function _registerSocketHandlers() {
       updateAuthUI();
       qid('modal-root').innerHTML = '';
       socket.emit('getFriends');   // pastille des demandes + relations dans le lobby
-      showToast('Connecté 👋 ' + (user.username || user.email));
+      showToast('Bon retour, ' + (user.username || user.email) + ' !', 'ok');
     } else if (expired) {
       try { localStorage.removeItem('cactus_token'); } catch(e){}
     } else {
@@ -2609,14 +2632,14 @@ function _registerSocketHandlers() {
   socket.on('rejoined', ({playerIndex, code}) => {
     myIndex = playerIndex; myRoom = code;
     showReconnecting(false);
-    showToast('✅ Reconnecté');
+    showToast('Connexion rétablie, la partie reprend', 'ok');
   });
   socket.on('rejoinFailed', () => {
     showReconnecting(false);
-    showToast('⚠️ Impossible de rejoindre la partie');
+    showToast('Impossible de rejoindre la partie', 'bad');
   });
   socket.on('playerConn', ({pi, connected, name}) => {
-    if (name && pi !== myIndex) showToast(connected ? `✅ ${name} est de retour` : `⚠️ ${name} s'est déconnecté`);
+    if (name && pi !== myIndex) showToast(connected ? `${name} est de retour` : `${name} a perdu la connexion`, connected ? 'ok' : 'warn');
   });
   socket.on('roomCreated', ({code, playerIndex}) => { myIndex=playerIndex; myRoom=code; _hasJoinedOnce=true; showWaiting(code,true); sendMyAvatar(); });
   socket.on('roomJoined',  ({code, playerIndex}) => { myIndex=playerIndex; myRoom=code; _hasJoinedOnce=true; showWaiting(code,false); sendMyAvatar(); });
@@ -2630,12 +2653,12 @@ function _registerSocketHandlers() {
       if(rel !== _layerProfile.relation && !document.querySelector('#layer-root .pc-name input')){ _layerProfile.relation = rel; showPublicProfile(_layerProfile); }
     }
   });
-  socket.on('friendResult', r => { if(r) showToast(r.ok ? r.message : r.error); });
+  socket.on('friendResult', r => { if(r) showToast(r.ok ? r.message : r.error, r.ok ? 'ok' : 'warn'); });
   socket.on('publicProfile', p => showPublicProfile(p));
   socket.on('friendRenamed', ({ code, alias }) => {
     if(_layerProfile && _layerProfile.code === code){ _layerProfile.alias = alias; showPublicProfile(_layerProfile); }
   });
-  socket.on('reportDone', () => showToast('Signalement envoyé, merci'));
+  socket.on('reportDone', () => showToast('Signalement envoyé, merci', 'ok'));
   socket.on('hostChanged', ({host}) => {
     if (typeof host === 'number') hostIndex = host;
     isHost = (myIndex === hostIndex);
@@ -2649,7 +2672,7 @@ function _registerSocketHandlers() {
       const elim = G.totals && G.totals.some(t => t >= 100);
       nr.style.display = (isHost && !elim) ? 'block' : 'none';
     }
-    if (isHost) showToast('👑 Vous êtes maintenant l\'hôte');
+    if (isHost) showToast('Tu prends la main : tu es l’hôte', 'info');
   });
   socket.on('gameStarted', () => { peekedCards=[]; peekRevealed=[]; window._peekRendered=false; _peekDoneSent=false; _victoryShown=false; qid('victory-overlay').classList.remove('show'); show('peek'); });
   socket.on('gameState',   (state) => { G=state; updateGame(state); });
@@ -2669,7 +2692,7 @@ function _registerSocketHandlers() {
     qid('btn-peek-ok').style.display = 'none';
   });
   socket.on('wrongSnap',   ({playerIndex, card}) => { if(playerIndex===myIndex){ if(_soundOn && SFX.wrongsnap) SFX.wrongsnap(); showWrongSnapModal(card, ()=>{}); } });
-  socket.on('error',       (msg) => { showToast('⚠️ '+msg); qid('lobby-error').textContent=msg; });
+  socket.on('error',       (msg) => showToast(msg, 'bad'));
 }
 
 function showReconnecting(on){
@@ -2695,18 +2718,18 @@ function createRoom() {
   initSocket();
   const go = () => { errEl.textContent=''; socket.emit('createRoom', {name:getName()}); };
   if (socket.connected) go();
-  else { socket.once('connect', go); socket.once('connect_error', ()=>errEl.textContent='Connexion impossible'); }
+  else { socket.once('connect', go); socket.once('connect_error', ()=>showToast('Connexion impossible', 'bad')); }
 }
 
 function joinRoom() {
   const code = qid('room-code').value.trim();
-  if (!code) { qid('lobby-error').textContent='Entrez un code'; return; }
+  if (!code) { showToast('Entre le code de la partie', 'warn'); return; }
   const errEl = qid('lobby-error');
   errEl.textContent = 'Connexion...';
   initSocket();
   const go = () => { errEl.textContent=''; socket.emit('joinRoom', {code, name:getName()}); };
   if (socket.connected) go();
-  else { socket.once('connect', go); socket.once('connect_error', ()=>errEl.textContent='Connexion impossible'); }
+  else { socket.once('connect', go); socket.once('connect_error', ()=>showToast('Connexion impossible', 'bad')); }
 }
 
 function showWaiting(code, host) {
@@ -2727,7 +2750,7 @@ function openLobbyMenu(ev, i){
   closeLobbyMenu();
   const p = lobbyPlayers[i]; if(!p) return;
   if(currentUser && p.code === currentUser.friendCode) return openProfil();
-  if(!p.code) return showToast(p.name + ' joue en invité');
+  if(!p.code) return showToast(p.name + ' joue en invité, pas de profil à afficher', 'info');
   const rel = FRIENDS ? (FRIENDS.friends.some(f => f.code === p.code) ? 'friend'
     : FRIENDS.outgoing.some(f => f.code === p.code) ? 'sent' : 'none') : 'none';
   const m = document.createElement('div');
@@ -3409,9 +3432,14 @@ function toggleLogPanel(){
 }
 
 function returnToLobby() {
-  if (!confirm('Quitter la partie et revenir au menu ?')) return;
-  if (socket) { try { socket.disconnect(); } catch(e){} }
-  location.reload();
+  gameDialog({
+    title: 'Quitter la partie ?',
+    text: 'Tu retournes au menu principal et tu quittes la table.',
+    buttons: [{ label: 'Rester', cls: 'ghost' }, { label: 'Quitter', cls: 'danger', onClick: () => {
+      if (socket) { try { socket.disconnect(); } catch(e){} }
+      location.reload();
+    } }],
+  });
 }
 
 function showSettings(){
@@ -3438,7 +3466,7 @@ function showSettings(){
   musS.addEventListener('input', ()=>{ setMusicVolume(musS.value/100); qid('mus-val').textContent = musS.value+'%'; });
   qid('set-rules').addEventListener('click', showRules);                    // showRules replaces the modal
   qid('set-close').addEventListener('click', ()=>{ qid('modal-root').innerHTML=''; });
-  document.querySelectorAll('.set-link').forEach(b => b.addEventListener('click', ()=> showToast('Bientôt disponible')));
+  document.querySelectorAll('.set-link').forEach(b => b.addEventListener('click', ()=> showToast('Bientôt disponible', 'info')));
 }
 
 function showRules() {
