@@ -258,6 +258,7 @@ const ACTION_COOLDOWN = {      // min ms between two of the SAME action (per con
   createRoom:500, joinRoom:400, chatMessage:700, reaction:300, rejoin:0,
   register:1500, login:800, authToken:400, logout:400,
   getFriends:300, friendRequest:600, friendAccept:300, friendDecline:300, friendRemove:400, getProfile:250,
+  friendRename:400, reportPlayer:5000,
 };
 const _rl = new Map(); // socket.id -> { times:[], last:{}, rejected:0, snapLock:0 }
 function _rlState(socket){
@@ -312,13 +313,14 @@ function dbRowToAccount(r){
     createdAt: r.created_at, stats: r.stats || {games:0,wins:0,cactus:0}, history: r.history || [],
     nickname: r.nickname || null, level: r.level || 1, avatar: (r.avatar ?? null),
     friends: Array.isArray(r.friends) ? r.friends : [],
-    requests: { in: (r.friend_requests && r.friend_requests.in) || [], out: (r.friend_requests && r.friend_requests.out) || [] } };
+    requests: { in: (r.friend_requests && r.friend_requests.in) || [], out: (r.friend_requests && r.friend_requests.out) || [] },
+    aliases: (r.friend_aliases && typeof r.friend_aliases === 'object') ? r.friend_aliases : {} };
 }
 function accountToDbRow(a){
   return { email: a.email, username: a.username, salt: a.salt, hash: a.hash, friend_code: a.friendCode,
     created_at: a.createdAt, stats: a.stats || {games:0,wins:0,cactus:0}, history: a.history || [],
     nickname: a.nickname || null, level: a.level || 1, avatar: (a.avatar ?? null),
-    friends: a.friends || [], friend_requests: a.requests || { in: [], out: [] } };
+    friends: a.friends || [], friend_requests: a.requests || { in: [], out: [] }, friend_aliases: a.aliases || {} };
 }
 
 let accounts = {};     // emailLower -> { email, username, salt, hash, friendCode, createdAt, stats, history, nickname, level, avatar }
@@ -352,6 +354,15 @@ async function deleteToken(token){
   try { await sbFetch(`tokens?token=eq.${encodeURIComponent(token)}`, { method:'DELETE', headers:{ 'Prefer':'return=minimal' } }); }
   catch (e) { console.error('[storage] suppression token échouée:', e.message); }
 }
+const REPORT_REASONS = ['Pseudo inapproprié', 'Triche', 'Comportement toxique', 'Autre'];
+const reports = [];   // copie locale ; en ligne ils vont dans la table Supabase "reports"
+async function saveReport(r){
+  reports.push(r);
+  console.log(`[report] ${r.reporter} a signalé ${r.reported} : ${r.reason}`);
+  if (!SUPABASE_ENABLED) return;
+  try { await sbFetch('reports', { method:'POST', headers:{ 'Prefer':'return=minimal' }, body: JSON.stringify(r) }); }
+  catch (e) { console.error('[storage] sauvegarde signalement échouée:', e.message); }
+}
 function _hashPw(pw, salt){ return crypto.scryptSync(String(pw), salt, 32).toString('hex'); }
 function _genFriendCode(){
   const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -380,15 +391,14 @@ function _isOnline(a){ return !!a && onlineEmails.has(a.email); }
 function _accByCode(code){ if(typeof code !== 'string') return null;
   const c = code.trim().replace(/^#/, '').toUpperCase();
   return Object.values(accounts).find(a => a.friendCode === c) || null; }
-function _accByName(name){ if(typeof name !== 'string') return null;
-  const n = name.trim().toLowerCase();
-  return Object.values(accounts).find(a => (a.username||'').toLowerCase() === n) || null; }
-function _friendCard(a){ return a ? { code: a.friendCode, name: a.username, avatar: (a.avatar ?? null),
-  nickname: a.nickname || null, level: a.level || 1, online: _isOnline(a) } : null; }
+function _friendCard(a, owner){ if(!a) return null;
+  const alias = owner && owner.aliases ? owner.aliases[a.friendCode] : null;
+  return { code: a.friendCode, name: alias || a.username, username: a.username, alias: alias || null,
+    avatar: (a.avatar ?? null), nickname: a.nickname || null, level: a.level || 1, online: _isOnline(a) }; }
 function _byName(x, y){ return (x.name||'').localeCompare(y.name||'', 'fr', { sensitivity:'base' }); }
-// En ligne d'abord, puis ordre alphabetique.
+// En ligne d'abord, puis ordre alphabetique dans chaque groupe.
 function _sortFriends(list){ return list.sort((x, y) => (y.online - x.online) || _byName(x, y)); }
-function _cards(codes){ return (codes||[]).map(c => _friendCard(_accByCode(c))).filter(Boolean); }
+function _cards(codes, owner){ return (codes||[]).map(c => _friendCard(_accByCode(c), owner)).filter(Boolean); }
 // Joueurs croises lors des 5 dernieres parties, sans doublon ni amis deja ajoutes.
 function _suggestions(a){
   const seen = new Set(), out = [];
@@ -396,15 +406,15 @@ function _suggestions(a){
     if (c === a.friendCode || seen.has(c)) continue;
     seen.add(c);
     if ((a.friends||[]).includes(c) || a.requests.out.includes(c) || a.requests.in.includes(c)) continue;
-    const card = _friendCard(_accByCode(c)); if (card) out.push(card);
+    const card = _friendCard(_accByCode(c), a); if (card) out.push(card);
   }
   return _sortFriends(out);
 }
 function _friendsPayload(a){ return {
   me: a.friendCode,
-  friends: _sortFriends(_cards(a.friends)),
-  incoming: _sortFriends(_cards(a.requests.in)),
-  outgoing: _sortFriends(_cards(a.requests.out)),
+  friends: _sortFriends(_cards(a.friends, a)),
+  incoming: _sortFriends(_cards(a.requests.in, a)),
+  outgoing: _sortFriends(_cards(a.requests.out, a)),
   suggestions: _suggestions(a) }; }
 function _socketsOf(email){ const out = [];
   for (const [, s] of io.of('/').sockets) if (s.username === email) out.push(s);
@@ -435,7 +445,7 @@ io.on('connection', socket => {
     if (Object.values(accounts).some(a => (a.username||'').toLowerCase() === usernameLower))
       return socket.emit('authResult', { ok:false, mode:'register', error:'Ce pseudo est déjà pris, choisis-en un autre.' });
     const salt = crypto.randomBytes(16).toString('hex');
-    accounts[email] = { email, username, salt, hash: _hashPw(password, salt), friendCode: _genFriendCode(), createdAt: Date.now(), stats:{games:0,wins:0,cactus:0}, history:[], friends:[], requests:{ in:[], out:[] } };
+    accounts[email] = { email, username, salt, hash: _hashPw(password, salt), friendCode: _genFriendCode(), createdAt: Date.now(), stats:{games:0,wins:0,cactus:0}, history:[], friends:[], requests:{ in:[], out:[] }, aliases:{} };
     await upsertAccount(accounts[email]);
     socket.username = email;
     _goOnline(email);
@@ -483,14 +493,14 @@ io.on('connection', socket => {
     socket.emit('friendsData', _friendsPayload(a));
   });
 
-  // Cherche par code ami (#ABC123) ou par pseudo exact.
+  // Les demandes se font uniquement avec le code ami (#ABC123).
   socket.on('friendRequest', async ({ query } = {}) => {
     if (!allow(socket, 'friendRequest')) return;
     const a = _me(); if (!a) return;
     const q = typeof query === 'string' ? query.trim() : '';
-    if (!q) return socket.emit('friendResult', { ok:false, error:'Entre un code ami ou un pseudo.' });
-    const b = _accByCode(q) || _accByName(q);
-    if (!b) return socket.emit('friendResult', { ok:false, error:'Aucun joueur trouvé avec ça.' });
+    if (!q) return socket.emit('friendResult', { ok:false, error:'Entre un code ami.' });
+    const b = _accByCode(q);
+    if (!b) return socket.emit('friendResult', { ok:false, error:'Aucun joueur avec ce code.' });
     if (b.email === a.email) return socket.emit('friendResult', { ok:false, error:'C’est toi !' });
     if ((a.friends||[]).includes(b.friendCode)) return socket.emit('friendResult', { ok:false, error:`${b.username} est déjà ton ami.` });
     if (a.requests.out.includes(b.friendCode)) return socket.emit('friendResult', { ok:false, error:'Demande déjà envoyée.' });
@@ -537,7 +547,31 @@ io.on('connection', socket => {
     const b = _accByCode(code); if (!b) return;
     a.friends = (a.friends||[]).filter(c => c !== b.friendCode);
     b.friends = (b.friends||[]).filter(c => c !== a.friendCode);
+    if (a.aliases) delete a.aliases[b.friendCode];
+    if (b.aliases) delete b.aliases[a.friendCode];
     await _save(a, b); _pushFriends(a.email); _pushFriends(b.email);
+  });
+
+  socket.on('friendRename', async ({ code, alias } = {}) => {
+    if (!allow(socket, 'friendRename')) return;
+    const a = _me(); if (!a) return;
+    const b = _accByCode(code); if (!b || !(a.friends||[]).includes(b.friendCode)) return;
+    const name = typeof alias === 'string' ? alias.trim().replace(/\s+/g, ' ').slice(0, 20) : '';
+    a.aliases = a.aliases || {};
+    if (name && name !== b.username) a.aliases[b.friendCode] = name; else delete a.aliases[b.friendCode];
+    await upsertAccount(a); _pushFriends(a.email);
+    socket.emit('friendRenamed', { code: b.friendCode, alias: a.aliases[b.friendCode] || null });
+  });
+
+  socket.on('reportPlayer', async ({ code, reason, details } = {}) => {
+    if (!allow(socket, 'reportPlayer')) return;
+    const a = _me(); if (!a) return;
+    const b = _accByCode(code); if (!b || b.email === a.email) return;
+    if (!REPORT_REASONS.includes(reason)) return;
+    const report = { reporter: a.friendCode, reported: b.friendCode, reason,
+      details: typeof details === 'string' ? details.trim().slice(0, 300) : '', created_at: Date.now() };
+    await saveReport(report);
+    socket.emit('reportDone', { ok: true });
   });
 
   // Mini profil public d'un joueur (depuis le lobby ou la liste d'amis).
@@ -546,7 +580,8 @@ io.on('connection', socket => {
     const b = _accByCode(code); if (!b) return socket.emit('publicProfile', null);
     const a = _me();
     const st = b.stats || {};
-    socket.emit('publicProfile', { code: b.friendCode, name: b.username, avatar: (b.avatar ?? null),
+    const alias = a && a.aliases ? a.aliases[b.friendCode] || null : null;
+    socket.emit('publicProfile', { code: b.friendCode, username: b.username, alias, avatar: (b.avatar ?? null),
       nickname: b.nickname || null, level: b.level || 1, online: _isOnline(b),
       stats: { games: st.games||0, wins: st.wins||0, cactus: st.cactus||0, bestStreak: st.bestStreak||0 },
       relation: !a ? 'none' : a.friendCode === b.friendCode ? 'me'
