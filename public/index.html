@@ -332,6 +332,7 @@ body[data-screen="lobby"] #profile-btn{display:block}
 .fr-av img{width:100%;height:100%;object-fit:cover;object-position:center top;display:block}
 .fr-id{min-width:0;flex:1}
 .fr-name{font-size:24px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fr-real{font-size:16px;font-weight:400;color:rgba(246,234,208,.42)}
 .fr-status{display:flex;align-items:center;gap:8px;margin-top:4px;font-family:system-ui,sans-serif;font-size:14px;color:rgba(246,234,208,.6)}
 .fr-dot{width:10px;height:10px;border-radius:50%;background:#56645c;flex-shrink:0}
 .fr-dot.on{background:#57d98a;box-shadow:0 0 8px rgba(87,217,138,.9)}
@@ -355,24 +356,20 @@ body[data-screen="lobby"] #profile-btn{display:block}
 .lobby-row{cursor:pointer}
 .lobby-row:hover{background:rgba(255,255,255,.14)!important}
 #layer-root .profil-modal-bg{z-index:840}
-.pc-edit{font-size:inherit;flex-shrink:0;width:.5em;height:.5em;border-radius:50%;border:2px solid #0b221c;background:#f0c96e;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;padding:0;box-shadow:0 3px 0 #8a6420;align-self:center}
-.pc-edit svg{width:58%;height:58%}
-.pc-edit:hover{background:#ffd98a}
+.pc-edit{font-size:inherit;flex-shrink:0;width:.42em;height:.42em;border:none;background:none;padding:0;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;opacity:.75;transition:opacity .15s,transform .15s}
+.pc-edit svg{width:100%;height:100%}
+.pc-edit:hover{opacity:1;transform:scale(1.08)}
 .pc-name input{font:inherit;color:inherit;width:100%;min-width:0;background:rgba(255,248,230,.6);border:2px solid #8a6420;border-radius:12px;padding:0 .15em;text-align:center;outline:none}
-.pc-more{position:absolute;top:34px;right:122px;width:56px;height:64px;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;border-radius:12px}
-.pc-more i{display:block;width:11px;height:11px;border-radius:50%;background:#0b221c}
-.pc-more:hover{background:rgba(11,34,28,.1)}
+.pc-more{position:absolute;top:38px;right:126px;width:40px;height:58px;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border-radius:12px;opacity:.45;transition:opacity .15s}
+.pc-more i{display:block;width:15px;height:15px;background:url('/tumbleweed.webp') center/contain no-repeat}
+.pc-more:hover{opacity:.85}
 .pc-more-menu{position:absolute;top:100px;right:122px;min-width:260px;padding:10px;border-radius:16px;z-index:5;display:flex;flex-direction:column;gap:4px;
   background:#f6ead0;border:2px solid #8a6420;box-shadow:0 18px 40px rgba(0,0,0,.45);animation:fadeIn .12s ease}
 .pc-more-menu button{background:none;border:none;font-family:'Playfair Display',serif;font-size:26px;font-weight:600;color:#0b221c;text-align:left;padding:12px 18px;border-radius:10px;cursor:pointer}
 .pc-more-menu button:hover{background:rgba(212,168,75,.3)}
 .pc-more-menu button.danger{color:#9b2a1f}
 .pc-more-menu button[disabled]{opacity:.5;cursor:default;background:none}
-.pc-status{display:flex;flex-direction:column;align-items:flex-start;gap:.2em;font-size:.3em;font-weight:600;color:#5b4a2c;position:relative;top:.12em;flex-shrink:0}
-.pc-status .pc-id{font-size:1em;top:0}
-.pc-online{display:flex;align-items:center;gap:.35em;white-space:nowrap}
-.pc-online .fr-dot{width:.55em;height:.55em}
 .notif-stack{position:absolute;top:26px;left:50%;transform:translateX(-50%);z-index:960;display:flex;flex-direction:column;align-items:center;gap:10px;pointer-events:none}
 .notif{display:flex;align-items:center;gap:14px;max-width:760px;padding:14px 26px 14px 16px;border-radius:16px;
   font-family:'Playfair Display',serif;font-size:24px;font-weight:600;color:#241a09;background:linear-gradient(180deg,#f8efd8,#e8d6ac);
@@ -407,8 +404,10 @@ body[data-screen="lobby"] #profile-btn{display:block}
 .pc-av-frame{position:absolute;left:107px;top:104px;width:376px;height:532px;border-radius:50%;overflow:hidden;cursor:pointer;-webkit-mask:radial-gradient(circle at 186.5px 550.5px,transparent 50px,#000 51px);mask:radial-gradient(circle at 186.5px 550.5px,transparent 50px,#000 51px)}
 .pc-av-frame img{width:100%;height:100%;object-fit:cover;display:block}
 .pc-name,.pc-nickname{position:absolute;display:flex;align-items:center;justify-content:center;white-space:nowrap}
-.pc-name{left:578px;top:75px;width:480px;height:140px;font-weight:700;font-size:100px;line-height:1;gap:16px;overflow:hidden}
-.pc-name>*{flex-shrink:0}
+.pc-name{left:560px;top:72px;width:516px;height:146px;flex-direction:column;justify-content:center;gap:.04em;font-weight:700;font-size:100px;line-height:1;overflow:hidden}
+.pc-name-row{display:flex;align-items:center;justify-content:center;gap:.16em;max-width:100%}
+.pc-name-row>*{flex-shrink:0}
+.pc-real{font-size:.26em;font-weight:600;color:#5b4a2c;letter-spacing:.01em}
 .pc-id{font-size:.3em;font-weight:600;letter-spacing:.03em;color:#5b4a2c;position:relative;top:.12em}
 .pc-nickname{left:668px;top:205px;width:300px;height:56px;font-weight:600;font-size:36px;line-height:1}
 .pc-nickname.empty{font-style:italic;font-weight:400;font-size:28px;color:#4a5a50}
@@ -2142,7 +2141,7 @@ function closeProfileDrawer(){
 function lockedRubric(name){ showToast('Connecte-toi pour ouvrir « ' + name + ' »', 'warn'); }
 
 // ── Profil ──
-const PENCIL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="#0b221c" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 3.5l4 4L8 20H4v-4z"/><path d="M13.5 6.5l4 4"/></svg>';
+const PENCIL_SVG = '<svg viewBox="0 0 64 64" fill="none" stroke="#5b4a2c" stroke-width="2.6" stroke-linejoin="round"><path d="M45 4 60 19 24 55l-9 3-9 3 3-9 3-9z"/><path d="M15 58 24 46"/><path d="M50 9 22 37"/><path d="M55 14 27 42"/><path d="M6 61l9-3"/></svg>';
 
 // Carte parchemin : la sienne (modifiable) ou celle d'un autre joueur (lecture seule).
 function profileCardHTML(p, mine){
@@ -2160,9 +2159,10 @@ function profileCardHTML(p, mine){
       <button class="cactus-close pc-close" onclick="${closeFn}" aria-label="Fermer" title="Fermer"></button>
       ${!mine && currentUser ? `<button class="pc-more" onclick="togglePcMenu(event)" aria-label="Options"><i></i><i></i><i></i></button>` : ''}
       <div class="pc-av-frame" ${mine ? 'onclick="openAvatarPicker()"' : 'style="cursor:default"'}><img src="${avatarImg(typeof p.avatar === 'number' ? p.avatar : null, 0)}" alt="avatar"></div>
-      <div class="pc-name"><span class="pc-display">${display}</span>${isFriend ? `<button class="pc-edit" onclick="startFriendRename()" title="Renommer">${PENCIL_SVG}</button>` : ''}${mine
-          ? (p.code ? `<span class="pc-id">#${p.code}</span>` : '')
-          : `<span class="pc-status"><span class="pc-id">#${p.code}</span><span class="pc-online"><span class="fr-dot ${p.online ? 'on' : ''}"></span>${p.online ? 'En ligne' : 'Hors ligne'}</span></span>`}</div>
+      <div class="pc-name">
+        <div class="pc-name-row"><span class="pc-display">${display}</span>${isFriend ? `<button class="pc-edit" onclick="startFriendRename()" title="Renommer">${PENCIL_SVG}</button>` : ''}${p.code ? `<span class="pc-id">#${p.code}</span>` : ''}</div>
+        ${p.alias ? `<div class="pc-real">${p.username}</div>` : ''}
+      </div>
       <div class="pc-nickname${p.nickname ? '' : ' empty'}" ${nickAttrs}><span>${nick}</span></div>
       <div class="pc-stats-title">Statistiques</div>
       ${stat('s1', 'Victoires', st.wins || 0)}
@@ -2292,7 +2292,7 @@ function openAuth(mode){
       <button class="auth-tab ${!login?'on':''}" onclick="openAuth('register')">Inscription</button>
     </div>
     <input id="auth-email" class="auth-field" type="email" placeholder="Adresse email" autocomplete="email" inputmode="email">
-    ${!login ? '<input id="auth-username" class="auth-field" placeholder="Pseudo (lettres uniquement, sans espace)" maxlength="20" autocomplete="nickname">' : ''}
+    ${!login ? '<input id="auth-username" class="auth-field" placeholder="Pseudo (lettres uniquement, sans espace)" maxlength="16" autocomplete="nickname">' : ''}
     <input id="auth-pw" class="auth-field" type="password" placeholder="Mot de passe" autocomplete="${login?'current-password':'new-password'}">
     ${!login ? '<input id="auth-pw2" class="auth-field" type="password" placeholder="Confirmer le mot de passe">' : ''}
     <div id="auth-error" style="color:#ff7a63;font-size:13px;text-align:center;min-height:16px;margin:4px 0"></div>
@@ -2323,7 +2323,7 @@ function submitAuth(mode){
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ err.textContent='Adresse email invalide.'; return; }
   if(!login){
     const un=(qid('auth-username').value||'').trim();
-    if(!un || !/^[A-Za-zÀ-ÿ]{2,20}$/.test(un)){ err.textContent='Pseudo : lettres uniquement (2–20 caractères), sans chiffres ni espaces.'; return; }
+    if(!un || !/^[A-Za-zÀ-ÿ]{2,16}$/.test(un)){ err.textContent='Pseudo : lettres uniquement, 2 à 16 caractères, sans chiffres ni espaces.'; return; }
     if(pw.length<6){ err.textContent='Mot de passe : 6 caractères minimum.'; return; }
     if(pw !== qid('auth-pw2').value){ err.textContent='Les mots de passe ne correspondent pas.'; return; }
     err.textContent='…'; initSocket();
@@ -2424,7 +2424,7 @@ function _frRow(c, actions){
   return `<div class="fr-row ${c.online ? '' : 'off'}" data-code="${c.code}" onclick="openPublicProfile('${c.code}')">
     <div class="fr-av"><img src="${avatarImg(typeof c.avatar==='number'?c.avatar:null)}" alt=""></div>
     <div class="fr-id">
-      <div class="fr-name">${c.name}</div>
+      <div class="fr-name">${c.name}${c.alias && c.username ? ` <span class="fr-real">(${c.username})</span>` : ''}</div>
       <div class="fr-status"><span class="fr-dot ${c.online?'on':''}"></span>${c.online ? 'En ligne' : 'Hors ligne'}</div>
     </div>
     ${actions ? `<div class="fr-act" onclick="event.stopPropagation()">${actions}</div>` : ''}
@@ -2519,8 +2519,8 @@ function startFriendRename(){
   closePcMenu();
   const p = _layerProfile; if(!p || p.relation !== 'friend') return;
   const box = document.querySelector('#layer-root .pc-name'); if(!box || box.querySelector('input')) return;
-  box.style.fontSize = '64px';
-  box.innerHTML = `<input maxlength="20" value="${(p.alias || p.username).replace(/"/g,'&quot;')}" placeholder="${p.username}">`;
+  box.style.fontSize = '60px';
+  box.innerHTML = `<input maxlength="16" value="${(p.alias || p.username).replace(/"/g,'&quot;')}" placeholder="${p.username}">`;
   const inp = box.querySelector('input');
   inp.focus(); inp.select();
   let done = false;
@@ -2789,7 +2789,7 @@ function updateLobbyPlayers(players, host) {
     `<div class="lobby-row" onclick="openLobbyMenu(event, ${i})" style="background:rgba(255,255,255,.08);border-radius:8px;padding:8px 14px;font-size:14px;display:flex;align-items:center;gap:8px">
       <span>${i+1}.</span>
       <img class="lobby-av" src="${avatarImg(typeof p.avatar==='number'?p.avatar:null)}" alt="">
-      <strong>${p.name}</strong>
+      <strong${currentUser && p.code && p.code === currentUser.friendCode ? ' style="color:var(--gold-light)"' : ''}>${p.name}</strong>
       ${i===hostIndex?'<span style="margin-left:auto;font-size:11px;color:var(--gold-light)">Hôte</span>':''}
     </div>`).join('');
   // Garde myAvatar en phase avec le serveur (utile après reconnexion)

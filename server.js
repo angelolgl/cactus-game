@@ -439,7 +439,7 @@ io.on('connection', socket => {
     email = (email||'').trim().toLowerCase();
     username = (username||'').trim();
     if (!_validEmail(email)) return socket.emit('authResult', { ok:false, mode:'register', error:'Adresse email invalide.' });
-    if (!username || username.length < 2 || username.length > 20) return socket.emit('authResult', { ok:false, mode:'register', error:'Pseudo : 2 à 20 caractères.' });
+    if (!username || username.length < 2 || username.length > 16) return socket.emit('authResult', { ok:false, mode:'register', error:'Pseudo : 2 à 16 caractères.' });
     if (!/^[A-Za-z\u00C0-\u00FF]+$/.test(username)) return socket.emit('authResult', { ok:false, mode:'register', error:'Pseudo : lettres uniquement, sans chiffre ni espace.' });
     if (!_validPw(password)) return socket.emit('authResult', { ok:false, mode:'register', error:'Mot de passe : 6 caractères minimum.' });
     if (accounts[email]) return socket.emit('authResult', { ok:false, mode:'register', error:'Cette adresse email est déjà utilisée.' });
@@ -555,7 +555,7 @@ io.on('connection', socket => {
     if (!allow(socket, 'friendRename')) return;
     const a = _me(); if (!a) return;
     const b = _accByCode(code); if (!b || !(a.friends||[]).includes(b.friendCode)) return;
-    const name = typeof alias === 'string' ? alias.trim().replace(/\s+/g, ' ').slice(0, 20) : '';
+    const name = typeof alias === 'string' ? alias.trim().replace(/\s+/g, ' ').slice(0, 16) : '';
     a.aliases = a.aliases || {};
     if (name && name !== b.username) a.aliases[b.friendCode] = name; else delete a.aliases[b.friendCode];
     await upsertAccount(a); _pushFriends(a.email);
