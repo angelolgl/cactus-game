@@ -258,7 +258,7 @@ const ACTION_COOLDOWN = {      // min ms between two of the SAME action (per con
   createRoom:500, joinRoom:400, chatMessage:700, reaction:300, rejoin:0,
   register:1500, login:800, authToken:400, logout:400,
   getFriends:300, friendRequest:600, friendAccept:300, friendDecline:300, friendRemove:400, getProfile:250,
-  friendRename:400, reportPlayer:5000,
+  friendRename:400, reportPlayer:5000, setMyAvatar:150,
 };
 const _rl = new Map(); // socket.id -> { times:[], last:{}, rejected:0, snapLock:0 }
 function _rlState(socket){
@@ -387,6 +387,8 @@ const onlineEmails = new Map();   // email -> nombre de connexions ouvertes
 function _goOnline(email){ if(!email) return; onlineEmails.set(email, (onlineEmails.get(email)||0) + 1); if(onlineEmails.get(email) === 1) _pushFriendsOf(email); }
 function _goOffline(email){ if(!email || !onlineEmails.has(email)) return; const n = onlineEmails.get(email) - 1;
   if(n > 0) onlineEmails.set(email, n); else { onlineEmails.delete(email); _pushFriendsOf(email); } }
+// Une connexion qui change de compte libère le précédent, sinon il resterait "en ligne" à vie.
+function _switchUser(socket, email){ if(socket.username === email) return; _goOffline(socket.username); socket.username = email; _goOnline(email); }
 function _isOnline(a){ return !!a && onlineEmails.has(a.email); }
 function _accByCode(code){ if(typeof code !== 'string') return null;
   const c = code.trim().replace(/^#/, '').toUpperCase();
@@ -447,8 +449,7 @@ io.on('connection', socket => {
     const salt = crypto.randomBytes(16).toString('hex');
     accounts[email] = { email, username, salt, hash: _hashPw(password, salt), friendCode: _genFriendCode(), createdAt: Date.now(), stats:{games:0,wins:0,cactus:0}, history:[], friends:[], requests:{ in:[], out:[] }, aliases:{} };
     await upsertAccount(accounts[email]);
-    socket.username = email;
-    _goOnline(email);
+    _switchUser(socket, email);
     socket.emit('authResult', { ok:true, user:_pubUser(accounts[email]), token:_newToken(email) });
   });
 
@@ -462,8 +463,7 @@ io.on('connection', socket => {
     let same = false;
     try { same = h.length === a.hash.length && crypto.timingSafeEqual(Buffer.from(h), Buffer.from(a.hash)); } catch(e){}
     if (!same) return fail();
-    socket.username = key;
-    _goOnline(key);
+    _switchUser(socket, key);
     socket.emit('authResult', { ok:true, user:_pubUser(a), token:_newToken(key) });
   });
 
@@ -472,8 +472,7 @@ io.on('connection', socket => {
     const key = token && authTokens[token];
     const a = key && accounts[key];
     if (!a) return socket.emit('authResult', { ok:false, expired:true });
-    socket.username = key;
-    _goOnline(key);
+    _switchUser(socket, key);
     socket.emit('authResult', { ok:true, user:_pubUser(a), token });
   });
 
@@ -591,6 +590,17 @@ io.on('connection', socket => {
   });
 
   socket.emit('titles', TITLES);
+
+  // L'avatar choisi est aussi gardé sur le compte : c'est lui que voient les amis.
+  socket.on('setMyAvatar', async ({ avatar } = {}) => {
+    if (!allow(socket, 'setMyAvatar')) return;
+    const a = socket.username && accounts[socket.username]; if (!a) return;
+    if (avatar !== null && (!Number.isInteger(avatar) || avatar < 0 || avatar > 10)) return;
+    a.avatar = avatar;
+    await upsertAccount(a);
+    socket.emit('accountUpdate', { user: _pubUser(a) });
+    _pushFriendsOf(a.email);
+  });
 
   socket.on('setNickname', async ({ nickname } = {}) => {
     if (!allow(socket, 'setNickname')) return;

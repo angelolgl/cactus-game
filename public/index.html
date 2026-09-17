@@ -310,7 +310,8 @@ body[data-screen="lobby"] #profile-btn{display:block}
 .fp-title{font-size:44px;font-weight:700;color:var(--gold-light);text-shadow:0 3px 10px rgba(0,0,0,.5)}
 .fp-mycode{margin-left:auto;font-family:system-ui,sans-serif;font-size:14px;color:rgba(246,234,208,.55)}
 .fp-mycode b{color:rgba(246,234,208,.85);font-weight:600;letter-spacing:.04em}
-.fp-mycode button{background:none;border:none;color:var(--gold);font-size:13px;cursor:pointer;text-decoration:underline;padding:0 0 0 6px}
+.fp-mycode b{cursor:pointer;border-bottom:1px dashed rgba(240,201,110,.5);padding-bottom:1px}
+.fp-mycode b:hover{color:var(--gold-light);border-bottom-color:var(--gold-light)}
 .fp-tabs{display:flex;gap:12px;margin:22px 0 20px}
 .fp-tab{position:relative;flex:1;padding:14px 10px;border-radius:14px;cursor:pointer;font-family:'Playfair Display',serif;font-size:22px;font-weight:700;
   color:rgba(246,234,208,.7);background:rgba(0,0,0,.28);border:1.5px solid rgba(212,168,75,.3);transition:background .15s,color .15s}
@@ -2241,6 +2242,7 @@ function selectAvatar(n){
   persistAvatar();
   refreshMyAvatarUI();
   if (socket && myRoom) socket.emit('setAvatar', { code: myRoom, playerIndex: myIndex, avatar: n });
+  if (socket && currentUser) socket.emit('setMyAvatar', { avatar: n });
 }
 
 // ── Surnom (titre affiché sous le nom) ──
@@ -2399,7 +2401,7 @@ function openFriends(){
       <button class="cactus-close" onclick="qid('modal-root').innerHTML=''" aria-label="Fermer" title="Fermer"></button>
       <div class="fp-head">
         <div class="fp-title">Amis</div>
-        <div class="fp-mycode">Ton code ami <b>#${currentUser.friendCode}</b><button onclick="copyMyCode()">copier</button></div>
+        <div class="fp-mycode">Ton code ami <b onclick="copyMyCode()" title="Copier">#${currentUser.friendCode}</b></div>
       </div>
       <div class="fp-tabs">
         <button class="fp-tab" data-tab="friends" onclick="frTab('friends')">Mes amis</button>
