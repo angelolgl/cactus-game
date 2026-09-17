@@ -305,8 +305,6 @@ body[data-screen="lobby"] #profile-btn{display:block}
 /* Portrait = the oval's inner photo area, minus the cactus medallion overlapping its bottom. */
 .pc-av-frame{position:absolute;left:107px;top:104px;width:376px;height:532px;border-radius:50%;overflow:hidden;cursor:pointer;-webkit-mask:radial-gradient(circle at 186.5px 550.5px,transparent 50px,#000 51px);mask:radial-gradient(circle at 186.5px 550.5px,transparent 50px,#000 51px)}
 .pc-av-frame img{width:100%;height:100%;object-fit:cover;display:block}
-.pc-av-frame::after{content:"Changer d’avatar";position:absolute;left:0;right:0;bottom:150px;padding:10px 0;text-align:center;font-weight:600;font-size:24px;color:#f6ead0;background:rgba(11,34,28,.6);opacity:0;transition:opacity .2s}
-.pc-av-frame:hover::after{opacity:1}
 .pc-name,.pc-nickname{position:absolute;display:flex;align-items:center;justify-content:center;white-space:nowrap}
 .pc-name{left:578px;top:75px;width:480px;height:140px;font-weight:700;font-size:100px;line-height:1;gap:16px;overflow:hidden}
 .pc-name>*{flex-shrink:0}
@@ -2045,7 +2043,7 @@ function openProfil(){
   qid('modal-root').innerHTML = `<div class="profil-modal-bg" id="profil-bg" onclick="_closeProfil(event)">
     <div class="profil-card" onclick="event.stopPropagation()">
       <button class="cactus-close pc-close" onclick="qid('modal-root').innerHTML=''" aria-label="Fermer" title="Fermer"></button>
-      <div class="pc-av-frame" onclick="openAvatarPicker()" title="Changer d'avatar"><img src="${avSrc}" alt="avatar"></div>
+      <div class="pc-av-frame" onclick="openAvatarPicker()"><img src="${avSrc}" alt="avatar"></div>
       <div class="pc-name"><span>${u ? u.username : 'Invité'}</span>${u ? `<span class="pc-id">#${u.friendCode}</span>` : ''}</div>
       <div class="pc-nickname${u && !u.nickname ? ' empty' : ''}" ${u ? 'onclick="openNicknamePicker()" title="Changer de surnom"' : ''}><span>${nickname}</span></div>
       <div class="pc-stats-title">Statistiques</div>
