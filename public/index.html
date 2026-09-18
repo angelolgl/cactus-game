@@ -301,53 +301,60 @@ body[data-screen="lobby"] #profile-btn{display:block}
 .pc-close{top:30px;right:36px;width:72px;height:72px}
 .av-picker-box .cactus-close{top:14px;right:14px}
 .modal-box>.cactus-close{top:10px;right:10px;width:46px;height:46px}
-.friends-panel{position:relative;width:1250px;height:720px;display:flex;flex-direction:column;padding:34px 44px 30px;border-radius:26px;
-  background:radial-gradient(120% 90% at 50% 0%,#23553a 0%,#133322 55%,#0b2216 100%);
-  border:2px solid var(--gold);box-shadow:0 0 0 6px rgba(11,34,22,.9),0 0 0 8px rgba(212,168,75,.45),0 30px 70px rgba(0,0,0,.7);
+.friends-panel{position:relative;width:1250px;height:720px;display:flex;flex-direction:column;padding:30px 40px 26px;border-radius:22px;overflow:hidden;
+  background:url('/friends-desert.webp') center bottom/100% auto no-repeat,radial-gradient(90% 70% at 50% 0%,#146140 0%,#0a3d27 45%,#04291a 80%);
+  border:2px solid #c9953a;box-shadow:0 0 0 5px rgba(4,41,26,.9),0 30px 70px rgba(0,0,0,.7);
   animation:slideUp .28s cubic-bezier(.34,1.56,.64,1) both;font-family:'Playfair Display',serif;color:#f6ead0}
-.friends-panel>.cactus-close{top:22px;right:26px;width:62px;height:62px}
-.fp-head{display:flex;align-items:baseline;gap:22px;margin-right:80px}
-.fp-title{font-size:44px;font-weight:700;color:var(--gold-light);text-shadow:0 3px 10px rgba(0,0,0,.5)}
-.fp-mycode{margin-left:auto;font-family:system-ui,sans-serif;font-size:14px;color:rgba(246,234,208,.55)}
-.fp-mycode b{color:rgba(246,234,208,.85);font-weight:600;letter-spacing:.04em}
-.fp-mycode b{cursor:pointer;border-bottom:1px dashed rgba(240,201,110,.5);padding-bottom:1px}
-.fp-mycode b:hover{color:var(--gold-light);border-bottom-color:var(--gold-light)}
-.fp-tabs{display:flex;gap:12px;margin:22px 0 20px}
-.fp-tab{position:relative;flex:1;padding:14px 10px;border-radius:14px;cursor:pointer;font-family:'Playfair Display',serif;font-size:22px;font-weight:700;
-  color:rgba(246,234,208,.7);background:rgba(0,0,0,.28);border:1.5px solid rgba(212,168,75,.3);transition:background .15s,color .15s}
-.fp-tab:hover{color:#f6ead0;border-color:rgba(212,168,75,.6)}
-.fp-tab.on{color:#1d1407;background:linear-gradient(180deg,#f0c96e,#c89535);border-color:#f0c96e;box-shadow:0 4px 14px rgba(212,168,75,.35)}
+.friends-panel>.cactus-close{top:20px;right:24px;width:62px;height:62px}
+.fp-head{display:flex;align-items:center;gap:18px;margin-right:80px}
+.fp-head svg{width:44px;height:52px;flex-shrink:0}
+.fp-title{font-size:58px;font-weight:700;line-height:1;color:#f6ead0;text-shadow:0 3px 10px rgba(0,0,0,.45)}
+.fp-tabs{display:flex;gap:12px;margin:22px 0 18px}
+.fp-tab{position:relative;flex:1;display:flex;align-items:center;justify-content:center;gap:14px;padding:14px 10px;border-radius:12px;cursor:pointer;
+  font-family:'Playfair Display',serif;font-size:25px;font-weight:700;color:rgba(246,234,208,.8);
+  background:rgba(2,28,17,.55);border:1.5px solid rgba(201,149,58,.35);transition:border-color .15s,color .15s}
+.fp-tab svg{width:30px;height:30px;flex-shrink:0;fill:currentColor;opacity:.75}
+.fp-tab:hover{color:#f6ead0;border-color:rgba(240,201,110,.7)}
+.fp-tab.on{color:#1d1407;background:linear-gradient(180deg,#f7d27a,#dca640);border-color:#f0c96e;box-shadow:0 0 0 2px rgba(4,41,26,.8),0 4px 14px rgba(212,168,75,.35)}
+.fp-tab.on svg{fill:#0b3a22;opacity:1}
 .fr-badge{position:absolute;top:-9px;right:-9px;min-width:26px;height:26px;padding:0 7px;border-radius:13px;background:#c2362a;color:#fff;
-  font-family:system-ui,sans-serif;font-size:14px;font-weight:700;line-height:26px;border:2px solid #0b2216}
+  font-family:system-ui,sans-serif;font-size:14px;font-weight:700;line-height:26px;border:2px solid #04291a}
 #pd-friends .fr-badge{position:static;margin-left:auto;min-width:22px;height:22px;line-height:18px;font-size:12px}
 .fp-body{flex:1;min-height:0;display:flex;flex-direction:column}
-.fr-list{flex:1;min-height:0;overflow-y:auto;display:grid;grid-template-columns:1fr 1fr;align-content:start;gap:14px;padding:4px 10px 4px 2px}
-.fr-list::-webkit-scrollbar{width:10px}.fr-list::-webkit-scrollbar-thumb{background:rgba(212,168,75,.45);border-radius:5px}
-.fr-section{grid-column:1/-1;font-size:18px;color:rgba(246,234,208,.6);margin:10px 0 -2px;letter-spacing:.06em;text-transform:uppercase}
-.fr-row{display:flex;align-items:center;gap:16px;padding:12px 16px;border-radius:16px;cursor:pointer;
-  background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(0,0,0,.18));border:1.5px solid rgba(212,168,75,.25);transition:border-color .15s,transform .15s}
-.fr-row:hover{border-color:rgba(240,201,110,.8);transform:translateY(-2px)}
-.fr-row.off{opacity:.72}
-.fr-av{width:58px;height:82px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid var(--gold);background:#e6b06c}
-.fr-av img{width:100%;height:100%;object-fit:cover;object-position:center top;display:block}
+.fr-list{flex:1;min-height:0;overflow-y:auto;display:grid;grid-template-columns:1fr 1fr;align-content:start;gap:18px 22px;padding:2px 8px 150px 0}
+.fr-list::-webkit-scrollbar{width:10px}.fr-list::-webkit-scrollbar-thumb{background:rgba(201,149,58,.45);border-radius:5px}
+.fr-section{grid-column:1/-1;font-size:18px;color:rgba(246,234,208,.6);margin:6px 0 -6px;letter-spacing:.06em;text-transform:uppercase}
+.fr-row{position:relative;display:flex;align-items:center;gap:20px;min-height:132px;padding:12px 18px 12px 24px;border-radius:14px;cursor:pointer;
+  background:linear-gradient(180deg,rgba(16,80,50,.55),rgba(3,33,20,.55));border:1.5px solid rgba(201,149,58,.55);transition:border-color .15s,transform .15s}
+.fr-row:hover{border-color:#f0c96e;transform:translateY(-2px)}
+.fr-av{width:104px;height:104px;border-radius:50%;overflow:hidden;flex-shrink:0;border:4px solid #d9a441;
+  background:radial-gradient(circle at 50% 40%,#f6e2ae,#e2b867);box-shadow:0 0 0 2px #7a5418,0 4px 10px rgba(0,0,0,.45)}
+.fr-av img{width:100%;height:141%;object-fit:cover;object-position:center top;display:block}
+.fr-row.off .fr-av{filter:saturate(.55) brightness(.85)}
 .fr-id{min-width:0;flex:1}
-.fr-name{font-size:24px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fr-real{font-size:16px;font-weight:400;color:rgba(246,234,208,.42)}
-.fr-status{display:flex;align-items:center;gap:8px;margin-top:4px;font-family:system-ui,sans-serif;font-size:14px;color:rgba(246,234,208,.6)}
+.fr-name{font-size:30px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fr-real{font-size:18px;font-weight:400;color:rgba(246,234,208,.42)}
+.fr-status{display:flex;align-items:center;gap:8px;margin-top:6px;font-family:system-ui,sans-serif;font-size:15px;color:rgba(246,234,208,.6)}
 .fr-dot{width:10px;height:10px;border-radius:50%;background:#56645c;flex-shrink:0}
 .fr-dot.on{background:#57d98a;box-shadow:0 0 8px rgba(87,217,138,.9)}
 .fr-act{display:flex;gap:8px;flex-shrink:0}
-.fr-btn{border:none;border-radius:10px;padding:10px 16px;font-family:'Playfair Display',serif;font-size:16px;font-weight:700;cursor:pointer;
+.fr-btn{border:none;border-radius:10px;padding:10px 16px;font-family:'Playfair Display',serif;font-size:17px;font-weight:700;cursor:pointer;
   background:linear-gradient(180deg,#f0c96e,#c89535);color:#1d1407;box-shadow:0 3px 0 #8a6420}
 .fr-btn:active{transform:translateY(2px);box-shadow:0 1px 0 #8a6420}
 .fr-btn.ghost{background:rgba(0,0,0,.3);color:rgba(246,234,208,.85);border:1.5px solid rgba(246,234,208,.25);box-shadow:none}
-.fr-empty{grid-column:1/-1;text-align:center;padding:70px 20px;font-size:22px;line-height:1.5;color:rgba(246,234,208,.55)}
-.fp-add{display:flex;gap:12px;align-items:center;margin-bottom:18px;padding:16px 18px;border-radius:16px;background:rgba(0,0,0,.25);border:1.5px solid rgba(212,168,75,.25)}
+.fr-more{flex-shrink:0;align-self:center;width:40px;height:74px;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border-radius:10px;opacity:.85;transition:opacity .15s,background .15s}
+.fr-more i{display:block;width:18px;height:18px;background:url('/tumbleweed.webp') center/contain no-repeat;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))}
+.fr-more:hover{opacity:1;background:rgba(255,255,255,.06)}
+.fr-empty{grid-column:1/-1;text-align:center;padding:70px 20px;font-size:24px;line-height:1.5;color:rgba(246,234,208,.6)}
+.fp-add{display:flex;gap:12px;align-items:center;margin-bottom:18px;padding:14px 18px;border-radius:14px;background:rgba(2,28,17,.55);border:1.5px solid rgba(201,149,58,.35)}
 .fp-add label{font-size:20px;font-weight:600;white-space:nowrap}
 .fp-add .hash{font-size:26px;font-weight:700;color:var(--gold-light);margin-left:6px}
-.fp-add input{flex:1;min-width:0;background:rgba(0,0,0,.35);border:1.5px solid rgba(212,168,75,.35);border-radius:10px;padding:10px 14px;
+.fp-add input{flex:1;min-width:0;background:rgba(0,0,0,.35);border:1.5px solid rgba(201,149,58,.35);border-radius:10px;padding:10px 14px;
   font-family:system-ui,sans-serif;font-size:22px;letter-spacing:.12em;text-transform:uppercase;color:#f6ead0;outline:none}
 .fp-add input:focus{border-color:var(--gold-light)}
+.fp-mycode{margin-left:auto;padding-left:14px;border-left:1px solid rgba(201,149,58,.3);font-family:system-ui,sans-serif;font-size:14px;color:rgba(246,234,208,.55);white-space:nowrap}
+.fp-mycode b{color:rgba(246,234,208,.9);font-weight:600;letter-spacing:.05em;cursor:pointer;border-bottom:1px dashed rgba(240,201,110,.5)}
+.fp-mycode b:hover{color:var(--gold-light)}
 .lw-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .lw-head h2{margin:0}
 .lw-quit{background:rgba(0,0,0,.28);border:1.5px solid rgba(246,234,208,.3);color:rgba(246,234,208,.85);border-radius:9px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer}
@@ -2394,7 +2401,11 @@ function openHistory(){
   </div></div>`;
 }
 
-let FRIENDS = null, _frTab = 'friends', _layerProfile = null;
+let FRIENDS = null, _frTab = 'friends', _layerProfile = null, _renameOnOpen = null;
+const ICON_CACTUS = '<svg viewBox="0 0 24 24"><path d="M10.5 2.5a1.5 1.5 0 0 1 3 0V13h2.5a1 1 0 0 0 1-1V7a1.5 1.5 0 0 1 3 0v5a4 4 0 0 1-4 4h-2.5v5.5h-3V17H8a4 4 0 0 1-4-4V9a1.5 1.5 0 0 1 3 0v4a1 1 0 0 0 1 1h2.5z"/></svg>';
+const ICON_CACTUS_TITLE = '<svg viewBox="0 0 24 28"><path fill="#6fa64a" d="M10.3 2a1.7 1.7 0 0 1 3.4 0v12.5h2.6a1 1 0 0 0 1-1V8a1.7 1.7 0 0 1 3.4 0v5.5a4.3 4.3 0 0 1-4.3 4.3h-2.7V27h-3.4v-6H7.7a4.3 4.3 0 0 1-4.3-4.3V11a1.7 1.7 0 0 1 3.4 0v5.7a1 1 0 0 0 1 1h2.5z"/></svg>';
+const ICON_ADD = '<svg viewBox="0 0 24 24"><circle cx="9" cy="7.5" r="4"/><path d="M1.5 20c0-4 3.4-6.5 7.5-6.5s7.5 2.5 7.5 6.5v1h-15z"/><path d="M19 7h2v3h3v2h-3v3h-2v-3h-3v-2h3z"/></svg>';
+const ICON_GROUP = '<svg viewBox="0 0 24 24"><circle cx="8" cy="7.5" r="3.6"/><circle cx="16.5" cy="7" r="3.2"/><path d="M1 20c0-3.8 3.1-6 7-6s7 2.2 7 6v1H1z"/><path d="M16.5 12.8c3.6 0 6.5 2 6.5 5.6V20h-6.3c0-2.6-1-4.7-2.9-6.1.8-.7 1.7-1.1 2.7-1.1z"/></svg>';
 function openFriends(){
   if(!currentUser){ openAuth('login'); return; }
   closeProfileDrawer();
@@ -2402,14 +2413,11 @@ function openFriends(){
   qid('modal-root').innerHTML = `<div class="modal-bg" onclick="if(event.target===this)qid('modal-root').innerHTML=''">
     <div class="friends-panel">
       <button class="cactus-close" onclick="qid('modal-root').innerHTML=''" aria-label="Fermer" title="Fermer"></button>
-      <div class="fp-head">
-        <div class="fp-title">Amis</div>
-        <div class="fp-mycode">Ton code ami <b onclick="copyMyCode()" title="Copier">#${currentUser.friendCode}</b></div>
-      </div>
+      <div class="fp-head">${ICON_CACTUS_TITLE}<div class="fp-title">Amis</div></div>
       <div class="fp-tabs">
-        <button class="fp-tab" data-tab="friends" onclick="frTab('friends')">Mes amis</button>
-        <button class="fp-tab" data-tab="requests" onclick="frTab('requests')">Demandes</button>
-        <button class="fp-tab" data-tab="suggest" onclick="frTab('suggest')">Suggestions</button>
+        <button class="fp-tab" data-tab="friends" onclick="frTab('friends')">${ICON_CACTUS}<span>Mes amis</span></button>
+        <button class="fp-tab" data-tab="requests" onclick="frTab('requests')">${ICON_ADD}<span>Demandes</span></button>
+        <button class="fp-tab" data-tab="suggest" onclick="frTab('suggest')">${ICON_GROUP}<span>Suggestions</span></button>
       </div>
       <div class="fp-body" id="fr-body"></div>
     </div>
@@ -2423,7 +2431,7 @@ function copyMyCode(){
 function frTab(tab){ _frTab = tab; renderFriends(); }
 
 // Une ligne = avatar + nom ; le code ami reste interne (data-code).
-function _frRow(c, actions){
+function _frRow(c, actions, withMenu){
   return `<div class="fr-row ${c.online ? '' : 'off'}" data-code="${c.code}" onclick="openPublicProfile('${c.code}')">
     <div class="fr-av"><img src="${avatarImg(typeof c.avatar==='number'?c.avatar:null)}" alt=""></div>
     <div class="fr-id">
@@ -2431,18 +2439,38 @@ function _frRow(c, actions){
       <div class="fr-status"><span class="fr-dot ${c.online?'on':''}"></span>${c.online ? 'En ligne' : 'Hors ligne'}</div>
     </div>
     ${actions ? `<div class="fr-act" onclick="event.stopPropagation()">${actions}</div>` : ''}
+    ${withMenu ? `<button class="fr-more" onclick="openRowMenu(event,'${c.code}')" aria-label="Options"><i></i><i></i><i></i></button>` : ''}
   </div>`;
+}
+
+// Menu d'une ligne d'ami : mêmes choix que sur sa carte.
+function openRowMenu(ev, code){
+  ev.stopPropagation();
+  closeLobbyMenu();
+  const f = FRIENDS && FRIENDS.friends.find(x => x.code === code); if(!f) return;
+  _layerProfile = { code: f.code, username: f.username, alias: f.alias, relation: 'friend' };
+  const m = document.createElement('div');
+  m.className = 'lobby-menu'; m.id = 'lobby-menu';
+  m.innerHTML = `<button onclick="closeLobbyMenu();openReport()">Signaler</button>
+    <button onclick="closeLobbyMenu();_renameOnOpen='${code}';openPublicProfile('${code}')">Renommer</button>
+    <button onclick="closeLobbyMenu();askRemoveFriend()" style="color:#ffb9a8">Retirer</button>`;
+  qid('stage').appendChild(m);
+  const r = stageRect(ev.currentTarget);
+  // Le menu s'ouvre vers la gauche, sous les virevoltants, pour rester dans la fenêtre.
+  m.style.left = Math.max(12, r.left + r.width - m.offsetWidth) + 'px';
+  m.style.top = Math.min(r.top + r.height + 4, STAGE_H - m.offsetHeight - 12) + 'px';
+  setTimeout(()=>document.addEventListener('click', closeLobbyMenu, { once:true }), 0);
 }
 function renderFriends(){
   const body = qid('fr-body'); if(!body) return;
   document.querySelectorAll('.fp-tab').forEach(b => b.classList.toggle('on', b.dataset.tab === _frTab));
   const d = FRIENDS;
   const tabReq = document.querySelector('.fp-tab[data-tab="requests"]');
-  if(tabReq){ const n = d ? d.incoming.length : 0; tabReq.innerHTML = 'Demandes' + (n ? `<span class="fr-badge">${n}</span>` : ''); }
+  if(tabReq){ const n = d ? d.incoming.length : 0; tabReq.innerHTML = ICON_ADD + '<span>Demandes</span>' + (n ? `<span class="fr-badge">${n}</span>` : ''); }
   if(!d){ body.innerHTML = '<div class="fr-list"><div class="fr-empty">Chargement…</div></div>'; return; }
 
   if(_frTab === 'friends'){
-    body.innerHTML = `<div class="fr-list">${d.friends.length ? d.friends.map(c => _frRow(c)).join('')
+    body.innerHTML = `<div class="fr-list">${d.friends.length ? d.friends.map(c => _frRow(c, '', true)).join('')
       : `<div class="fr-empty">Pas encore d'amis.<br>Envoie une demande avec un code ami dans l'onglet Demandes.</div>`}</div>`;
     return;
   }
@@ -2463,6 +2491,7 @@ function renderFriends(){
         <label for="friend-input">Ajouter un ami</label><span class="hash">#</span>
         <input id="friend-input" placeholder="CODE AMI" maxlength="6" spellcheck="false" autocomplete="off">
         <button class="fr-btn" id="friend-add">Envoyer</button>
+        <div class="fp-mycode">Ton code <b onclick="copyMyCode()" title="Copier">#${currentUser.friendCode}</b></div>
       </div>
       <div class="fr-list">${rows.join('')}</div>`;
     const fi = qid('friend-input');
@@ -2489,6 +2518,7 @@ function showPublicProfile(p){
   qid('layer-root').innerHTML = profileCardHTML(p, false);
   fitProfilText();
   if (document.fonts) document.fonts.ready.then(fitProfilText);
+  if (_renameOnOpen === p.code){ _renameOnOpen = null; startFriendRename(); }
 }
 function closeLayer(){ qid('layer-root').innerHTML = ''; _layerProfile = null; }
 
