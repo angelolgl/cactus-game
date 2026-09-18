@@ -1434,6 +1434,17 @@ setInterval(() => {
 
 _loadState();  // restore before accepting connections
 
+// Supabase met en pause un projet gratuit sans activité pendant ~7 jours : une petite lecture
+// tous les 3 jours suffit à le garder éveillé, même quand personne ne joue.
+const KEEPALIVE_MS = 3 * 24 * 60 * 60 * 1000;
+function supabaseKeepAlive(){
+  if (!SUPABASE_ENABLED) return;
+  sbFetch('users?select=email&limit=1')
+    .then(() => console.log('[storage] keep-alive Supabase ok'))
+    .catch(e => console.error('[storage] keep-alive Supabase échoué:', e.message));
+}
+setInterval(supabaseKeepAlive, KEEPALIVE_MS);
+
 const PORT = process.env.PORT || 3000;
 loadAccounts().finally(() => {
   httpServer.listen(PORT, () => console.log(`Cactus server running on port ${PORT}`));
