@@ -89,7 +89,7 @@ body{font-family:'Inter',sans-serif;background:#0a1a12;color:white;font-size:14p
 
 /* ─── GAME ─── */
 /* Padding keeps the table inside the border painted in the background image. */
-#s-game{flex-direction:column;padding:44px var(--frame-inset);gap:8px;overflow:hidden;--seat-side:92px;--seat-col:380px}
+#s-game{flex-direction:column;padding:44px var(--frame-inset) var(--frame-inset);gap:8px;overflow:hidden;--seat-side:92px;--seat-col:380px}
 .g-header{display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .g-title{font-family:'Playfair Display',serif;font-size:20px;color:var(--gold-light)}
 .g-btns{display:flex;gap:6px}
@@ -129,8 +129,8 @@ body[data-screen="game"] .log-toggle-btn{display:flex}
 /* ── Avatars ── */
 .pav{width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;background:rgba(255,255,255,.06);border:2px solid var(--gold);box-shadow:0 1px 4px rgba(0,0,0,.35)}
 .pav-wrap{position:relative;display:inline-flex;width:40px;height:40px;flex-shrink:0}
-.turn-ring{position:absolute;top:50%;left:50%;width:52px;height:52px;transform:translate(-50%,-50%) rotate(-90deg);pointer-events:none;overflow:visible;filter:drop-shadow(0 0 4px rgba(245,197,24,.55))}
-.turn-ring circle{fill:none;stroke:#f5c518;stroke-width:3.5;stroke-linecap:round;stroke-dasharray:144.5;stroke-dashoffset:144.5;animation-name:ringFill;animation-timing-function:linear;animation-fill-mode:forwards}
+.turn-ring{position:absolute;top:50%;left:50%;width:52px;height:52px;transform:translate(-50%,-50%) rotate(-90deg);pointer-events:none;overflow:visible;filter:drop-shadow(0 0 5px rgba(226,69,47,.65))}
+.turn-ring circle{fill:none;stroke:#e2452f;stroke-width:3.5;stroke-linecap:round;stroke-dasharray:144.5;stroke-dashoffset:144.5;animation-name:ringFill;animation-timing-function:linear;animation-fill-mode:forwards}
 @keyframes ringFill{to{stroke-dashoffset:0}}
 .lobby-av{width:30px;height:30px;border-radius:50%;object-fit:cover;flex-shrink:0;background:rgba(255,255,255,.06);border:2px solid var(--gold);box-shadow:0 1px 4px rgba(0,0,0,.35)}
 .lobby-av.lobby-av-empty{border:1.5px solid rgba(212,168,75,.28);background:rgba(255,255,255,.03);box-shadow:none;display:inline-block}
@@ -273,7 +273,7 @@ body.anim-lock #chat-widget{pointer-events:auto}
 body[data-screen="lobby"] #profile-btn{display:block}
 #drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .25s;z-index:750}
 #drawer-overlay.show{opacity:1;pointer-events:auto}
-#profile-drawer{position:fixed;top:0;right:0;height:100%;width:300px;max-width:82vw;background:linear-gradient(180deg,#0c2e20,#081b13);border-left:1px solid var(--gold);box-shadow:-10px 0 40px rgba(0,0,0,.5);z-index:760;transform:translateX(100%);transition:transform .28s cubic-bezier(.3,.7,.3,1);display:flex;flex-direction:column;padding:22px 18px}
+#profile-drawer{position:fixed;top:0;right:0;height:100%;width:300px;max-width:82vw;background:linear-gradient(180deg,#0c2e20,#081b13);border-left:1px solid var(--gold);box-shadow:-10px 0 40px rgba(0,0,0,.5);z-index:700;transform:translateX(100%);transition:transform .28s cubic-bezier(.3,.7,.3,1);display:flex;flex-direction:column;padding:22px 18px}
 #profile-drawer.open{transform:translateX(0)}
 .pd-head{display:flex;flex-direction:column;align-items:center;text-align:center;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:14px}
 .pd-avatar{width:78px;height:78px;border-radius:50%;object-fit:cover;border:3px solid var(--gold);box-shadow:0 0 0 4px rgba(212,168,75,.18);cursor:pointer}
@@ -586,15 +586,23 @@ body[data-screen="lobby"] #profile-btn{display:block}
   flex: 0 0 var(--seat-col);
   min-width: 0;
 }
+/* Grille à trois colonnes : la carte piochée s'affiche À CÔTÉ de la défausse, dans une colonne
+   réservée d'avance (et sa jumelle vide à gauche). Les pioches ne bougent donc jamais quand on
+   pioche — avant, la zone d'action s'insérait sous les pioches et les poussait sur le jeu d'en face. */
 .table-center {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 180px auto 180px;
+  grid-template-rows: auto auto;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
+  justify-items: center;
+  column-gap: 16px;
+  row-gap: 10px;
   flex-shrink: 0;
   padding: 4px 0;
 }
+.table-center .piles-row { grid-column: 2; grid-row: 1; }
+.table-center .g-banner { grid-column: 2; grid-row: 2; }
+.table-center .action-area { grid-column: 3; grid-row: 1; align-self: start; }
 /* The mat hugs the cards, not the whole seat, so the avatar and the centring
    counterweight sit outside it and the box never looks half-empty. */
 .seat-me {
@@ -680,7 +688,9 @@ body[data-screen="lobby"] #profile-btn{display:block}
   flex-direction: column;
   align-items: center;
 }
-.card.landscape { width: 54px; height: 34px; }
+/* Les joueurs de côté voient la même carte, simplement tournée d'un quart de tour.
+   Les marges compensent la rotation pour que la place occupée suive le dessin. */
+.card.landscape { width: 54px; height: 94px; transform: rotate(90deg); margin: -20px 20px; }
 .prow {
   background: transparent;
   border: none;
@@ -711,7 +721,9 @@ body[data-screen="lobby"] #profile-btn{display:block}
 }
 #s-game .card.landscape {
   width: var(--card-w);
-  height: calc(var(--card-w) * .63);
+  height: calc(var(--card-w) * 1.436);
+  transform: rotate(90deg);
+  margin: calc(var(--card-w) * -0.218) calc(var(--card-w) * 0.218);
 }
 #s-game .pav, #s-game .pav-wrap { width: 52px; height: 52px; }
 #s-game.layout-2 .pav, #s-game.layout-2 .pav-wrap { width: 60px; height: 60px; }
@@ -719,6 +731,9 @@ body[data-screen="lobby"] #profile-btn{display:block}
 #s-game.layout-5 .pav, #s-game.layout-5 .pav-wrap { width: 44px; height: 44px; }
 /* No top seat at 3 players: reserve its height so the table keeps the same
    vertical rhythm as the 4/5-player layouts instead of floating up. */
+/* À 2 joueurs, un vide en bas de la table remonte le jeu de l'adversaire et les pioches :
+   la carte piochée ne traverse plus ses cartes en montant. */
+#s-game.layout-2 .game-table::after { content:''; display:block; height:150px; }
 #s-game.layout-3 .seat-top { min-height: 165px; }
 #s-game.layout-5 .phand { gap: 4px; }
 #s-game.layout-5 .prow.side-row-flex { gap: 8px; }
@@ -1285,7 +1300,7 @@ body.anim-lock #react-dock{ pointer-events:auto; }
   </div>
   <nav class="pd-nav">
     <button class="pd-item" onclick="openProfil()"><span class="pd-ic">👤</span> Profil</button>
-    <button class="pd-item" onclick="closeProfileDrawer(); showSettings()"><span class="pd-ic">⚙️</span> Paramètres</button>
+    <button class="pd-item" onclick="showSettings()"><span class="pd-ic">⚙️</span> Paramètres</button>
     <button class="pd-item" id="pd-history" onclick="openHistory()"><span class="pd-ic">🕓</span> Historique <span class="pd-lock">Se connecter</span></button>
     <button class="pd-item" id="pd-friends" onclick="openFriends()"><span class="pd-ic">👥</span> Mes amis <span class="pd-lock">Se connecter</span></button>
     <button class="pd-item" id="pd-logout" style="display:none" onclick="logoutAccount()"><span class="pd-ic">🚪</span> Déconnexion</button>
@@ -2184,7 +2199,6 @@ function profileCardHTML(p, mine){
   </div>`;
 }
 function openProfil(){
-  closeProfileDrawer();
   const u = currentUser;
   const p = u ? { username: u.username, code: u.friendCode, avatar: myAvatar, nickname: u.nickname, level: u.level, stats: u.stats }
               : { username: 'Invité', guest: true, avatar: myAvatar };
@@ -2293,7 +2307,6 @@ let currentUser = null;   // null = invité ; sinon { username, friendCode, stat
 let TITLES = [];          // titres disponibles, envoyés par le serveur à la connexion
 
 function openAuth(mode){
-  closeProfileDrawer();
   const login = mode !== 'register';
   qid('modal-root').innerHTML = `<div class="modal-bg"><div class="modal-box">
     <button class="cactus-close" onclick="qid('modal-root').innerHTML=''" aria-label="Fermer" title="Fermer"></button>
@@ -2394,7 +2407,6 @@ function openHistory(){
     return `<div style="display:flex;justify-content:space-between;padding:8px 4px;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px">
       <span>${dd} · ${res}</span><span style="color:rgba(255,255,255,.5)">${(g.players||[]).length} joueurs · ${g.total} pts</span></div>`;
   }).join('') : '<p style="color:rgba(255,255,255,.5);text-align:center;padding:16px">Aucune partie terminée pour l\'instant.</p>';
-  closeProfileDrawer();
   qid('modal-root').innerHTML = `<div class="modal-bg"><div class="modal-box">
     <button class="cactus-close" onclick="qid('modal-root').innerHTML=''" aria-label="Fermer" title="Fermer"></button>
     <h3>🕓 20 dernières parties</h3><div style="max-height:50vh;overflow:auto">${rows}</div>
@@ -2408,7 +2420,6 @@ const ICON_ADD = '<svg viewBox="0 0 24 24"><circle cx="9" cy="7.5" r="4"/><path 
 const ICON_GROUP = '<svg viewBox="0 0 24 24"><circle cx="8" cy="7.5" r="3.6"/><circle cx="16.5" cy="7" r="3.2"/><path d="M1 20c0-3.8 3.1-6 7-6s7 2.2 7 6v1H1z"/><path d="M16.5 12.8c3.6 0 6.5 2 6.5 5.6V20h-6.3c0-2.6-1-4.7-2.9-6.1.8-.7 1.7-1.1 2.7-1.1z"/></svg>';
 function openFriends(){
   if(!currentUser){ openAuth('login'); return; }
-  closeProfileDrawer();
   _frTab = 'friends';
   qid('modal-root').innerHTML = `<div class="modal-bg" onclick="if(event.target===this)qid('modal-root').innerHTML=''">
     <div class="friends-panel">
@@ -2622,7 +2633,6 @@ function logoutAccount(){
   qid('lobby-main').style.display = 'none';
   qid('home-account').style.display = 'block';
   updateAuthUI();
-  closeProfileDrawer();
   showToast('Tu es déconnecté, à bientôt', 'info');
 }
 function sendMyAvatar(){ if (socket && myRoom && typeof myAvatar === 'number') socket.emit('setAvatar', { code: myRoom, playerIndex: myIndex, avatar: myAvatar }); }
@@ -2831,7 +2841,7 @@ function updateLobbyPlayers(players, host) {
     `<div class="lobby-row" onclick="openLobbyMenu(event, ${i})" style="background:rgba(255,255,255,.08);border-radius:8px;padding:8px 14px;font-size:14px;display:flex;align-items:center;gap:8px">
       <span>${i+1}.</span>
       <img class="lobby-av" src="${avatarImg(typeof p.avatar==='number'?p.avatar:null)}" alt="">
-      <strong${currentUser && p.code && p.code === currentUser.friendCode ? ' style="color:var(--gold-light)"' : ''}>${p.name}</strong>
+      <strong${i === myIndex ? ' style="color:var(--gold-light)"' : ''}>${p.name}</strong>${i === myIndex ? '<span style="font-size:11px;color:rgba(240,201,110,.65);margin-left:2px">(toi)</span>' : ''}
       ${i===hostIndex?'<span style="margin-left:auto;font-size:11px;color:var(--gold-light)">Hôte</span>':''}
     </div>`).join('');
   // Garde myAvatar en phase avec le serveur (utile après reconnexion)
