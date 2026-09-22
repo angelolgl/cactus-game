@@ -105,15 +105,6 @@ function cleanName(name) {
   const s = String(name == null ? '' : name).replace(/[<>&"'`\x00-\x1f]/g, '').trim().replace(/\s+/g, ' ').slice(0, 16).trim();
   return s || 'Joueur';
 }
-// Make the name unique inside the room ("Hugo", "Hugo 2"...) so reconnection can tell seats apart.
-function uniqueName(room, name) {
-  const taken = n => room.players.some(p => p.name.toLowerCase() === n.toLowerCase());
-  if (!taken(name)) return name;
-  for (let i = 2; ; i++) {
-    const n = name.slice(0, 16 - String(i).length - 1) + ' ' + i;
-    if (!taken(n)) return n;
-  }
-}
 
 // ── Card utils ──
 const SUITS = ['♠','♥','♦','♣'];
@@ -695,7 +686,7 @@ io.on('connection', socket => {
     if (room.started) { socket.emit('error', 'La partie a déjà commencé'); return; }
     if (room.players.length >= 5) { socket.emit('error', 'Partie pleine : 5 joueurs maximum'); return; }
     const pi = room.players.length;
-    name = uniqueName(room, cleanName(name));
+    name = cleanName(name);
     room.players.push({ socketId: socket.id, name, hand: [], ready: false, connected: true, avatar: null, username: socket.username || null });
     socket.join(code);
     socket.emit('roomJoined', { code, playerIndex: pi, name });

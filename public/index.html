@@ -2702,7 +2702,7 @@ function _registerSocketHandlers() {
   socket.on('playerConn', ({pi, connected, name}) => {
     if (name && pi !== myIndex) showToast(connected ? `${name} est de retour` : `${name} a perdu la connexion`, connected ? 'ok' : 'warn');
   });
-  // Le serveur renvoie le nom retenu (nettoyé, et « Hugo 2 » si le pseudo est déjà pris dans la salle).
+  // Le serveur renvoie le nom retenu (nettoyé : texte simple, 16 caractères maximum).
   socket.on('roomCreated', ({code, playerIndex, name}) => { myIndex=playerIndex; myRoom=code; if (name) myName=name; _hasJoinedOnce=true; showWaiting(code,true); sendMyAvatar(); });
   socket.on('roomJoined',  ({code, playerIndex, name}) => { myIndex=playerIndex; myRoom=code; if (name) myName=name; _hasJoinedOnce=true; showWaiting(code,false); sendMyAvatar(); });
   socket.on('lobbyUpdate', ({players, host}) => { updateLobbyPlayers(players, host); });
