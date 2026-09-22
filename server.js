@@ -82,10 +82,37 @@ function removeLobbySeat(code, pi) {
   io.to(code).emit('lobbyUpdate', lobbyPayload(room));
   io.to(code).emit('hostChanged', { host: room.hostIndex });
 }
+// Mark a waiting-room player offline and drop their seat if they aren't back in time.
+function scheduleLobbyDrop(code, room, p) {
+  p.connected = false;
+  clearTimeout(p._dropTimer);
+  p._dropTimer = setTimeout(() => {
+    p._dropTimer = null;
+    if (rooms[code] !== room || room.started || p.connected) return;
+    removeLobbySeat(code, room.players.indexOf(p));
+  }, LOBBY_GRACE_MS);
+}
 
 
 function makeCode() {
-  return String(Math.floor(1000 + Math.random() * 9000));
+  let code;
+  do { code = String(Math.floor(1000 + Math.random() * 9000)); } while (rooms[code]);
+  return code;
+}
+
+// Player name shown to everyone in a room: plain text only (no HTML), 16 chars max.
+function cleanName(name) {
+  const s = String(name == null ? '' : name).replace(/[<>&"'`\x00-\x1f]/g, '').trim().replace(/\s+/g, ' ').slice(0, 16).trim();
+  return s || 'Joueur';
+}
+// Make the name unique inside the room ("Hugo", "Hugo 2"...) so reconnection can tell seats apart.
+function uniqueName(room, name) {
+  const taken = n => room.players.some(p => p.name.toLowerCase() === n.toLowerCase());
+  if (!taken(name)) return name;
+  for (let i = 2; ; i++) {
+    const n = name.slice(0, 16 - String(i).length - 1) + ' ' + i;
+    if (!taken(n)) return n;
+  }
 }
 
 // ── Card utils ──
@@ -643,6 +670,7 @@ io.on('connection', socket => {
   // ── Lobby ──
   socket.on('createRoom', ({ name }) => {
     if (!allow(socket, 'createRoom')) return;
+    name = cleanName(name);
     const code = makeCode();
     rooms[code] = {
       code, cardCount: 4,
@@ -654,7 +682,7 @@ io.on('connection', socket => {
       chat: [],
     };
     socket.join(code);
-    socket.emit('roomCreated', { code, playerIndex: 0 });
+    socket.emit('roomCreated', { code, playerIndex: 0, name });
     io.to(code).emit('lobbyUpdate', lobbyPayload(rooms[code]));
     console.log(`Room ${code} created by ${name}`);
   });
@@ -667,9 +695,10 @@ io.on('connection', socket => {
     if (room.started) { socket.emit('error', 'La partie a déjà commencé'); return; }
     if (room.players.length >= 5) { socket.emit('error', 'Partie pleine : 5 joueurs maximum'); return; }
     const pi = room.players.length;
+    name = uniqueName(room, cleanName(name));
     room.players.push({ socketId: socket.id, name, hand: [], ready: false, connected: true, avatar: null, username: socket.username || null });
     socket.join(code);
-    socket.emit('roomJoined', { code, playerIndex: pi });
+    socket.emit('roomJoined', { code, playerIndex: pi, name });
     io.to(code).emit('lobbyUpdate', lobbyPayload(room));
     console.log(`${name} joined ${code}`);
   });
@@ -1160,14 +1189,7 @@ io.on('connection', socket => {
         } else {
           // Still in the lobby: keep the seat for a short grace period so a brief
           // network drop doesn't kick the player; remove them only if they don't come back.
-          const p = room.players[pi];
-          p.connected = false;
-          clearTimeout(p._dropTimer);
-          p._dropTimer = setTimeout(() => {
-            p._dropTimer = null;
-            if (rooms[code] !== room || room.started || p.connected) return;
-            removeLobbySeat(code, room.players.indexOf(p));
-          }, LOBBY_GRACE_MS);
+          scheduleLobbyDrop(code, room, room.players[pi]);
           io.to(code).emit('lobbyUpdate', lobbyPayload(room));
         }
         break;
@@ -1451,6 +1473,8 @@ function _loadState() {
       (r.players || []).forEach(p => { p.connected = false; });  // sockets are gone; players will rejoin
       if (r.phase === 'countdown') r.phase = 'peek';             // interrupted countdown → restart cleanly
       rooms[code] = r;
+      // Waiting rooms: players who don't come back in time lose their seat
+      if (!r.started) (r.players || []).forEach(p => scheduleLobbyDrop(code, r, p));
       n++;
     }
     if (n) console.log(`[persist] restored ${n} room(s) from ${STATE_FILE}`);

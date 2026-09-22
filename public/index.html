@@ -2682,22 +2682,29 @@ function _registerSocketHandlers() {
       showToast('Connexion rétablie', 'ok');
     } else showToast('Connexion rétablie, la partie reprend', 'ok');
   });
-  socket.on('rejoinFailed', ({started} = {}) => {
+  socket.on('rejoinFailed', () => {
     showReconnecting(false);
-    const waiting = qid('lobby-waiting');
-    if (started === false || (waiting && waiting.style.display !== 'none')) {
+    myRoom = null; myIndex = -1; isHost = false; lobbyPlayers = [];
+    if (document.body.dataset.screen === 'lobby') {
       // La salle d'attente a disparu pendant la coupure : retour au menu Rejoindre / Créer.
-      myRoom = null; myIndex = -1; isHost = false; lobbyPlayers = [];
-      if (waiting) waiting.style.display = 'none';
+      qid('lobby-waiting').style.display = 'none';
       qid('lobby-main').style.display = 'block';
       showToast('Connexion perdue trop longtemps, tu as quitté la salle', 'warn');
-    } else showToast('Impossible de rejoindre la partie', 'bad');
+    } else {
+      // La partie n'existe plus : on ne laisse pas le joueur bloqué sur la table.
+      gameDialog({
+        title: 'Partie terminée',
+        text: 'Cette partie n\'est plus disponible. Tu retournes au menu principal.',
+        buttons: [{ label: 'Retour au menu', onClick: () => location.reload() }],
+      });
+    }
   });
   socket.on('playerConn', ({pi, connected, name}) => {
     if (name && pi !== myIndex) showToast(connected ? `${name} est de retour` : `${name} a perdu la connexion`, connected ? 'ok' : 'warn');
   });
-  socket.on('roomCreated', ({code, playerIndex}) => { myIndex=playerIndex; myRoom=code; _hasJoinedOnce=true; showWaiting(code,true); sendMyAvatar(); });
-  socket.on('roomJoined',  ({code, playerIndex}) => { myIndex=playerIndex; myRoom=code; _hasJoinedOnce=true; showWaiting(code,false); sendMyAvatar(); });
+  // Le serveur renvoie le nom retenu (nettoyé, et « Hugo 2 » si le pseudo est déjà pris dans la salle).
+  socket.on('roomCreated', ({code, playerIndex, name}) => { myIndex=playerIndex; myRoom=code; if (name) myName=name; _hasJoinedOnce=true; showWaiting(code,true); sendMyAvatar(); });
+  socket.on('roomJoined',  ({code, playerIndex, name}) => { myIndex=playerIndex; myRoom=code; if (name) myName=name; _hasJoinedOnce=true; showWaiting(code,false); sendMyAvatar(); });
   socket.on('lobbyUpdate', ({players, host}) => { updateLobbyPlayers(players, host); });
   socket.on('friendsData', d => {
     FRIENDS = d; renderFriends(); refreshFriendBadge();
