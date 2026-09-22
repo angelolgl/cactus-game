@@ -57,6 +57,32 @@ function reassignHost(room) {
   return idx;
 }
 
+// ── Waiting room helpers ──
+// How long a seat in the waiting room is kept for a player whose connection dropped.
+const LOBBY_GRACE_MS = 20000;
+function lobbyPayload(room) {
+  return {
+    players: room.players.map(p => ({ name: p.name, avatar: p.avatar, connected: p.connected !== false,
+      code: (p.username && accounts[p.username] ? accounts[p.username].friendCode : null) })),
+    host: room.hostIndex,
+  };
+}
+// Remove seat `pi` from a room that hasn't started, keep the host on the right seat,
+// and tell the others. Deletes the room once nobody is left.
+function removeLobbySeat(code, pi) {
+  const room = rooms[code];
+  if (!room || pi < 0 || pi >= room.players.length) return;
+  clearTimeout(room.players[pi]._dropTimer);
+  const wasHost = (pi === room.hostIndex);
+  room.players.splice(pi, 1);
+  if (room.players.length === 0) { delete rooms[code]; return; }
+  if (wasHost) reassignHost(room);
+  else if (pi < room.hostIndex) room.hostIndex -= 1;
+  if (room.hostIndex < 0 || room.hostIndex >= room.players.length) room.hostIndex = 0;
+  io.to(code).emit('lobbyUpdate', lobbyPayload(room));
+  io.to(code).emit('hostChanged', { host: room.hostIndex });
+}
+
 
 function makeCode() {
   return String(Math.floor(1000 + Math.random() * 9000));
@@ -629,7 +655,7 @@ io.on('connection', socket => {
     };
     socket.join(code);
     socket.emit('roomCreated', { code, playerIndex: 0 });
-    io.to(code).emit('lobbyUpdate', { players: rooms[code].players.map(p => ({ name: p.name, avatar: p.avatar, code: (p.username && accounts[p.username] ? accounts[p.username].friendCode : null) })), host: rooms[code].hostIndex });
+    io.to(code).emit('lobbyUpdate', lobbyPayload(rooms[code]));
     console.log(`Room ${code} created by ${name}`);
   });
 
@@ -644,7 +670,7 @@ io.on('connection', socket => {
     room.players.push({ socketId: socket.id, name, hand: [], ready: false, connected: true, avatar: null, username: socket.username || null });
     socket.join(code);
     socket.emit('roomJoined', { code, playerIndex: pi });
-    io.to(code).emit('lobbyUpdate', { players: room.players.map(p => ({ name: p.name, avatar: p.avatar, code: (p.username && accounts[p.username] ? accounts[p.username].friendCode : null) })), host: room.hostIndex });
+    io.to(code).emit('lobbyUpdate', lobbyPayload(room));
     console.log(`${name} joined ${code}`);
   });
 
@@ -657,7 +683,7 @@ io.on('connection', socket => {
     if (pi < 0) return;
     if (avatar !== null && (typeof avatar !== 'number' || avatar < 0 || avatar > 10 || !Number.isInteger(avatar))) return;
     room.players[pi].avatar = avatar;   // null = default cactus
-    io.to(code).emit('lobbyUpdate', { players: room.players.map(p => ({ name: p.name, avatar: p.avatar, code: (p.username && accounts[p.username] ? accounts[p.username].friendCode : null) })), host: room.hostIndex });
+    io.to(code).emit('lobbyUpdate', lobbyPayload(room));
   });
 
   socket.on('startGame', ({ code, cardCount }) => {
@@ -665,6 +691,8 @@ io.on('connection', socket => {
     const room = rooms[code];
     if (!room || !isHostSocket(room, socket)) return;
     if (room.players.length < 2) { socket.emit('error', 'Il faut au moins 2 joueurs'); return; }
+    const away = room.players.find(p => p.connected === false);
+    if (away) { socket.emit('error', `Attends que ${away.name} soit reconnecté`); return; }
     // Validate card count based on player count
     const n = room.players.length;
     let cc = cardCount || 4;
@@ -1072,16 +1100,27 @@ io.on('connection', socket => {
   socket.on('rejoin', ({ code, name, playerIndex }) => {
     if (!allow(socket, 'rejoin')) return;
     const room = rooms[code];
-    if (!room) { socket.emit('rejoinFailed'); return; }
-    let pi = (typeof playerIndex === 'number' && room.players[playerIndex]) ? playerIndex : -1;
+    if (!room) { socket.emit('rejoinFailed', { started: false }); return; }
+    // The seat number alone isn't trusted: in the lobby seats shift when someone
+    // leaves, so it must also carry the same name. Otherwise look the name up,
+    // preferring a seat that is waiting for its player to come back.
+    let pi = (typeof playerIndex === 'number' && room.players[playerIndex] && room.players[playerIndex].name === name) ? playerIndex : -1;
+    if (pi < 0 && name) pi = room.players.findIndex(p => p.name === name && p.connected === false);
     if (pi < 0 && name) pi = room.players.findIndex(p => p.name === name);
-    if (pi < 0) { socket.emit('rejoinFailed'); return; }
-    room.players[pi].socketId = socket.id;
-    room.players[pi].connected = true;
+    if (pi < 0) { socket.emit('rejoinFailed', { started: !!room.started }); return; }
+    const seat = room.players[pi];
+    clearTimeout(seat._dropTimer); seat._dropTimer = null;
+    seat.socketId = socket.id;
+    seat.connected = true;
     socket.join(code);
+    if (!room.started) {
+      socket.emit('rejoined', { playerIndex: pi, code, started: false, host: room.hostIndex });
+      io.to(code).emit('lobbyUpdate', lobbyPayload(room));
+      return;
+    }
     addLog(room, `${room.players[pi].name} est de retour.`);
     io.to(code).emit('playerConn', { pi, connected: true, name: room.players[pi].name });
-    socket.emit('rejoined', { playerIndex: pi, code });
+    socket.emit('rejoined', { playerIndex: pi, code, started: true });
     broadcastRoom(code);
   });
 
@@ -1091,16 +1130,9 @@ io.on('connection', socket => {
     const room = rooms[code]; if (!room || room.started) return;
     const pi = room.players.findIndex(p => p.socketId === socket.id);
     if (pi < 0) return;
-    const wasHost = (pi === room.hostIndex);
-    room.players.splice(pi, 1);
     socket.leave(code);
     socket.emit('leftRoom');
-    if (room.players.length === 0) { delete rooms[code]; return; }
-    if (wasHost) room.hostIndex = 0;
-    else if (pi < room.hostIndex) room.hostIndex -= 1;
-    if (room.hostIndex < 0 || room.hostIndex >= room.players.length) room.hostIndex = 0;
-    io.to(code).emit('lobbyUpdate', { players: room.players.map(p => ({ name: p.name, avatar: p.avatar, code: (p.username && accounts[p.username] ? accounts[p.username].friendCode : null) })), host: room.hostIndex });
-    io.to(code).emit('hostChanged', { host: room.hostIndex });
+    removeLobbySeat(code, pi);
   });
 
   socket.on('disconnect', () => {
@@ -1126,15 +1158,17 @@ io.on('connection', socket => {
           }
           broadcastRoom(code);
         } else {
-          // Still in the lobby: remove them from the list
-          const wasHost = (pi === room.hostIndex);
-          room.players.splice(pi, 1);
-          if (room.players.length === 0) { delete rooms[code]; break; }
-          // Keep hostIndex pointing at the right seat after the splice
-          if (wasHost) room.hostIndex = 0;
-          else if (pi < room.hostIndex) room.hostIndex -= 1;
-          if (room.hostIndex < 0 || room.hostIndex >= room.players.length) room.hostIndex = 0;
-          io.to(code).emit('lobbyUpdate', { players: room.players.map(p => ({ name: p.name, avatar: p.avatar, code: (p.username && accounts[p.username] ? accounts[p.username].friendCode : null) })), host: room.hostIndex });
+          // Still in the lobby: keep the seat for a short grace period so a brief
+          // network drop doesn't kick the player; remove them only if they don't come back.
+          const p = room.players[pi];
+          p.connected = false;
+          clearTimeout(p._dropTimer);
+          p._dropTimer = setTimeout(() => {
+            p._dropTimer = null;
+            if (rooms[code] !== room || room.started || p.connected) return;
+            removeLobbySeat(code, room.players.indexOf(p));
+          }, LOBBY_GRACE_MS);
+          io.to(code).emit('lobbyUpdate', lobbyPayload(room));
         }
         break;
       }
@@ -1391,7 +1425,7 @@ let _persistDirty = false;
 function _saveState() {
   try {
     const data = JSON.stringify(rooms, (key, value) => {
-      if (key === '_cactusTimer' || key === '_turnTimer') return undefined; // Timeouts: not serializable
+      if (key === '_cactusTimer' || key === '_turnTimer' || key === '_dropTimer') return undefined; // Timeouts: not serializable
       if (value instanceof Set) return { __set: true, v: [...value] };
       return value;
     });

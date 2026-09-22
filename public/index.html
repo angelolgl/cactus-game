@@ -2674,14 +2674,24 @@ function _registerSocketHandlers() {
   socket.on('disconnect', () => {
     if (_hasJoinedOnce) showReconnecting(true);
   });
-  socket.on('rejoined', ({playerIndex, code}) => {
+  socket.on('rejoined', ({playerIndex, code, started, host}) => {
     myIndex = playerIndex; myRoom = code;
     showReconnecting(false);
-    showToast('Connexion rétablie, la partie reprend', 'ok');
+    if (started === false) {
+      if (typeof host === 'number') showWaiting(code, host === playerIndex);
+      showToast('Connexion rétablie', 'ok');
+    } else showToast('Connexion rétablie, la partie reprend', 'ok');
   });
-  socket.on('rejoinFailed', () => {
+  socket.on('rejoinFailed', ({started} = {}) => {
     showReconnecting(false);
-    showToast('Impossible de rejoindre la partie', 'bad');
+    const waiting = qid('lobby-waiting');
+    if (started === false || (waiting && waiting.style.display !== 'none')) {
+      // La salle d'attente a disparu pendant la coupure : retour au menu Rejoindre / Créer.
+      myRoom = null; myIndex = -1; isHost = false; lobbyPlayers = [];
+      if (waiting) waiting.style.display = 'none';
+      qid('lobby-main').style.display = 'block';
+      showToast('Connexion perdue trop longtemps, tu as quitté la salle', 'warn');
+    } else showToast('Impossible de rejoindre la partie', 'bad');
   });
   socket.on('playerConn', ({pi, connected, name}) => {
     if (name && pi !== myIndex) showToast(connected ? `${name} est de retour` : `${name} a perdu la connexion`, connected ? 'ok' : 'warn');
@@ -2838,10 +2848,10 @@ function updateLobbyPlayers(players, host) {
   if (typeof host === 'number') hostIndex = host;
   isHost = (myIndex === hostIndex);
   qid('lobby-players-list').innerHTML = norm.map((p,i) =>
-    `<div class="lobby-row" onclick="openLobbyMenu(event, ${i})" style="background:rgba(255,255,255,.08);border-radius:8px;padding:8px 14px;font-size:14px;display:flex;align-items:center;gap:8px">
+    `<div class="lobby-row" onclick="openLobbyMenu(event, ${i})" style="background:rgba(255,255,255,.08);border-radius:8px;padding:8px 14px;font-size:14px;display:flex;align-items:center;gap:8px${p.connected === false ? ';opacity:.5' : ''}">
       <span>${i+1}.</span>
       <img class="lobby-av" src="${avatarImg(typeof p.avatar==='number'?p.avatar:null)}" alt="">
-      <strong${i === myIndex ? ' style="color:var(--gold-light)"' : ''}>${p.name}</strong>${i === myIndex ? '<span style="font-size:11px;color:rgba(240,201,110,.65);margin-left:2px">(toi)</span>' : ''}
+      <strong${i === myIndex ? ' style="color:var(--gold-light)"' : ''}>${p.name}</strong>${i === myIndex ? '<span style="font-size:11px;color:rgba(240,201,110,.65);margin-left:2px">(toi)</span>' : ''}${p.connected === false ? '<span style="font-size:11px;font-style:italic;margin-left:2px">reconnexion...</span>' : ''}
       ${i===hostIndex?'<span style="margin-left:auto;font-size:11px;color:var(--gold-light)">Hôte</span>':''}
     </div>`).join('');
   // Garde myAvatar en phase avec le serveur (utile après reconnexion)
