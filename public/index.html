@@ -501,47 +501,45 @@ body[data-screen="lobby"] #profile-btn{display:block}
    deux cactus, champs à icône. Utilisé par l'accueil, Rejoindre / Créer et
    la fenêtre Connexion / Inscription. */
 :root{--cactus-glyph:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 28'><path d='M10.3 2a1.7 1.7 0 0 1 3.4 0v12.5h2.6a1 1 0 0 0 1-1V8a1.7 1.7 0 0 1 3.4 0v5.5a4.3 4.3 0 0 1-4.3 4.3h-2.7V27h-3.4v-6H7.7a4.3 4.3 0 0 1-4.3-4.3V11a1.7 1.7 0 0 1 3.4 0v5.7a1 1 0 0 0 1 1h2.5z'/></svg>")}
-.orn-frame{position:relative;border-radius:28px;border:3px solid #081c12;
-  background:linear-gradient(165deg,#15422b 0%,#0e3020 55%,#0a2417 100%);
-  box-shadow:inset 0 0 0 2px #e2a93f,inset 0 0 0 4px #081c12,inset 0 0 0 6px rgba(226,169,63,.45),
-             0 26px 60px rgba(0,0,0,.65);
-  font-family:'Playfair Display',serif;color:#f6ead0}
-.orn-frame::before,.orn-frame::after,.orn-frame>.orn::before,.orn-frame>.orn::after{
-  content:'';position:absolute;width:30px;height:30px;pointer-events:none;border:2px solid rgba(240,201,110,.85)}
-.orn-frame::before{top:12px;left:12px;border-width:2px 0 0 2px;border-radius:16px 0 0 0}
-.orn-frame::after{bottom:12px;right:12px;border-width:0 2px 2px 0;border-radius:0 0 16px 0}
-.orn-frame>.orn::before{top:12px;right:12px;border-width:2px 2px 0 0;border-radius:0 16px 0 0}
-.orn-frame>.orn::after{bottom:12px;left:12px;border-width:0 0 2px 2px;border-radius:0 0 0 16px}
+/* Le cadre : épais liseré sombre, puis un filet doré vif, puis un second filet
+   plus fin à l'intérieur — les deux filets sont portés par l'élément .orn. */
+.orn-frame{position:relative;border-radius:40px;border:11px solid #06150d;
+  background:linear-gradient(180deg,#154029 0%,#0f3220 55%,#0b2818 100%);
+  box-shadow:0 26px 60px rgba(0,0,0,.65);font-family:'Playfair Display',serif;color:#f6ead0}
+.orn-frame>.orn{position:absolute;inset:7px;border:3px solid #f0a93a;border-radius:26px;pointer-events:none}
+.orn-frame>.orn::before{content:'';position:absolute;inset:6px;border:1.5px solid rgba(240,201,110,.55);border-radius:20px}
 
-.gbtn{position:relative;display:block;width:100%;cursor:pointer;border-radius:13px;
-  padding:15px 54px;font-family:'Playfair Display',serif;font-size:26px;font-weight:700;
-  color:#23180a;background:linear-gradient(180deg,#f8d98a,#d8a63c);border:1.5px solid #f3d489;
-  box-shadow:0 4px 0 #8a6420,0 7px 16px rgba(0,0,0,.35);transition:transform .12s,box-shadow .12s,filter .15s}
-.gbtn::before,.gbtn::after{content:'';position:absolute;top:50%;width:19px;height:23px;transform:translateY(-50%);
-  background:currentColor;opacity:.62;
+.gbtn{position:relative;display:block;width:100%;cursor:pointer;border-radius:16px;
+  padding:19px 64px;font-family:'Playfair Display',serif;font-size:34px;font-weight:700;
+  color:#1c1206;background:linear-gradient(180deg,#f7d98c 0%,#e5bb5c 45%,#cf9a34 100%);
+  border:2px solid #f6e3a8;box-shadow:0 5px 0 #7d5a1c,0 9px 18px rgba(0,0,0,.4);
+  transition:transform .12s,box-shadow .12s,filter .15s}
+.gbtn::before,.gbtn::after{content:'';position:absolute;top:50%;width:26px;height:32px;transform:translateY(-50%);
+  background:currentColor;opacity:.55;
   -webkit-mask:var(--cactus-glyph) center/contain no-repeat;mask:var(--cactus-glyph) center/contain no-repeat}
-.gbtn::before{left:20px}
-.gbtn::after{right:20px}
-.gbtn:hover{transform:translateY(-2px);box-shadow:0 6px 0 #8a6420,0 10px 20px rgba(0,0,0,.4)}
-.gbtn:active{transform:translateY(2px);box-shadow:0 1px 0 #8a6420}
-.gbtn.ghost{color:#f6ead0;background:linear-gradient(180deg,#154430,#0c2b1c);border:2px solid #e2a93f;box-shadow:0 4px 0 #071811}
-.gbtn.ghost::before,.gbtn.ghost::after{color:#e2a93f;opacity:.9}
-.gbtn.ghost:hover{box-shadow:0 6px 0 #071811}
-.gbtn.small{font-size:22px;padding:13px 22px;width:auto;white-space:nowrap}
+.gbtn::before{left:26px}
+.gbtn::after{right:26px}
+.gbtn:hover{transform:translateY(-2px);box-shadow:0 7px 0 #7d5a1c,0 12px 22px rgba(0,0,0,.45)}
+.gbtn:active{transform:translateY(3px);box-shadow:0 2px 0 #7d5a1c}
+.gbtn.ghost{color:#f6ead0;background:linear-gradient(180deg,#154430,#0c2b1c);
+  border:2px solid #e2a93f;box-shadow:0 5px 0 #06150d}
+.gbtn.ghost::before,.gbtn.ghost::after{color:#e2a93f;opacity:.95}
+.gbtn.ghost:hover{box-shadow:0 7px 0 #06150d}
+.gbtn.small{font-size:26px;padding:16px 26px;width:auto;white-space:nowrap}
 .gbtn.small::before,.gbtn.small::after{display:none}
 
-.orn-field{display:flex;align-items:center;height:60px;padding:0 18px;margin-bottom:15px;border-radius:13px;
-  background:rgba(3,26,16,.5);border:1.5px solid rgba(226,169,63,.7)}
-.orn-field:focus-within{border-color:#f0c96e}
-.orn-field svg{width:25px;height:25px;flex-shrink:0;fill:#f0c96e}
-.orn-field i{width:1px;height:28px;background:rgba(226,169,63,.45);margin:0 17px;flex-shrink:0}
+.orn-field{display:flex;align-items:center;height:76px;padding:0 24px;margin-bottom:19px;border-radius:17px;
+  background:rgba(4,28,18,.45);border:1.5px solid rgba(240,169,58,.8)}
+.orn-field:focus-within{border-color:#f7d98c}
+.orn-field svg{width:32px;height:32px;flex-shrink:0;fill:#f4d18b}
+.orn-field i{width:1.5px;height:38px;background:rgba(240,201,110,.45);margin:0 22px;flex-shrink:0}
 .orn-field input{flex:1;min-width:0;background:none;border:none;outline:none;color:#f6ead0;
-  font-family:'Playfair Display',serif;font-size:21px}
-.orn-field input::placeholder{color:rgba(246,234,208,.45)}
-.orn-field input:-webkit-autofill{-webkit-text-fill-color:#f6ead0;-webkit-box-shadow:0 0 0 60px #0d2c1c inset}
+  font-family:'Playfair Display',serif;font-size:26px}
+.orn-field input::placeholder{color:rgba(230,226,214,.5)}
+.orn-field input:-webkit-autofill{-webkit-text-fill-color:#f6ead0;-webkit-box-shadow:0 0 0 80px #0d2c1c inset}
 
-.orn-or{display:flex;align-items:center;gap:16px;margin:20px 2px;font-size:19px;color:rgba(246,234,208,.65)}
-.orn-or::before,.orn-or::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(226,169,63,.7),transparent)}
+.orn-or{display:flex;align-items:center;gap:18px;margin:22px 2px;font-size:23px;color:rgba(246,234,208,.72)}
+.orn-or::before,.orn-or::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(240,169,58,.8),transparent)}
 
 /* ── ACCUEIL (Se connecter / S'inscrire / Jouer en invité) ──
    Même langage visuel que la fenêtre Amis : vert désert, filets dorés,
@@ -561,11 +559,11 @@ body[data-screen="lobby"] #profile-btn{display:block}
 .home-orn i{flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(226,169,63,.85),transparent)}
 .home-orn b{width:11px;height:11px;transform:rotate(45deg);border-radius:2px;
   background:linear-gradient(135deg,#fdf3d2,#d8a63c);flex-shrink:0}
-.home-panel{width:560px;padding:34px 38px 30px;text-align:center}
+.home-panel{width:680px;padding:44px 48px 40px;text-align:center}
 /* Bloc Rejoindre / Créer */
-.join-panel{width:560px;padding:30px 36px 28px}
-.wood-band{position:relative;margin:0 14px 24px;padding:12px 44px;border-radius:12px;text-align:center;
-  font-size:27px;font-weight:700;color:#f6ead0;text-shadow:0 2px 4px rgba(0,0,0,.6);
+.join-panel{width:680px;padding:40px 46px 38px}
+.wood-band{position:relative;margin:0 10px 30px;padding:15px 52px;border-radius:14px;text-align:center;
+  font-size:32px;font-weight:700;color:#f6ead0;text-shadow:0 2px 4px rgba(0,0,0,.6);
   background:linear-gradient(180deg,#6d4c2c,#4a3119 60%,#3d2814);
   border:2px solid #c9953a;box-shadow:inset 0 0 20px rgba(0,0,0,.5),0 4px 12px rgba(0,0,0,.45)}
 .wood-band::before,.wood-band::after{content:'';position:absolute;top:50%;width:11px;height:11px;
@@ -574,16 +572,17 @@ body[data-screen="lobby"] #profile-btn{display:block}
 .wood-band::after{right:18px}
 .join-row{display:flex;gap:14px;align-items:stretch}
 .join-row .orn-field{flex:1}
-.join-row .gbtn.small{height:60px;margin-bottom:15px}
+.join-row .gbtn.small{height:76px;margin-bottom:19px}
 .join-panel .error-msg{margin-top:12px;font-family:'Inter',sans-serif}
 /* Fenêtre Connexion / Inscription */
-.auth-panel{position:relative;width:620px;padding:30px 36px 32px;
+.auth-panel{position:relative;width:720px;padding:38px 46px 42px;
   animation:slideUp .25s cubic-bezier(.34,1.56,.64,1) both}
-.auth-panel>.cactus-close{top:16px;right:18px;width:42px;height:42px}
-.auth-panel .auth-tabs{display:flex;margin:4px 46px 26px 6px;padding-bottom:14px;
+.auth-panel>.cactus-close{top:-18px;right:-18px;width:56px;height:56px}
+.join-panel>.cactus-close{top:-18px;right:-18px;width:56px;height:56px}
+.auth-panel .auth-tabs{display:flex;margin:10px 10px 34px;padding-bottom:16px;
   border-bottom:1px solid rgba(226,169,63,.28)}
 .auth-panel .auth-tab{flex:1;background:none;border:none;cursor:pointer;padding:4px 0;
-  font-family:'Playfair Display',serif;font-size:32px;font-weight:700;color:rgba(246,234,208,.42);
+  font-family:'Playfair Display',serif;font-size:40px;font-weight:700;color:rgba(246,234,208,.42);
   border-bottom:none;transition:color .15s}
 .auth-panel .auth-tab:hover{color:rgba(246,234,208,.75)}
 .auth-panel .auth-tab.on{color:#f6ead0}
@@ -1275,6 +1274,7 @@ body.anim-lock #react-dock{ pointer-events:auto; }
 
   <!-- REJOINDRE / CRÉER (invité ou connecté) -->
   <div class="join-panel orn-frame" id="lobby-main" style="display:none"><span class="orn"></span>
+    <button class="cactus-close" onclick="backToHome()" aria-label="Retour" title="Retour"></button>
     <div class="wood-band">Rejoindre / Créer</div>
     <label class="orn-field">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="7.5" r="4.2"/><path d="M3.8 21c0-4.3 3.7-7 8.2-7s8.2 2.7 8.2 7v1H3.8z"/></svg><i></i>
@@ -1585,9 +1585,12 @@ function flyCard(srcEl,dstEl,opts={},onDone){
 
 // ══ CARD SOUNDS (light synthesized SFX, no files) ══
 let _actx = null;
-let _soundOn = true;        // mirror of (_sfxVolume > 0), kept for existing gates
-let _sfxVolume = 0.8;       // 0..1 — sound effects
-let _musicVolume = 0.35;    // 0..1 — background music
+// Le son est coupé par défaut et le réglage est retenu d'une visite à l'autre :
+// sinon la musique repartait dans chaque onglet ouvert.
+function _readVol(key){ try { const v = parseFloat(localStorage.getItem(key)); return isNaN(v) ? 0 : Math.max(0, Math.min(1, v)); } catch(e){ return 0; } }
+let _sfxVolume = _readVol('cactus_sfx');     // 0..1 — effets sonores
+let _musicVolume = _readVol('cactus_music'); // 0..1 — musique de fond
+let _soundOn = _sfxVolume > 0;               // miroir de (_sfxVolume > 0), gardé pour le code existant
 function _audio(){
   if(!_actx){
     try { _actx = new (window.AudioContext||window.webkitAudioContext)(); } catch(e){ return null; }
@@ -1698,11 +1701,13 @@ function startMusic(){
     _musicSource.start(); _musicStarted=true;
   }catch(e){}
 }
-function setSfxVolume(v){ _sfxVolume=Math.max(0,Math.min(1,v)); _soundOn=_sfxVolume>0; }
+function _saveVol(key, v){ try { localStorage.setItem(key, String(v)); } catch(e){} }
+function setSfxVolume(v){ _sfxVolume=Math.max(0,Math.min(1,v)); _soundOn=_sfxVolume>0; _saveVol('cactus_sfx', _sfxVolume); }
 function setMusicVolume(v){
   _musicVolume=Math.max(0,Math.min(1,v));
   if(_musicGain) _musicGain.gain.value=_musicVolume;
   if(_musicVolume>0 && _userInteracted) startMusic();
+  _saveVol('cactus_music', _musicVolume);
 }
 
 // ══ QUICK REACTIONS ══
