@@ -496,113 +496,35 @@ body[data-screen="lobby"] #profile-btn{display:block}
 @keyframes dealIn{from{opacity:0;transform:translateY(-30px) scale(.75) rotate(-6deg)}to{opacity:1;transform:none}}
 @keyframes penaltyIn{from{transform:translateX(30px) scale(.7);opacity:0}to{transform:none;opacity:1}}
 
-/* ── HABILLAGE COMMUN DES ÉCRANS HORS JEU (maquettes de septembre 2026) ──
-   Cadre vert à double filet doré avec coins ornés, boutons dorés encadrés de
-   deux cactus, champs à icône. Utilisé par l'accueil, Rejoindre / Créer et
-   la fenêtre Connexion / Inscription. */
-:root{--cactus-glyph:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 28'><path d='M10.3 2a1.7 1.7 0 0 1 3.4 0v12.5h2.6a1 1 0 0 0 1-1V8a1.7 1.7 0 0 1 3.4 0v5.5a4.3 4.3 0 0 1-4.3 4.3h-2.7V27h-3.4v-6H7.7a4.3 4.3 0 0 1-4.3-4.3V11a1.7 1.7 0 0 1 3.4 0v5.7a1 1 0 0 0 1 1h2.5z'/></svg>")}
-/* Le cadre : épais liseré sombre, puis un filet doré vif, puis un second filet
-   plus fin à l'intérieur — les deux filets sont portés par l'élément .orn. */
-.orn-frame{position:relative;border-radius:40px;border:11px solid #06150d;
-  background:linear-gradient(180deg,#154029 0%,#0f3220 55%,#0b2818 100%);
-  box-shadow:0 26px 60px rgba(0,0,0,.65);font-family:'Playfair Display',serif;color:#f6ead0}
-.orn-frame>.orn{position:absolute;inset:7px;border:3px solid #f0a93a;border-radius:26px;pointer-events:none}
-.orn-frame>.orn::before{content:'';position:absolute;inset:6px;border:1.5px solid rgba(240,201,110,.55);border-radius:20px}
+/* ── ÉCRANS HORS JEU : LES MAQUETTES SERVENT D'IMAGES ──
+   Chaque écran est une image fournie (public/ui-*.webp) affichée à taille fixe.
+   Les champs de saisie et les zones cliquables sont posés par-dessus, en
+   pourcentage de l'image : si une image change, il faut remesurer ces valeurs.
+   Les libellés (Se connecter, Votre prénom…) sont peints dans l'image. */
+.ui-logo{width:660px;height:176px;background:url('/ui-logo.webp') center/100% 100% no-repeat;flex-shrink:0}
+.ui-panel{position:relative;background-size:100% 100%;background-repeat:no-repeat;flex-shrink:0;
+  font-family:'Playfair Display',serif;color:#f6ead0;filter:drop-shadow(0 20px 40px rgba(0,0,0,.5))}
+.ui-home{width:640px;height:393px;background-image:url('/ui-home.webp')}
+.ui-join{width:640px;height:447px;background-image:url('/ui-join.webp')}
+.ui-login{width:660px;height:459px;background-image:url('/ui-login.webp')}
+.ui-register{width:660px;height:495px;background-image:url('/ui-register.webp')}
+/* Zone cliquable transparente posée sur un bouton peint dans l'image */
+.ui-hot{position:absolute;border:none;background:transparent;cursor:pointer;border-radius:16px;padding:0;
+  transition:box-shadow .12s,transform .1s,background .15s}
+.ui-hot:hover{box-shadow:inset 0 0 40px rgba(255,255,255,.22)}
+.ui-hot:active{transform:translateY(2px)}
+.ui-hot.off{background:rgba(2,18,11,.55);cursor:default}
+.ui-hot.off:hover{box-shadow:none}
+/* Champ de saisie posé dans le cadre peint, après l'icône et le trait */
+.ui-in{position:absolute;border:none;outline:none;background:#0b2618;color:#f6ead0;
+  font-family:'Playfair Display',serif;font-size:20px;padding:0 4px}
+.ui-in::placeholder{color:rgba(232,226,212,.55)}
+.ui-in:-webkit-autofill{-webkit-text-fill-color:#f6ead0;-webkit-box-shadow:0 0 0 80px #0b2618 inset}
+.ui-join .ui-in{background:#0c2c1b}
+.ui-panel>.cactus-close{top:-16px;right:-16px;width:54px;height:54px}
+.ui-err{position:absolute;left:8%;right:8%;bottom:-30px;text-align:center;
+  font-family:'Inter',sans-serif;font-size:14px;color:#ff9a86;min-height:18px}
 
-.gbtn{position:relative;display:block;width:100%;cursor:pointer;border-radius:16px;
-  padding:19px 64px;font-family:'Playfair Display',serif;font-size:34px;font-weight:700;
-  color:#1c1206;background:linear-gradient(180deg,#f7d98c 0%,#e5bb5c 45%,#cf9a34 100%);
-  border:2px solid #f6e3a8;box-shadow:0 5px 0 #7d5a1c,0 9px 18px rgba(0,0,0,.4);
-  transition:transform .12s,box-shadow .12s,filter .15s}
-.gbtn::before,.gbtn::after{content:'';position:absolute;top:50%;width:26px;height:32px;transform:translateY(-50%);
-  background:currentColor;opacity:.55;
-  -webkit-mask:var(--cactus-glyph) center/contain no-repeat;mask:var(--cactus-glyph) center/contain no-repeat}
-.gbtn::before{left:26px}
-.gbtn::after{right:26px}
-.gbtn:hover{transform:translateY(-2px);box-shadow:0 7px 0 #7d5a1c,0 12px 22px rgba(0,0,0,.45)}
-.gbtn:active{transform:translateY(3px);box-shadow:0 2px 0 #7d5a1c}
-.gbtn.ghost{color:#f6ead0;background:linear-gradient(180deg,#154430,#0c2b1c);
-  border:2px solid #e2a93f;box-shadow:0 5px 0 #06150d}
-.gbtn.ghost::before,.gbtn.ghost::after{color:#e2a93f;opacity:.95}
-.gbtn.ghost:hover{box-shadow:0 7px 0 #06150d}
-.gbtn.small{font-size:26px;padding:16px 26px;width:auto;white-space:nowrap}
-.gbtn.small::before,.gbtn.small::after{display:none}
-
-.orn-field{display:flex;align-items:center;height:76px;padding:0 24px;margin-bottom:19px;border-radius:17px;
-  background:rgba(4,28,18,.45);border:1.5px solid rgba(240,169,58,.8)}
-.orn-field:focus-within{border-color:#f7d98c}
-.orn-field svg{width:32px;height:32px;flex-shrink:0;fill:#f4d18b}
-.orn-field i{width:1.5px;height:38px;background:rgba(240,201,110,.45);margin:0 22px;flex-shrink:0}
-.orn-field input{flex:1;min-width:0;background:none;border:none;outline:none;color:#f6ead0;
-  font-family:'Playfair Display',serif;font-size:26px}
-.orn-field input::placeholder{color:rgba(230,226,214,.5)}
-.orn-field input:-webkit-autofill{-webkit-text-fill-color:#f6ead0;-webkit-box-shadow:0 0 0 80px #0d2c1c inset}
-
-.orn-or{display:flex;align-items:center;gap:18px;margin:22px 2px;font-size:23px;color:rgba(246,234,208,.72)}
-.orn-or::before,.orn-or::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(240,169,58,.8),transparent)}
-
-/* ── ACCUEIL (Se connecter / S'inscrire / Jouer en invité) ──
-   Même langage visuel que la fenêtre Amis : vert désert, filets dorés,
-   titres en Playfair. Aucun emoji : le cactus est un dessin SVG. */
-.home-logo{text-align:center;display:flex;flex-direction:column;align-items:center;gap:2px}
-.home-logo h1{font-family:'Playfair Display',serif;font-size:96px;font-weight:700;line-height:1;
-  letter-spacing:.06em;text-indent:.06em;
-  background:linear-gradient(180deg,#fdf3d2 12%,#efc87c 52%,#cf9f3d 100%);-webkit-background-clip:text;
-  background-clip:text;color:transparent;filter:drop-shadow(0 4px 10px rgba(0,0,0,.6))}
-/* Le U du logo est un cactus, comme sur la maquette */
-.home-logo h1 .logo-u{display:inline-block;width:.6em;height:.78em;vertical-align:-.02em;margin:0 .02em;
-  background:linear-gradient(180deg,#fdf3d2 12%,#efc87c 52%,#cf9f3d 100%);
-  -webkit-mask:var(--cactus-glyph) center/contain no-repeat;mask:var(--cactus-glyph) center/contain no-repeat}
-.home-logo p{font-family:'Playfair Display',serif;font-size:20px;color:#e9c987;
-  letter-spacing:.3em;text-indent:.3em;text-transform:uppercase;margin-top:12px}
-.home-orn{display:flex;align-items:center;gap:12px;width:420px;margin:12px 0 26px}
-.home-orn i{flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(226,169,63,.85),transparent)}
-.home-orn b{width:11px;height:11px;transform:rotate(45deg);border-radius:2px;
-  background:linear-gradient(135deg,#fdf3d2,#d8a63c);flex-shrink:0}
-.home-panel{width:680px;padding:44px 48px 40px;text-align:center}
-/* Bloc Rejoindre / Créer */
-.join-panel{width:680px;padding:40px 46px 38px}
-.wood-band{position:relative;margin:0 10px 30px;padding:15px 52px;border-radius:14px;text-align:center;
-  font-size:32px;font-weight:700;color:#f6ead0;text-shadow:0 2px 4px rgba(0,0,0,.6);
-  background:linear-gradient(180deg,#6d4c2c,#4a3119 60%,#3d2814);
-  border:2px solid #c9953a;box-shadow:inset 0 0 20px rgba(0,0,0,.5),0 4px 12px rgba(0,0,0,.45)}
-.wood-band::before,.wood-band::after{content:'';position:absolute;top:50%;width:11px;height:11px;
-  transform:translateY(-50%) rotate(45deg);border-radius:2px;background:linear-gradient(135deg,#fdf3d2,#d8a63c)}
-.wood-band::before{left:18px}
-.wood-band::after{right:18px}
-.join-row{display:flex;gap:14px;align-items:stretch}
-.join-row .orn-field{flex:1}
-.join-row .gbtn.small{height:76px;margin-bottom:19px}
-.join-panel .error-msg{margin-top:12px;font-family:'Inter',sans-serif}
-/* Fenêtre Connexion / Inscription */
-.auth-panel{position:relative;width:720px;padding:38px 46px 42px;
-  animation:slideUp .25s cubic-bezier(.34,1.56,.64,1) both}
-.auth-panel>.cactus-close{top:-18px;right:-18px;width:56px;height:56px}
-.join-panel>.cactus-close{top:-18px;right:-18px;width:56px;height:56px}
-.auth-panel .auth-tabs{display:flex;margin:10px 10px 34px;padding-bottom:16px;
-  border-bottom:1px solid rgba(226,169,63,.28)}
-.auth-panel .auth-tab{flex:1;background:none;border:none;cursor:pointer;padding:4px 0;
-  font-family:'Playfair Display',serif;font-size:40px;font-weight:700;color:rgba(246,234,208,.42);
-  border-bottom:none;transition:color .15s}
-.auth-panel .auth-tab:hover{color:rgba(246,234,208,.75)}
-.auth-panel .auth-tab.on{color:#f6ead0}
-.auth-panel .auth-tab.on::after{content:'';position:absolute;margin:0 auto;left:0;right:0;width:0;height:0}
-.auth-panel .auth-tab{position:relative}
-.auth-panel .auth-tab.on::before{content:'';position:absolute;left:14%;right:14%;bottom:-15px;height:2px;
-  background:linear-gradient(90deg,transparent,#e2a93f 18%,#e2a93f 82%,transparent)}
-.auth-panel .auth-tab.on::after{content:'';position:absolute;left:50%;bottom:-19px;width:10px;height:10px;
-  transform:translateX(-50%) rotate(45deg);border-radius:2px;background:linear-gradient(135deg,#fdf3d2,#d8a63c)}
-.auth-err{font-family:'Inter',sans-serif;color:#ff9a86;font-size:14px;text-align:center;min-height:18px;margin:2px 0 10px}
-.auth-note{font-family:'Inter',sans-serif;font-size:13px;color:rgba(246,234,208,.5);text-align:center;margin-top:14px}
-.home-panel .gbtn+.gbtn{margin-top:16px}
-.home-sep{display:flex;align-items:center;gap:14px;margin:24px 2px 18px}
-.home-sep i{flex:1;height:2px;background:linear-gradient(90deg,transparent,rgba(201,149,58,.85),transparent)}
-.home-sep svg{width:17px;height:20px;fill:rgba(201,149,58,.75);flex-shrink:0}
-.home-guest{background:none;border:none;cursor:pointer;font-family:'Playfair Display',serif;font-size:21px;
-  color:rgba(246,234,208,.82);text-decoration:underline;text-underline-offset:5px;
-  text-decoration-color:rgba(201,149,58,.5);padding:4px 8px;transition:color .15s}
-.home-guest:hover{color:#f0c96e;text-decoration-color:#f0c96e}
-.home-note{font-family:'Inter',sans-serif;font-size:14px;line-height:1.45;color:rgba(246,234,208,.5);margin-top:12px}
 
 /* ── LOBBY ── */
 #s-lobby{
@@ -1259,38 +1181,27 @@ body.anim-lock #react-dock{ pointer-events:auto; }
 
 <!-- LOBBY -->
 <div id="s-lobby" class="screen active">
-  <div class="home-logo">
-    <h1>CACT<span class="logo-u"></span>S</h1>
-    <p>Jeu de cartes en ligne</p>
-    <div class="home-orn"><i></i><b></b><i></i></div>
-  </div>
-  <!-- ACCUEIL COMPTE (V2) -->
-  <div class="home-panel orn-frame" id="home-account"><span class="orn"></span>
-    <button class="gbtn" onclick="openAuth('login')">Se connecter</button>
-    <button class="gbtn ghost" onclick="openAuth('register')">S'inscrire</button>
-    <div class="home-sep"><i></i><svg viewBox="0 0 24 28"><path d="M10.3 2a1.7 1.7 0 0 1 3.4 0v12.5h2.6a1 1 0 0 0 1-1V8a1.7 1.7 0 0 1 3.4 0v5.5a4.3 4.3 0 0 1-4.3 4.3h-2.7V27h-3.4v-6H7.7a4.3 4.3 0 0 1-4.3-4.3V11a1.7 1.7 0 0 1 3.4 0v5.7a1 1 0 0 0 1 1h2.5z"/></svg><i></i></div>
-    <button class="home-guest" onclick="playGuest()">Jouer en invité</button>
+  <div class="ui-logo"></div>
+
+  <!-- ACCUEIL : maquette public/ui-home.webp, zones cliquables posées dessus -->
+  <div class="ui-panel ui-home" id="home-account">
+    <button class="ui-hot" style="left:8.6%;top:16%;width:82.8%;height:19.3%" onclick="openAuth('login')" aria-label="Se connecter"></button>
+    <button class="ui-hot" style="left:8.6%;top:39.1%;width:82.8%;height:19.6%" onclick="openAuth('register')" aria-label="S'inscrire"></button>
+    <button class="ui-hot" style="left:33%;top:74%;width:34%;height:12%" onclick="playGuest()" aria-label="Jouer en invité"></button>
   </div>
 
-  <!-- REJOINDRE / CRÉER (invité ou connecté) -->
-  <div class="join-panel orn-frame" id="lobby-main" style="display:none"><span class="orn"></span>
+  <!-- REJOINDRE / CRÉER : maquette public/ui-join.webp -->
+  <div class="ui-panel ui-join" id="lobby-main" style="display:none">
     <button class="cactus-close" onclick="backToHome()" aria-label="Retour" title="Retour"></button>
-    <div class="wood-band">Rejoindre / Créer</div>
-    <label class="orn-field">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="7.5" r="4.2"/><path d="M3.8 21c0-4.3 3.7-7 8.2-7s8.2 2.7 8.2 7v1H3.8z"/></svg><i></i>
-      <input id="player-name" placeholder="Votre prénom" maxlength="20">
-    </label>
-    <div class="join-row">
-      <label class="orn-field">
-        <svg viewBox="0 0 24 24"><path d="M9.2 3h2.2l-.8 5h4l.8-5h2.2l-.8 5H20v2.2h-3.5l-.6 3.6H19v2.2h-3.5l-.8 5h-2.2l.8-5h-4l-.8 5H6.3l.8-5H4v-2.2h3.5l.6-3.6H5v-2.2h3.5zm.1 7.2-.6 3.6h4l.6-3.6z"/></svg><i></i>
-        <input id="room-code" placeholder="Code" maxlength="4" inputmode="numeric">
-      </label>
-      <button class="gbtn small" onclick="joinRoom()">Rejoindre</button>
-    </div>
-    <div class="orn-or">ou</div>
-    <button class="gbtn" onclick="createRoom()">Créer une partie</button>
-    <div class="error-msg" id="lobby-error"></div>
+    <input class="ui-in" id="player-name" placeholder="Votre prénom" maxlength="20"
+           style="left:18.5%;top:32.4%;width:71.5%;height:7.4%">
+    <input class="ui-in" id="room-code" placeholder="Code" maxlength="4" inputmode="numeric"
+           style="left:18.5%;top:47.6%;width:35%;height:7.4%">
+    <button class="ui-hot" style="left:58.4%;top:44.5%;width:33.7%;height:13.6%" onclick="joinRoom()" aria-label="Rejoindre"></button>
+    <button class="ui-hot" style="left:8.3%;top:74.2%;width:83.6%;height:15.1%" onclick="createRoom()" aria-label="Créer une partie"></button>
+    <div class="ui-err" id="lobby-error"></div>
   </div>
+
   <div class="lobby-box" id="lobby-waiting" style="display:none">
     <div class="lw-head"><h2>Salle d'attente</h2><button class="lw-quit" onclick="leaveWaiting()">Quitter</button></div>
     <div style="font-family:'Playfair Display',serif;font-size:42px;color:var(--gold-light);letter-spacing:.15em;text-align:center;text-shadow:0 2px 8px rgba(0,0,0,.5);margin:12px 0" id="lobby-code-display">----</div>
@@ -2431,30 +2342,38 @@ const ICON_LOCK = '<svg viewBox="0 0 24 24"><path d="M7 10V7.5a5 5 0 0 1 10 0V10
 
 function openAuth(mode){
   const login = mode !== 'register';
-  const field = (id, icon, ph, extra = '') =>
-    `<label class="orn-field">${icon}<i></i><input id="${id}" placeholder="${ph}" ${extra}></label>`;
-  qid('modal-root').innerHTML = `<div class="modal-bg"><div class="auth-panel orn-frame"><span class="orn"></span>
+  // Les libellés sont peints dans les maquettes (public/ui-login.webp et
+  // ui-register.webp) : on pose seulement les champs de saisie et les zones
+  // cliquables, aux positions mesurées sur ces images.
+  const field = (id, top, ph, extra = '') =>
+    `<input class="ui-in" id="${id}" placeholder="${ph}" ${extra} style="left:21%;top:${top}%;width:67%;height:6.6%">`;
+  const tabTop = login ? 9 : 7;
+  const tabs = `
+    <button class="ui-hot" style="left:8%;top:${tabTop}%;width:40%;height:15%" onclick="openAuth('login')" aria-label="Connexion"></button>
+    <button class="ui-hot" style="left:52%;top:${tabTop}%;width:40%;height:15%" onclick="openAuth('register')" aria-label="Inscription"></button>`;
+  const body = login
+    ? `${field('auth-email', 33.6, 'Adresse email', 'type="email" autocomplete="email" inputmode="email"')}
+       ${field('auth-pw', 53.8, 'Mot de passe', 'type="password" autocomplete="current-password"')}
+       <button class="ui-hot" id="auth-submit" style="left:8.1%;top:72.3%;width:83.9%;height:15.6%" aria-label="Se connecter"></button>`
+    : `${field('auth-email', 24.6, 'Adresse email', 'type="email" autocomplete="email" inputmode="email"')}
+       ${field('auth-username', 37.5, 'Pseudo', 'maxlength="16" autocomplete="nickname"')}
+       ${field('auth-pw', 50.4, 'Mot de passe', 'type="password" autocomplete="new-password"')}
+       ${field('auth-pw2', 63.3, 'Confirmer le mot de passe', 'type="password"')}
+       <button class="ui-hot" id="auth-submit" style="left:8.5%;top:74.4%;width:83%;height:12.6%" aria-label="S'inscrire"></button>`;
+  qid('modal-root').innerHTML = `<div class="modal-bg"><div class="ui-panel ${login?'ui-login':'ui-register'}">
     <button class="cactus-close" onclick="qid('modal-root').innerHTML=''" aria-label="Fermer" title="Fermer"></button>
-    <div class="auth-tabs">
-      <button class="auth-tab ${login?'on':''}" onclick="openAuth('login')">Connexion</button>
-      <button class="auth-tab ${!login?'on':''}" onclick="openAuth('register')">Inscription</button>
-    </div>
-    ${field('auth-email', login ? ICON_USER : ICON_MAIL, 'Adresse email', 'type="email" autocomplete="email" inputmode="email"')}
-    ${!login ? field('auth-username', ICON_USER, 'Pseudo (lettres uniquement, sans espace)', 'maxlength="16" autocomplete="nickname"') : ''}
-    ${field('auth-pw', ICON_LOCK, 'Mot de passe', `type="password" autocomplete="${login?'current-password':'new-password'}"`)}
-    ${!login ? field('auth-pw2', ICON_LOCK, 'Confirmer le mot de passe', 'type="password"') : ''}
-    <div id="auth-error" class="auth-err"></div>
-    <button class="gbtn" id="auth-submit" style="transition:filter .15s,opacity .15s">${login?'Se connecter':"S'inscrire"}</button>
-    ${!login ? '<p class="auth-note">Un code ami unique sera généré à l\'inscription.</p>' : ''}
+    ${tabs}${body}
+    <div id="auth-error" class="ui-err"></div>
   </div></div>`;
+
   // Light up submit when all fields are filled
   const fields = ['auth-email', !login&&'auth-username', 'auth-pw', !login&&'auth-pw2'].filter(Boolean);
   const btn = qid('auth-submit');
   const checkFilled = () => {
     const filled = fields.every(id=>{ const el=qid(id); return el && el.value.trim().length>0; });
-    btn.style.opacity = filled ? '1' : '.5';
+    // Le bouton est peint dans la maquette : on l'assombrit tant que tout n'est pas rempli.
+    btn.classList.toggle('off', !filled);
     btn.style.pointerEvents = filled ? 'auto' : 'none';
-    btn.style.filter = filled ? 'brightness(1.1)' : '';
   };
   if(!login) checkFilled(); // initial state: disabled
   fields.forEach(id=>{ const el=qid(id); if(el){ el.addEventListener('input', checkFilled); el.addEventListener('keydown', e=>{ if(e.key==='Enter') submitAuth(mode); }); } });
