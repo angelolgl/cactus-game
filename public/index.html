@@ -295,17 +295,17 @@ body[data-screen="lobby"] #profile-btn{display:block}
 /* The card artwork is a fixed 1473x794 image (public/profile-card-bg.webp). Every slot below
    is placed on a frame painted in it, so these values must be re-measured if the image changes. */
 .profil-card{position:relative;width:1473px;height:794px;flex-shrink:0;background:url('/profile-card-bg.webp') center/100% 100% no-repeat;filter:drop-shadow(0 24px 50px rgba(0,0,0,.6));font-family:'Playfair Display',serif;color:#0b221c;font-variant-numeric:lining-nums;animation:slideUp .3s cubic-bezier(.34,1.56,.64,1) both}
-.cactus-close{position:absolute;width:56px;height:56px;padding:0;border:0;background:url('/close-cactus.webp?v=4') center/contain no-repeat;cursor:pointer;filter:drop-shadow(0 3px 5px rgba(0,0,0,.35));transition:transform .18s ease}
+.cactus-close{position:absolute;width:44px;height:44px;padding:0;border:0;background:url('/close-cactus.webp?v=4') center/contain no-repeat;cursor:pointer;filter:drop-shadow(0 3px 5px rgba(0,0,0,.35));transition:transform .18s ease}
 .cactus-close:hover{transform:scale(1.1)}
 .cactus-close:active{transform:scale(.95)}
-.pc-close{top:30px;right:36px;width:72px;height:72px}
+.pc-close{top:30px;right:36px;width:56px;height:56px}
 .av-picker-box .cactus-close{top:14px;right:14px}
-.modal-box>.cactus-close{top:10px;right:10px;width:46px;height:46px}
+.modal-box>.cactus-close{top:10px;right:10px;width:36px;height:36px}
 .friends-panel{position:relative;width:1250px;height:720px;display:flex;flex-direction:column;padding:30px 40px 26px;border-radius:22px;overflow:hidden;
   background:url('/friends-desert.webp') center bottom/100% auto no-repeat,radial-gradient(90% 70% at 50% 0%,#146140 0%,#0a3d27 45%,#04291a 80%);
   border:2px solid #c9953a;box-shadow:0 0 0 5px rgba(4,41,26,.9),0 30px 70px rgba(0,0,0,.7);
   animation:slideUp .28s cubic-bezier(.34,1.56,.64,1) both;font-family:'Playfair Display',serif;color:#f6ead0}
-.friends-panel>.cactus-close{top:20px;right:24px;width:62px;height:62px}
+.friends-panel>.cactus-close{top:20px;right:24px;width:48px;height:48px}
 .fp-head{display:flex;align-items:center;gap:18px;margin-right:80px}
 .fp-head svg{width:44px;height:52px;flex-shrink:0}
 .fp-title{font-size:58px;font-weight:700;line-height:1;color:#f6ead0;text-shadow:0 3px 10px rgba(0,0,0,.45)}
@@ -496,28 +496,107 @@ body[data-screen="lobby"] #profile-btn{display:block}
 @keyframes dealIn{from{opacity:0;transform:translateY(-30px) scale(.75) rotate(-6deg)}to{opacity:1;transform:none}}
 @keyframes penaltyIn{from{transform:translateX(30px) scale(.7);opacity:0}to{transform:none;opacity:1}}
 
+/* ── HABILLAGE COMMUN DES ÉCRANS HORS JEU (maquettes de septembre 2026) ──
+   Cadre vert à double filet doré avec coins ornés, boutons dorés encadrés de
+   deux cactus, champs à icône. Utilisé par l'accueil, Rejoindre / Créer et
+   la fenêtre Connexion / Inscription. */
+:root{--cactus-glyph:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 28'><path d='M10.3 2a1.7 1.7 0 0 1 3.4 0v12.5h2.6a1 1 0 0 0 1-1V8a1.7 1.7 0 0 1 3.4 0v5.5a4.3 4.3 0 0 1-4.3 4.3h-2.7V27h-3.4v-6H7.7a4.3 4.3 0 0 1-4.3-4.3V11a1.7 1.7 0 0 1 3.4 0v5.7a1 1 0 0 0 1 1h2.5z'/></svg>")}
+.orn-frame{position:relative;border-radius:28px;border:3px solid #081c12;
+  background:linear-gradient(165deg,#15422b 0%,#0e3020 55%,#0a2417 100%);
+  box-shadow:inset 0 0 0 2px #e2a93f,inset 0 0 0 4px #081c12,inset 0 0 0 6px rgba(226,169,63,.45),
+             0 26px 60px rgba(0,0,0,.65);
+  font-family:'Playfair Display',serif;color:#f6ead0}
+.orn-frame::before,.orn-frame::after,.orn-frame>.orn::before,.orn-frame>.orn::after{
+  content:'';position:absolute;width:30px;height:30px;pointer-events:none;border:2px solid rgba(240,201,110,.85)}
+.orn-frame::before{top:12px;left:12px;border-width:2px 0 0 2px;border-radius:16px 0 0 0}
+.orn-frame::after{bottom:12px;right:12px;border-width:0 2px 2px 0;border-radius:0 0 16px 0}
+.orn-frame>.orn::before{top:12px;right:12px;border-width:2px 2px 0 0;border-radius:0 16px 0 0}
+.orn-frame>.orn::after{bottom:12px;left:12px;border-width:0 0 2px 2px;border-radius:0 0 0 16px}
+
+.gbtn{position:relative;display:block;width:100%;cursor:pointer;border-radius:13px;
+  padding:15px 54px;font-family:'Playfair Display',serif;font-size:26px;font-weight:700;
+  color:#23180a;background:linear-gradient(180deg,#f8d98a,#d8a63c);border:1.5px solid #f3d489;
+  box-shadow:0 4px 0 #8a6420,0 7px 16px rgba(0,0,0,.35);transition:transform .12s,box-shadow .12s,filter .15s}
+.gbtn::before,.gbtn::after{content:'';position:absolute;top:50%;width:19px;height:23px;transform:translateY(-50%);
+  background:currentColor;opacity:.62;
+  -webkit-mask:var(--cactus-glyph) center/contain no-repeat;mask:var(--cactus-glyph) center/contain no-repeat}
+.gbtn::before{left:20px}
+.gbtn::after{right:20px}
+.gbtn:hover{transform:translateY(-2px);box-shadow:0 6px 0 #8a6420,0 10px 20px rgba(0,0,0,.4)}
+.gbtn:active{transform:translateY(2px);box-shadow:0 1px 0 #8a6420}
+.gbtn.ghost{color:#f6ead0;background:linear-gradient(180deg,#154430,#0c2b1c);border:2px solid #e2a93f;box-shadow:0 4px 0 #071811}
+.gbtn.ghost::before,.gbtn.ghost::after{color:#e2a93f;opacity:.9}
+.gbtn.ghost:hover{box-shadow:0 6px 0 #071811}
+.gbtn.small{font-size:22px;padding:13px 22px;width:auto;white-space:nowrap}
+.gbtn.small::before,.gbtn.small::after{display:none}
+
+.orn-field{display:flex;align-items:center;height:60px;padding:0 18px;margin-bottom:15px;border-radius:13px;
+  background:rgba(3,26,16,.5);border:1.5px solid rgba(226,169,63,.7)}
+.orn-field:focus-within{border-color:#f0c96e}
+.orn-field svg{width:25px;height:25px;flex-shrink:0;fill:#f0c96e}
+.orn-field i{width:1px;height:28px;background:rgba(226,169,63,.45);margin:0 17px;flex-shrink:0}
+.orn-field input{flex:1;min-width:0;background:none;border:none;outline:none;color:#f6ead0;
+  font-family:'Playfair Display',serif;font-size:21px}
+.orn-field input::placeholder{color:rgba(246,234,208,.45)}
+.orn-field input:-webkit-autofill{-webkit-text-fill-color:#f6ead0;-webkit-box-shadow:0 0 0 60px #0d2c1c inset}
+
+.orn-or{display:flex;align-items:center;gap:16px;margin:20px 2px;font-size:19px;color:rgba(246,234,208,.65)}
+.orn-or::before,.orn-or::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(226,169,63,.7),transparent)}
+
 /* ── ACCUEIL (Se connecter / S'inscrire / Jouer en invité) ──
    Même langage visuel que la fenêtre Amis : vert désert, filets dorés,
    titres en Playfair. Aucun emoji : le cactus est un dessin SVG. */
 .home-logo{text-align:center;display:flex;flex-direction:column;align-items:center;gap:2px}
-.home-cactus{width:84px;height:98px;filter:drop-shadow(0 6px 14px rgba(0,0,0,.55))}
-.home-logo h1{font-family:'Playfair Display',serif;font-size:92px;font-weight:700;line-height:1;color:#f6ead0;
-  letter-spacing:.12em;text-indent:.12em;margin-top:10px;text-shadow:0 4px 16px rgba(0,0,0,.55)}
-.home-logo p{font-family:'Playfair Display',serif;font-size:19px;color:rgba(246,234,208,.62);
-  letter-spacing:.34em;text-indent:.34em;text-transform:uppercase;margin-top:10px}
-.home-panel{width:520px;padding:30px 34px 26px;border-radius:20px;text-align:center;
-  background:linear-gradient(180deg,rgba(16,80,50,.72),rgba(3,33,20,.78));
-  border:2px solid #c9953a;box-shadow:0 0 0 4px rgba(4,41,26,.75),0 22px 50px rgba(0,0,0,.6);
-  font-family:'Playfair Display',serif;color:#f6ead0}
-.home-btn{display:block;width:100%;border:none;border-radius:12px;padding:16px;cursor:pointer;
-  font-family:'Playfair Display',serif;font-size:27px;font-weight:700;color:#1d1407;
-  background:linear-gradient(180deg,#f7d27a,#dca640);box-shadow:0 4px 0 #8a6420;transition:transform .12s,box-shadow .12s}
-.home-btn:hover{transform:translateY(-2px);box-shadow:0 6px 0 #8a6420}
-.home-btn:active{transform:translateY(2px);box-shadow:0 1px 0 #8a6420}
-.home-btn.ghost{margin-top:14px;color:#f6ead0;background:rgba(2,28,17,.55);
-  border:1.5px solid rgba(201,149,58,.55);box-shadow:none}
-.home-btn.ghost:hover{border-color:#f0c96e;transform:translateY(-2px);box-shadow:none}
-.home-sep{display:flex;align-items:center;gap:14px;margin:22px 2px 18px}
+.home-logo h1{font-family:'Playfair Display',serif;font-size:96px;font-weight:700;line-height:1;
+  letter-spacing:.06em;text-indent:.06em;
+  background:linear-gradient(180deg,#fdf3d2 12%,#efc87c 52%,#cf9f3d 100%);-webkit-background-clip:text;
+  background-clip:text;color:transparent;filter:drop-shadow(0 4px 10px rgba(0,0,0,.6))}
+/* Le U du logo est un cactus, comme sur la maquette */
+.home-logo h1 .logo-u{display:inline-block;width:.6em;height:.78em;vertical-align:-.02em;margin:0 .02em;
+  background:linear-gradient(180deg,#fdf3d2 12%,#efc87c 52%,#cf9f3d 100%);
+  -webkit-mask:var(--cactus-glyph) center/contain no-repeat;mask:var(--cactus-glyph) center/contain no-repeat}
+.home-logo p{font-family:'Playfair Display',serif;font-size:20px;color:#e9c987;
+  letter-spacing:.3em;text-indent:.3em;text-transform:uppercase;margin-top:12px}
+.home-orn{display:flex;align-items:center;gap:12px;width:420px;margin:12px 0 26px}
+.home-orn i{flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(226,169,63,.85),transparent)}
+.home-orn b{width:11px;height:11px;transform:rotate(45deg);border-radius:2px;
+  background:linear-gradient(135deg,#fdf3d2,#d8a63c);flex-shrink:0}
+.home-panel{width:560px;padding:34px 38px 30px;text-align:center}
+/* Bloc Rejoindre / Créer */
+.join-panel{width:560px;padding:30px 36px 28px}
+.wood-band{position:relative;margin:0 14px 24px;padding:12px 44px;border-radius:12px;text-align:center;
+  font-size:27px;font-weight:700;color:#f6ead0;text-shadow:0 2px 4px rgba(0,0,0,.6);
+  background:linear-gradient(180deg,#6d4c2c,#4a3119 60%,#3d2814);
+  border:2px solid #c9953a;box-shadow:inset 0 0 20px rgba(0,0,0,.5),0 4px 12px rgba(0,0,0,.45)}
+.wood-band::before,.wood-band::after{content:'';position:absolute;top:50%;width:11px;height:11px;
+  transform:translateY(-50%) rotate(45deg);border-radius:2px;background:linear-gradient(135deg,#fdf3d2,#d8a63c)}
+.wood-band::before{left:18px}
+.wood-band::after{right:18px}
+.join-row{display:flex;gap:14px;align-items:stretch}
+.join-row .orn-field{flex:1}
+.join-row .gbtn.small{height:60px;margin-bottom:15px}
+.join-panel .error-msg{margin-top:12px;font-family:'Inter',sans-serif}
+/* Fenêtre Connexion / Inscription */
+.auth-panel{position:relative;width:620px;padding:30px 36px 32px;
+  animation:slideUp .25s cubic-bezier(.34,1.56,.64,1) both}
+.auth-panel>.cactus-close{top:16px;right:18px;width:42px;height:42px}
+.auth-panel .auth-tabs{display:flex;margin:4px 46px 26px 6px;padding-bottom:14px;
+  border-bottom:1px solid rgba(226,169,63,.28)}
+.auth-panel .auth-tab{flex:1;background:none;border:none;cursor:pointer;padding:4px 0;
+  font-family:'Playfair Display',serif;font-size:32px;font-weight:700;color:rgba(246,234,208,.42);
+  border-bottom:none;transition:color .15s}
+.auth-panel .auth-tab:hover{color:rgba(246,234,208,.75)}
+.auth-panel .auth-tab.on{color:#f6ead0}
+.auth-panel .auth-tab.on::after{content:'';position:absolute;margin:0 auto;left:0;right:0;width:0;height:0}
+.auth-panel .auth-tab{position:relative}
+.auth-panel .auth-tab.on::before{content:'';position:absolute;left:14%;right:14%;bottom:-15px;height:2px;
+  background:linear-gradient(90deg,transparent,#e2a93f 18%,#e2a93f 82%,transparent)}
+.auth-panel .auth-tab.on::after{content:'';position:absolute;left:50%;bottom:-19px;width:10px;height:10px;
+  transform:translateX(-50%) rotate(45deg);border-radius:2px;background:linear-gradient(135deg,#fdf3d2,#d8a63c)}
+.auth-err{font-family:'Inter',sans-serif;color:#ff9a86;font-size:14px;text-align:center;min-height:18px;margin:2px 0 10px}
+.auth-note{font-family:'Inter',sans-serif;font-size:13px;color:rgba(246,234,208,.5);text-align:center;margin-top:14px}
+.home-panel .gbtn+.gbtn{margin-top:16px}
+.home-sep{display:flex;align-items:center;gap:14px;margin:24px 2px 18px}
 .home-sep i{flex:1;height:2px;background:linear-gradient(90deg,transparent,rgba(201,149,58,.85),transparent)}
 .home-sep svg{width:17px;height:20px;fill:rgba(201,149,58,.75);flex-shrink:0}
 .home-guest{background:none;border:none;cursor:pointer;font-family:'Playfair Display',serif;font-size:21px;
@@ -1182,29 +1261,34 @@ body.anim-lock #react-dock{ pointer-events:auto; }
 <!-- LOBBY -->
 <div id="s-lobby" class="screen active">
   <div class="home-logo">
-    <svg class="home-cactus" viewBox="0 0 24 28"><path fill="#6fa64a" d="M10.3 2a1.7 1.7 0 0 1 3.4 0v12.5h2.6a1 1 0 0 0 1-1V8a1.7 1.7 0 0 1 3.4 0v5.5a4.3 4.3 0 0 1-4.3 4.3h-2.7V27h-3.4v-6H7.7a4.3 4.3 0 0 1-4.3-4.3V11a1.7 1.7 0 0 1 3.4 0v5.7a1 1 0 0 0 1 1h2.5z"/></svg>
-    <h1>CACTUS</h1>
+    <h1>CACT<span class="logo-u"></span>S</h1>
     <p>Jeu de cartes en ligne</p>
+    <div class="home-orn"><i></i><b></b><i></i></div>
   </div>
   <!-- ACCUEIL COMPTE (V2) -->
-  <div class="home-panel" id="home-account">
-    <button class="home-btn" onclick="openAuth('login')">Se connecter</button>
-    <button class="home-btn ghost" onclick="openAuth('register')">S'inscrire</button>
+  <div class="home-panel orn-frame" id="home-account"><span class="orn"></span>
+    <button class="gbtn" onclick="openAuth('login')">Se connecter</button>
+    <button class="gbtn ghost" onclick="openAuth('register')">S'inscrire</button>
     <div class="home-sep"><i></i><svg viewBox="0 0 24 28"><path d="M10.3 2a1.7 1.7 0 0 1 3.4 0v12.5h2.6a1 1 0 0 0 1-1V8a1.7 1.7 0 0 1 3.4 0v5.5a4.3 4.3 0 0 1-4.3 4.3h-2.7V27h-3.4v-6H7.7a4.3 4.3 0 0 1-4.3-4.3V11a1.7 1.7 0 0 1 3.4 0v5.7a1 1 0 0 0 1 1h2.5z"/></svg><i></i></div>
     <button class="home-guest" onclick="playGuest()">Jouer en invité</button>
-    <p class="home-note">Sans compte, tes parties et tes statistiques ne sont pas enregistrées.</p>
   </div>
 
   <!-- REJOINDRE / CRÉER (invité ou connecté) -->
-  <div class="lobby-box" id="lobby-main" style="display:none">
-    <h2>Rejoindre ou créer</h2>
-    <input class="ninput" id="player-name" placeholder="Votre prénom" maxlength="20" style="margin-bottom:12px">
-    <div style="display:flex;gap:10px;margin-bottom:12px">
-      <input class="ninput" id="room-code" placeholder="Code (ex: 1234)" maxlength="4" inputmode="numeric" style="text-align:center;font-size:18px;letter-spacing:.1em">
-      <button class="start-btn" style="padding:0 16px;font-size:14px;white-space:nowrap" onclick="joinRoom()">Rejoindre</button>
+  <div class="join-panel orn-frame" id="lobby-main" style="display:none"><span class="orn"></span>
+    <div class="wood-band">Rejoindre / Créer</div>
+    <label class="orn-field">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="7.5" r="4.2"/><path d="M3.8 21c0-4.3 3.7-7 8.2-7s8.2 2.7 8.2 7v1H3.8z"/></svg><i></i>
+      <input id="player-name" placeholder="Votre prénom" maxlength="20">
+    </label>
+    <div class="join-row">
+      <label class="orn-field">
+        <svg viewBox="0 0 24 24"><path d="M9.2 3h2.2l-.8 5h4l.8-5h2.2l-.8 5H20v2.2h-3.5l-.6 3.6H19v2.2h-3.5l-.8 5h-2.2l.8-5h-4l-.8 5H6.3l.8-5H4v-2.2h3.5l.6-3.6H5v-2.2h3.5zm.1 7.2-.6 3.6h4l.6-3.6z"/></svg><i></i>
+        <input id="room-code" placeholder="Code" maxlength="4" inputmode="numeric">
+      </label>
+      <button class="gbtn small" onclick="joinRoom()">Rejoindre</button>
     </div>
-    <div style="color:rgba(255,255,255,.3);font-size:12px;margin:8px 0;text-align:center">— ou —</div>
-    <button class="start-btn" onclick="createRoom()">Créer une partie</button>
+    <div class="orn-or">ou</div>
+    <button class="gbtn" onclick="createRoom()">Créer une partie</button>
     <div class="error-msg" id="lobby-error"></div>
   </div>
   <div class="lobby-box" id="lobby-waiting" style="display:none">
@@ -2336,21 +2420,27 @@ function pickNickname(i){
 let currentUser = null;   // null = invité ; sinon { username, friendCode, stats, history }
 let TITLES = [];          // titres disponibles, envoyés par le serveur à la connexion
 
+const ICON_USER = '<svg viewBox="0 0 24 24"><circle cx="12" cy="7.5" r="4.2"/><path d="M3.8 21c0-4.3 3.7-7 8.2-7s8.2 2.7 8.2 7v1H3.8z"/></svg>';
+const ICON_MAIL = '<svg viewBox="0 0 24 24"><path d="M2.5 5.5h19v13h-19zm1.8 1.4 7.7 5.6 7.7-5.6z"/></svg>';
+const ICON_LOCK = '<svg viewBox="0 0 24 24"><path d="M7 10V7.5a5 5 0 0 1 10 0V10h1.6v11H5.4V10zm2.4 0h5.2V7.5a2.6 2.6 0 0 0-5.2 0zm1.4 5.2v3h2.4v-3z"/></svg>';
+
 function openAuth(mode){
   const login = mode !== 'register';
-  qid('modal-root').innerHTML = `<div class="modal-bg"><div class="modal-box">
+  const field = (id, icon, ph, extra = '') =>
+    `<label class="orn-field">${icon}<i></i><input id="${id}" placeholder="${ph}" ${extra}></label>`;
+  qid('modal-root').innerHTML = `<div class="modal-bg"><div class="auth-panel orn-frame"><span class="orn"></span>
     <button class="cactus-close" onclick="qid('modal-root').innerHTML=''" aria-label="Fermer" title="Fermer"></button>
     <div class="auth-tabs">
       <button class="auth-tab ${login?'on':''}" onclick="openAuth('login')">Connexion</button>
       <button class="auth-tab ${!login?'on':''}" onclick="openAuth('register')">Inscription</button>
     </div>
-    <input id="auth-email" class="auth-field" type="email" placeholder="Adresse email" autocomplete="email" inputmode="email">
-    ${!login ? '<input id="auth-username" class="auth-field" placeholder="Pseudo (lettres uniquement, sans espace)" maxlength="16" autocomplete="nickname">' : ''}
-    <input id="auth-pw" class="auth-field" type="password" placeholder="Mot de passe" autocomplete="${login?'current-password':'new-password'}">
-    ${!login ? '<input id="auth-pw2" class="auth-field" type="password" placeholder="Confirmer le mot de passe">' : ''}
-    <div id="auth-error" style="color:#ff7a63;font-size:13px;text-align:center;min-height:16px;margin:4px 0"></div>
-    <button class="set-btn" id="auth-submit" style="transition:filter .15s,opacity .15s">${login?'Se connecter':"S'inscrire"}</button>
-    ${!login ? '<p style="font-size:12px;color:rgba(255,255,255,.4);text-align:center;margin-top:10px">Un code ami unique sera généré à l\'inscription.</p>' : ''}
+    ${field('auth-email', login ? ICON_USER : ICON_MAIL, 'Adresse email', 'type="email" autocomplete="email" inputmode="email"')}
+    ${!login ? field('auth-username', ICON_USER, 'Pseudo (lettres uniquement, sans espace)', 'maxlength="16" autocomplete="nickname"') : ''}
+    ${field('auth-pw', ICON_LOCK, 'Mot de passe', `type="password" autocomplete="${login?'current-password':'new-password'}"`)}
+    ${!login ? field('auth-pw2', ICON_LOCK, 'Confirmer le mot de passe', 'type="password"') : ''}
+    <div id="auth-error" class="auth-err"></div>
+    <button class="gbtn" id="auth-submit" style="transition:filter .15s,opacity .15s">${login?'Se connecter':"S'inscrire"}</button>
+    ${!login ? '<p class="auth-note">Un code ami unique sera généré à l\'inscription.</p>' : ''}
   </div></div>`;
   // Light up submit when all fields are filled
   const fields = ['auth-email', !login&&'auth-username', 'auth-pw', !login&&'auth-pw2'].filter(Boolean);
