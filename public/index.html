@@ -558,6 +558,9 @@ body[data-screen="lobby"] #profile-btn{display:block}
 #home-account,#lobby-main,#auth-host,#lobby-waiting{position:absolute;left:50%;top:630px;transform:translate(-50%,-50%)}
 /* Connexion / Inscription sont les plus hauts des panneaux : on les remonte un peu. */
 #auth-host{top:588px}
+/* La salle d'attente s'allonge avec le nombre de joueurs : elle est accrochee par
+   le haut, juste sous le trait du titre, au lieu d'etre centree. */
+#lobby-waiting{top:356px;transform:translateX(-50%)}
 .lobby-box{
   background:rgba(0,0,0,.4);
   border:1px solid rgba(255,255,255,.1);
