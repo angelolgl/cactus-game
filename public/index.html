@@ -529,6 +529,10 @@ body[data-screen="lobby"] #profile-btn{display:block}
 /* La croix reste bien à l'intérieur du cadre peint, dont les bords rentrent
    vers l'intérieur aux angles : d'où la marge en pourcentage. */
 .ui-panel>.cactus-close{top:8%;right:6.5%;width:32px;height:32px}
+.ui-login>.cactus-close,.ui-register>.cactus-close{top:9.5%;right:7.5%;width:28px;height:28px}
+/* Un panneau en remplace un autre : fondu court, sans glissement ni empilement */
+.ui-panel{animation:uiIn .16s ease both}
+@keyframes uiIn{from{opacity:0}to{opacity:1}}
 .ui-err{position:absolute;left:8%;right:8%;bottom:-30px;text-align:center;
   font-family:'Poppins',sans-serif;font-size:14px;color:#ff9a86;min-height:18px}
 
@@ -1208,6 +1212,10 @@ body.anim-lock #react-dock{ pointer-events:auto; }
     <button class="ui-hot" style="left:7.1%;top:73.3%;width:85.8%;height:14.7%" onclick="createRoom()" aria-label="Créer une partie"></button>
     <div class="ui-err" id="lobby-error"></div>
   </div>
+
+  <!-- La fenêtre Connexion / Inscription se pose ici : elle REMPLACE le panneau
+       précédent au lieu de s'ouvrir par-dessus. -->
+  <div id="auth-host" style="display:none"></div>
 
   <div class="lobby-box" id="lobby-waiting" style="display:none">
     <div class="lw-head"><h2>Salle d'attente</h2><button class="lw-quit" onclick="leaveWaiting()">Quitter</button></div>
@@ -2347,6 +2355,19 @@ const ICON_USER = '<svg viewBox="0 0 24 24"><circle cx="12" cy="7.5" r="4.2"/><p
 const ICON_MAIL = '<svg viewBox="0 0 24 24"><path d="M2.5 5.5h19v13h-19zm1.8 1.4 7.7 5.6 7.7-5.6z"/></svg>';
 const ICON_LOCK = '<svg viewBox="0 0 24 24"><path d="M7 10V7.5a5 5 0 0 1 10 0V10h1.6v11H5.4V10zm2.4 0h5.2V7.5a2.6 2.6 0 0 0-5.2 0zm1.4 5.2v3h2.4v-3z"/></svg>';
 
+// Panneau que la fenêtre Connexion / Inscription a remplacé, pour y revenir.
+let _authFrom = 'home-account';
+function closeAuth(){
+  const host = qid('auth-host');
+  if (!host || host.style.display === 'none') return;
+  host.innerHTML = '';
+  host.style.display = 'none';
+  // Une fois connecté, on repart sur Rejoindre / Créer plutôt que sur l'accueil.
+  const back = (currentUser && _authFrom === 'home-account') ? 'lobby-main' : _authFrom;
+  const el = qid(back);
+  if (el) el.style.display = 'block';
+}
+
 function openAuth(mode){
   const login = mode !== 'register';
   // Les libellés sont peints dans les maquettes (public/ui-login.webp et
@@ -2366,11 +2387,19 @@ function openAuth(mode){
        ${field('auth-pw', 52.9, 'Mot de passe', 'type="password" autocomplete="new-password"')}
        ${field('auth-pw2', 66.5, 'Confirmer le mot de passe', 'type="password"')}
        <button class="ui-hot" id="auth-submit" style="left:8.8%;top:78.5%;width:82.3%;height:12.3%" aria-label="S'inscrire"></button>`;
-  qid('modal-root').innerHTML = `<div class="modal-bg"><div class="ui-panel ${login?'ui-login':'ui-register'}">
-    <button class="cactus-close" onclick="qid('modal-root').innerHTML=''" aria-label="Fermer" title="Fermer"></button>
+  const panel = `<div class="ui-panel ${login?'ui-login':'ui-register'}">
+    <button class="cactus-close" onclick="closeAuth()" aria-label="Fermer" title="Fermer"></button>
     ${tabs}${body}
     <div id="auth-error" class="ui-err"></div>
-  </div></div>`;
+  </div>`;
+  const host = qid('auth-host');
+  // On retient le panneau qu'on remplace, pour y revenir en fermant.
+  if (host.style.display === 'none') {
+    _authFrom = (qid('lobby-main').style.display !== 'none') ? 'lobby-main' : 'home-account';
+    qid(_authFrom).style.display = 'none';
+    host.style.display = 'block';
+  }
+  host.innerHTML = panel;
 
   // Light up submit when all fields are filled
   const fields = ['auth-email', !login&&'auth-username', 'auth-pw', !login&&'auth-pw2'].filter(Boolean);
@@ -2671,8 +2700,9 @@ function gameDialog({ title, text, html, buttons }){
 }
 
 // ── Navigation accueil (invité) ──
-function playGuest(){ qid('home-account').style.display='none'; qid('lobby-main').style.display='block'; }
-function backToHome(){ qid('lobby-main').style.display='none'; qid('home-account').style.display='block'; }
+function playGuest(){ _hideAuthHost(); qid('home-account').style.display='none'; qid('lobby-main').style.display='block'; }
+function backToHome(){ _hideAuthHost(); qid('lobby-main').style.display='none'; qid('home-account').style.display='block'; }
+function _hideAuthHost(){ const h=qid('auth-host'); if(h){ h.innerHTML=''; h.style.display='none'; } }
 function copyFriendCode(){ const v=qid('pd-code-val'); if(v && navigator.clipboard){ navigator.clipboard.writeText(v.textContent).then(()=>showToast('Code ami copié', 'ok')).catch(()=>{}); } }
 function logoutAccount(){
   let t = null; try { t = localStorage.getItem('cactus_token'); } catch(e){}
@@ -2711,6 +2741,7 @@ function _registerSocketHandlers() {
       if (token) { try { localStorage.setItem('cactus_token', token); } catch(e){} }
       updateAuthUI();
       qid('modal-root').innerHTML = '';
+      closeAuth();                 // la fenêtre laisse la place au panneau suivant
       socket.emit('getFriends');   // pastille des demandes + relations dans le lobby
       showToast('Bon retour, ' + (user.username || user.email) + ' !', 'ok');
     } else if (expired) {
