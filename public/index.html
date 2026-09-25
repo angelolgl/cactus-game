@@ -517,8 +517,11 @@ body[data-screen="lobby"] #profile-btn{display:block}
 /* Au survol on n'affiche pas de rectangle : le mélange « color-dodge » n'éclaire
    que ce qui est déjà clair, donc seuls le texte et l'or ressortent, le fond
    vert sombre ne bouge presque pas. */
-.ui-hot:hover{background:#242424;mix-blend-mode:color-dodge}
-.ui-hot:active{background:#3a3a3a}
+/* Le dégradé s'éteint sur les bords (noir = aucun effet en color-dodge), donc
+   aucun rectangle n'apparaît : seul le texte, déjà clair, gagne en éclat. */
+.ui-hot:hover{background:radial-gradient(62% 78% at 50% 50%,#1b1b1b 0%,#0b0b0b 55%,#000 100%);
+  mix-blend-mode:color-dodge}
+.ui-hot:active{background:radial-gradient(62% 78% at 50% 50%,#2c2c2c 0%,#111 55%,#000 100%)}
 .ui-hot.off{background:rgba(2,18,11,.5);mix-blend-mode:normal;cursor:default}
 .ui-hot.off:hover{background:rgba(2,18,11,.5);mix-blend-mode:normal}
 /* Champ de saisie posé dans le cadre peint, après l'icône et le trait */
@@ -539,6 +542,8 @@ body[data-screen="lobby"] #profile-btn{display:block}
 
 /* ── LOBBY ── */
 #s-lobby{
+  position:absolute;
+  inset:0;
   flex-direction:column;
   align-items:center;
   justify-content:center;
@@ -546,6 +551,11 @@ body[data-screen="lobby"] #profile-btn{display:block}
   padding:24px;
   overflow-y:auto;
 }
+/* Le titre fait partie du décor : il est posé à une place fixe et ne bouge plus
+   quand on passe d'un panneau à l'autre. Les panneaux, eux, sont centrés sur un
+   même point, donc ils grandissent vers le haut et vers le bas sans rien pousser. */
+#s-lobby > .ui-logo{position:absolute;top:96px;left:50%;transform:translateX(-50%)}
+#home-account,#lobby-main,#auth-host{position:absolute;left:50%;top:630px;transform:translate(-50%,-50%)}
 .lobby-box{
   background:rgba(0,0,0,.4);
   border:1px solid rgba(255,255,255,.1);
