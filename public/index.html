@@ -273,9 +273,9 @@ body.anim-lock #chat-widget{pointer-events:auto}
 body[data-screen="lobby"] #profile-btn{display:block}
 #drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .25s;z-index:750}
 #drawer-overlay.show{opacity:1;pointer-events:auto}
-#profile-drawer{position:fixed;top:0;right:0;height:100%;width:300px;max-width:82vw;background:linear-gradient(180deg,#0c2e20,#081b13);border-left:1px solid var(--gold);box-shadow:-10px 0 40px rgba(0,0,0,.5);z-index:700;transform:translateX(100%);transition:transform .28s cubic-bezier(.3,.7,.3,1);display:flex;flex-direction:column;padding:22px 18px}
+#profile-drawer{position:fixed;top:0;right:0;height:100%;width:300px;max-width:82vw;background:linear-gradient(180deg,#0c2e20,#081b13);border-left:2px solid #e2a93f;box-shadow:-10px 0 40px rgba(0,0,0,.5);z-index:700;transform:translateX(100%);transition:transform .28s cubic-bezier(.3,.7,.3,1);display:flex;flex-direction:column;padding:22px 18px}
 #profile-drawer.open{transform:translateX(0)}
-.pd-head{display:flex;flex-direction:column;align-items:center;text-align:center;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:14px}
+.pd-head{display:flex;flex-direction:column;align-items:center;text-align:center;padding-bottom:16px;border-bottom:1px solid rgba(226,169,63,.3);margin-bottom:14px}
 .pd-avatar{width:78px;height:78px;border-radius:50%;object-fit:cover;border:3px solid var(--gold);box-shadow:0 0 0 4px rgba(212,168,75,.18);cursor:pointer}
 .pd-name{font-size:18px;font-weight:700;color:#fff;margin-top:10px}
 .pd-code{display:flex;align-items:center;gap:8px;margin-top:8px;background:rgba(20,45,32,.8);border-radius:8px;padding:4px 10px}
@@ -284,9 +284,9 @@ body[data-screen="lobby"] #profile-btn{display:block}
 .pd-cta{margin-top:12px;width:100%;background:linear-gradient(180deg,var(--gold),#b8860b);color:#1a1a1a;font-weight:700;border:none;border-radius:10px;padding:10px;font-size:14px;cursor:pointer}
 .pd-cta:hover{filter:brightness(1.06)}
 .pd-nav{display:flex;flex-direction:column;gap:8px}
-.pd-item{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:12px 14px;color:#fff;font-size:15px;cursor:pointer;transition:background .12s}
-.pd-item:hover{background:rgba(212,168,75,.14)}
-.pd-ic{font-size:17px;width:22px;text-align:center}
+.pd-item{display:flex;align-items:center;gap:13px;width:100%;text-align:left;background:rgba(4,28,18,.55);border:1.5px solid rgba(226,169,63,.32);border-radius:12px;padding:13px 15px;color:#f6ead0;font-family:'Poppins',sans-serif;font-size:15px;font-weight:500;cursor:pointer;transition:background .12s,border-color .12s}
+.pd-item:hover{background:rgba(14,56,35,.75);border-color:#f0c96e}
+.pd-ic{width:22px;height:22px;flex-shrink:0;fill:#f0c96e}
 .pd-lock{margin-left:auto;font-size:11px;font-weight:700;color:var(--gold-light);opacity:.85}
 .pd-item.locked .pd-lock{ display:inline; }
 .pd-item:not(.locked) .pd-lock{ display:none; }
@@ -1351,11 +1351,11 @@ body.anim-lock #react-dock{ pointer-events:auto; }
     <button id="pd-cta" class="pd-cta" onclick="openAuth('login')">Se connecter / S'inscrire</button>
   </div>
   <nav class="pd-nav">
-    <button class="pd-item" onclick="openProfil()"><span class="pd-ic">👤</span> Profil</button>
-    <button class="pd-item" onclick="showSettings()"><span class="pd-ic">⚙️</span> Paramètres</button>
-    <button class="pd-item" id="pd-history" onclick="openHistory()"><span class="pd-ic">🕓</span> Historique <span class="pd-lock">Se connecter</span></button>
-    <button class="pd-item" id="pd-friends" onclick="openFriends()"><span class="pd-ic">👥</span> Mes amis <span class="pd-lock">Se connecter</span></button>
-    <button class="pd-item" id="pd-logout" style="display:none" onclick="logoutAccount()"><span class="pd-ic">🚪</span> Déconnexion</button>
+    <button class="pd-item" onclick="openProfil()"><svg class='pd-ic' viewBox='0 0 24 24'><circle cx='12' cy='7.6' r='4.2'/><path d='M3.8 21c0-4.3 3.7-7.1 8.2-7.1s8.2 2.8 8.2 7.1v.8H3.8z'/></svg> Profil</button>
+    <button class="pd-item" onclick="showSettings()"><svg class='pd-ic' viewBox='0 0 24 24'><path d='M12 8.4a3.6 3.6 0 1 0 0 7.2 3.6 3.6 0 0 0 0-7.2zm0 2a1.6 1.6 0 1 1 0 3.2 1.6 1.6 0 0 1 0-3.2z'/><path d='M10.6 1.8h2.8l.4 2.5c.6.2 1.2.5 1.7.9l2.3-1 1.4 2.4-1.9 1.6c.1.6.1 1.2 0 1.8l1.9 1.6-1.4 2.4-2.3-1c-.5.4-1.1.7-1.7.9l-.4 2.5h-2.8l-.4-2.5c-.6-.2-1.2-.5-1.7-.9l-2.3 1-1.4-2.4 1.9-1.6a6.6 6.6 0 0 1 0-1.8L4.8 6.6l1.4-2.4 2.3 1c.5-.4 1.1-.7 1.7-.9z' transform='translate(0 2.2)'/></svg> Paramètres</button>
+    <button class="pd-item" id="pd-history" onclick="openHistory()"><svg class='pd-ic' viewBox='0 0 24 24'><path d='M12 2.6a9.4 9.4 0 1 0 9.4 9.4A9.4 9.4 0 0 0 12 2.6zm0 2.2a7.2 7.2 0 1 1-7.2 7.2A7.2 7.2 0 0 1 12 4.8z'/><path d='M11 6.6h2v5.9l4 2.4-1 1.7-5-3z'/></svg> Historique <span class="pd-lock">Se connecter</span></button>
+    <button class="pd-item" id="pd-friends" onclick="openFriends()"><svg class='pd-ic' viewBox='0 0 24 24'><circle cx='8.4' cy='7.6' r='3.8'/><circle cx='16.8' cy='7.2' r='3.3'/><path d='M1.4 20.6c0-3.9 3.2-6.3 7-6.3s7 2.4 7 6.3v.8h-14z'/><path d='M16.8 13.4c3.6 0 6.4 2 6.4 5.5v1.7h-6.1c0-2.6-.9-4.7-2.6-6.2.7-.6 1.5-1 2.3-1z'/></svg> Mes amis <span class="pd-lock">Se connecter</span></button>
+    <button class="pd-item" id="pd-logout" style="display:none" onclick="logoutAccount()"><svg class='pd-ic' viewBox='0 0 24 24'><path d='M4 3h8.5v2.1H6.1v13.8h6.4V21H4z'/><path d='m14.8 7.4 4.9 4.6-4.9 4.6-1.5-1.5 2.3-2.1H9.4v-2h6.2l-2.3-2.1z'/></svg> Déconnexion</button>
   </nav>
 </aside>
 </div><!-- #stage -->
