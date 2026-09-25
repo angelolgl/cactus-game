@@ -514,17 +514,21 @@ body[data-screen="lobby"] #profile-btn{display:block}
 /* Zone cliquable transparente posée sur un bouton peint dans l'image */
 .ui-hot{position:absolute;border:none;background:transparent;cursor:pointer;border-radius:16px;padding:0;
   transition:box-shadow .12s,transform .1s,background .15s}
-.ui-hot:hover{box-shadow:inset 0 0 40px rgba(255,255,255,.2)}
-.ui-hot:active{transform:translateY(2px)}
-.ui-hot.off{background:rgba(2,18,11,.5);cursor:default}
-.ui-hot.off:hover{box-shadow:none}
+/* Au survol on n'affiche pas de rectangle : le mélange « color-dodge » n'éclaire
+   que ce qui est déjà clair, donc seuls le texte et l'or ressortent, le fond
+   vert sombre ne bouge presque pas. */
+.ui-hot:hover{background:#242424;mix-blend-mode:color-dodge}
+.ui-hot:active{background:#3a3a3a}
+.ui-hot.off{background:rgba(2,18,11,.5);mix-blend-mode:normal;cursor:default}
+.ui-hot.off:hover{background:rgba(2,18,11,.5);mix-blend-mode:normal}
 /* Champ de saisie posé dans le cadre peint, après l'icône et le trait */
 .ui-in{position:absolute;border:none;outline:none;background:transparent;color:#fdf6e6;
   font-family:'Poppins',sans-serif;font-size:21px;font-weight:400;padding:0}
 .ui-in::placeholder{color:rgba(246,234,208,.45)}
 .ui-in:-webkit-autofill{-webkit-text-fill-color:#fdf6e6;-webkit-box-shadow:0 0 0 80px #0e3221 inset}
-/* La croix reste à l'intérieur du cadre peint */
-.ui-panel>.cactus-close{top:14px;right:16px;width:46px;height:46px}
+/* La croix reste bien à l'intérieur du cadre peint, dont les bords rentrent
+   vers l'intérieur aux angles : d'où la marge en pourcentage. */
+.ui-panel>.cactus-close{top:8%;right:6.5%;width:32px;height:32px}
 .ui-err{position:absolute;left:8%;right:8%;bottom:-30px;text-align:center;
   font-family:'Poppins',sans-serif;font-size:14px;color:#ff9a86;min-height:18px}
 
