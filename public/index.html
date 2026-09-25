@@ -507,10 +507,10 @@ body[data-screen="lobby"] #profile-btn{display:block}
   filter:drop-shadow(0 6px 18px rgba(0,0,0,.75))}
 .ui-panel{position:relative;background-size:100% 100%;background-repeat:no-repeat;flex-shrink:0;
   font-family:'Poppins',sans-serif;color:#f6ead0;filter:drop-shadow(0 20px 40px rgba(0,0,0,.5))}
-.ui-home{width:780px;height:455px;background-image:url('/ui-home.webp')}
-.ui-join{width:740px;height:500px;background-image:url('/ui-join.webp')}
-.ui-login{width:740px;height:499px;background-image:url('/ui-login.webp')}
-.ui-register{width:720px;height:512px;background-image:url('/ui-register.webp')}
+.ui-home{width:738px;height:431px;background-image:url('/ui-home.webp')}
+.ui-join{width:638px;height:431px;background-image:url('/ui-join.webp')}
+.ui-login{width:639px;height:431px;background-image:url('/ui-login.webp')}
+.ui-register{width:606px;height:431px;background-image:url('/ui-register.webp')}
 /* Zone cliquable transparente posée sur un bouton peint dans l'image */
 .ui-hot{position:absolute;border:none;background:transparent;cursor:pointer;border-radius:16px;padding:0;
   transition:box-shadow .12s,transform .1s,background .15s}
@@ -554,11 +554,11 @@ body[data-screen="lobby"] #profile-btn{display:block}
 /* Le titre fait partie du décor : il est posé à une place fixe et ne bouge plus
    quand on passe d'un panneau à l'autre. Les panneaux, eux, sont centrés sur un
    même point, donc ils grandissent vers le haut et vers le bas sans rien pousser. */
-#s-lobby > .ui-logo{position:absolute;top:96px;left:50%;transform:translateX(-50%)}
-#home-account,#lobby-main,#auth-host{position:absolute;left:50%;top:356px;transform:translateX(-50%)}
+#s-lobby > .ui-logo{position:absolute;top:134px;left:50%;transform:translateX(-50%)}
+#home-account,#lobby-main,#auth-host{position:absolute;left:50%;top:382px;transform:translateX(-50%)}
 /* La salle d'attente grandit avec le nombre de joueurs : elle est centree dans
    l'ecran, quitte a passer devant le titre, plutot que de descendre trop bas. */
-#lobby-waiting{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)}
+#lobby-waiting{position:absolute;left:50%;top:382px;transform:translateX(-50%);transform-origin:top center}
 .lobby-box{
   background:rgba(0,0,0,.4);
   border:1px solid rgba(255,255,255,.1);
@@ -2897,6 +2897,19 @@ function leaveWaiting(){
   showToast('Tu as quitté la salle', 'info');
 }
 
+// La salle d'attente grandit avec le nombre de joueurs. Elle part sous le trait
+// du titre et ne doit jamais descendre plus bas que l'ornement peint en bas du
+// cadre : au-delà, on la réduit d'un bloc plutôt que de la laisser deborder.
+function fitWaiting(){
+  const el = qid('lobby-waiting');
+  if (!el || el.style.display === 'none') return;
+  el.style.transform = 'translateX(-50%)';
+  const libre = 431;                       // de 382 (sous le titre) a 813
+  const h = el.offsetHeight;
+  const k = h > libre ? libre / h : 1;
+  el.style.transform = 'translateX(-50%)' + (k < 1 ? ' scale(' + k.toFixed(3) + ')' : '');
+}
+
 function showWaiting(code, host) {
   isHost = host;
   qid('home-account').style.display='none';
@@ -2905,6 +2918,7 @@ function showWaiting(code, host) {
   qid('lobby-code-display').textContent = code;
   qid('host-controls').style.display = host ? 'block' : 'none';
   qid('waiting-msg').style.display = host ? 'none' : 'block';
+  fitWaiting();
 }
 
 let selectedCC = 4;
@@ -2966,6 +2980,7 @@ function updateLobbyPlayers(players, host) {
     qid('waiting-msg').style.display = isHost ? 'none' : 'block';
   }
   if (isHost) updateCardCountOptions(norm.length);
+  fitWaiting();
 }
 
 function updateCardCountOptions(n) {
