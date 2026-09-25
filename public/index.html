@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>🌵 Cactus</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600&display=swap');
 :root{
   --felt:#1a5c35;--felt-dark:#0d3520;--felt-light:#236b40;
   --gold:#d4a84b;--gold-light:#f0c96e;
@@ -497,33 +497,36 @@ body[data-screen="lobby"] #profile-btn{display:block}
 @keyframes penaltyIn{from{transform:translateX(30px) scale(.7);opacity:0}to{transform:none;opacity:1}}
 
 /* ── ÉCRANS HORS JEU : LES MAQUETTES SERVENT D'IMAGES ──
-   Chaque écran est une image fournie (public/ui-*.webp) affichée à taille fixe.
-   Les champs de saisie et les zones cliquables sont posés par-dessus, en
+   Chaque écran est une image fournie (public/ui-*.webp) affichée à taille fixe
+   dans la scène 1664x936, donc tous les menus gardent la même échelle. Les
+   champs de saisie et les zones cliquables sont posés par-dessus, en
    pourcentage de l'image : si une image change, il faut remesurer ces valeurs.
-   Les libellés (Se connecter, Votre prénom…) sont peints dans l'image. */
-.ui-logo{width:660px;height:176px;background:url('/ui-logo.webp') center/100% 100% no-repeat;flex-shrink:0}
+   Les libellés (Se connecter, Connexion…) sont peints dans l'image ; seuls les
+   textes saisis sont en Poppins. */
+.ui-logo{width:640px;height:226px;background:url('/ui-logo.webp') center/contain no-repeat;flex-shrink:0;
+  filter:drop-shadow(0 6px 18px rgba(0,0,0,.75))}
 .ui-panel{position:relative;background-size:100% 100%;background-repeat:no-repeat;flex-shrink:0;
-  font-family:'Playfair Display',serif;color:#f6ead0;filter:drop-shadow(0 20px 40px rgba(0,0,0,.5))}
-.ui-home{width:640px;height:393px;background-image:url('/ui-home.webp')}
-.ui-join{width:640px;height:447px;background-image:url('/ui-join.webp')}
-.ui-login{width:660px;height:459px;background-image:url('/ui-login.webp')}
-.ui-register{width:660px;height:495px;background-image:url('/ui-register.webp')}
+  font-family:'Poppins',sans-serif;color:#f6ead0;filter:drop-shadow(0 20px 40px rgba(0,0,0,.5))}
+.ui-home{width:780px;height:455px;background-image:url('/ui-home.webp')}
+.ui-join{width:740px;height:500px;background-image:url('/ui-join.webp')}
+.ui-login{width:740px;height:499px;background-image:url('/ui-login.webp')}
+.ui-register{width:720px;height:512px;background-image:url('/ui-register.webp')}
 /* Zone cliquable transparente posée sur un bouton peint dans l'image */
 .ui-hot{position:absolute;border:none;background:transparent;cursor:pointer;border-radius:16px;padding:0;
   transition:box-shadow .12s,transform .1s,background .15s}
-.ui-hot:hover{box-shadow:inset 0 0 40px rgba(255,255,255,.22)}
+.ui-hot:hover{box-shadow:inset 0 0 40px rgba(255,255,255,.2)}
 .ui-hot:active{transform:translateY(2px)}
-.ui-hot.off{background:rgba(2,18,11,.55);cursor:default}
+.ui-hot.off{background:rgba(2,18,11,.5);cursor:default}
 .ui-hot.off:hover{box-shadow:none}
 /* Champ de saisie posé dans le cadre peint, après l'icône et le trait */
-.ui-in{position:absolute;border:none;outline:none;background:#0b2618;color:#f6ead0;
-  font-family:'Playfair Display',serif;font-size:20px;padding:0 4px}
-.ui-in::placeholder{color:rgba(232,226,212,.55)}
-.ui-in:-webkit-autofill{-webkit-text-fill-color:#f6ead0;-webkit-box-shadow:0 0 0 80px #0b2618 inset}
-.ui-join .ui-in{background:#0c2c1b}
-.ui-panel>.cactus-close{top:-16px;right:-16px;width:54px;height:54px}
+.ui-in{position:absolute;border:none;outline:none;background:transparent;color:#fdf6e6;
+  font-family:'Poppins',sans-serif;font-size:21px;font-weight:400;padding:0}
+.ui-in::placeholder{color:rgba(246,234,208,.45)}
+.ui-in:-webkit-autofill{-webkit-text-fill-color:#fdf6e6;-webkit-box-shadow:0 0 0 80px #0e3221 inset}
+/* La croix reste à l'intérieur du cadre peint */
+.ui-panel>.cactus-close{top:14px;right:16px;width:46px;height:46px}
 .ui-err{position:absolute;left:8%;right:8%;bottom:-30px;text-align:center;
-  font-family:'Inter',sans-serif;font-size:14px;color:#ff9a86;min-height:18px}
+  font-family:'Poppins',sans-serif;font-size:14px;color:#ff9a86;min-height:18px}
 
 
 /* ── LOBBY ── */
@@ -1185,20 +1188,20 @@ body.anim-lock #react-dock{ pointer-events:auto; }
 
   <!-- ACCUEIL : maquette public/ui-home.webp, zones cliquables posées dessus -->
   <div class="ui-panel ui-home" id="home-account">
-    <button class="ui-hot" style="left:8.6%;top:16%;width:82.8%;height:19.3%" onclick="openAuth('login')" aria-label="Se connecter"></button>
-    <button class="ui-hot" style="left:8.6%;top:39.1%;width:82.8%;height:19.6%" onclick="openAuth('register')" aria-label="S'inscrire"></button>
-    <button class="ui-hot" style="left:33%;top:74%;width:34%;height:12%" onclick="playGuest()" aria-label="Jouer en invité"></button>
+    <button class="ui-hot" style="left:14%;top:19.7%;width:72.2%;height:18.3%" onclick="openAuth('login')" aria-label="Se connecter"></button>
+    <button class="ui-hot" style="left:14%;top:41.3%;width:72.2%;height:18%" onclick="openAuth('register')" aria-label="S'inscrire"></button>
+    <button class="ui-hot" style="left:36%;top:73.5%;width:28%;height:11%" onclick="playGuest()" aria-label="Jouer en invité"></button>
   </div>
 
   <!-- REJOINDRE / CRÉER : maquette public/ui-join.webp -->
   <div class="ui-panel ui-join" id="lobby-main" style="display:none">
     <button class="cactus-close" onclick="backToHome()" aria-label="Retour" title="Retour"></button>
     <input class="ui-in" id="player-name" placeholder="Votre prénom" maxlength="20"
-           style="left:18.5%;top:32.4%;width:71.5%;height:7.4%">
+           style="left:17%;top:33.8%;width:73%;height:6.5%">
     <input class="ui-in" id="room-code" placeholder="Code" maxlength="4" inputmode="numeric"
-           style="left:18.5%;top:47.6%;width:35%;height:7.4%">
-    <button class="ui-hot" style="left:58.4%;top:44.5%;width:33.7%;height:13.6%" onclick="joinRoom()" aria-label="Rejoindre"></button>
-    <button class="ui-hot" style="left:8.3%;top:74.2%;width:83.6%;height:15.1%" onclick="createRoom()" aria-label="Créer une partie"></button>
+           style="left:17%;top:50.8%;width:40%;height:6.5%">
+    <button class="ui-hot" style="left:61.2%;top:47.6%;width:32%;height:13.5%" onclick="joinRoom()" aria-label="Rejoindre"></button>
+    <button class="ui-hot" style="left:7.1%;top:73.3%;width:85.8%;height:14.7%" onclick="createRoom()" aria-label="Créer une partie"></button>
     <div class="ui-err" id="lobby-error"></div>
   </div>
 
@@ -2346,20 +2349,19 @@ function openAuth(mode){
   // ui-register.webp) : on pose seulement les champs de saisie et les zones
   // cliquables, aux positions mesurées sur ces images.
   const field = (id, top, ph, extra = '') =>
-    `<input class="ui-in" id="${id}" placeholder="${ph}" ${extra} style="left:21%;top:${top}%;width:67%;height:6.6%">`;
-  const tabTop = login ? 9 : 7;
+    `<input class="ui-in" id="${id}" placeholder="${ph}" ${extra} style="left:${login?22:23}%;top:${top}%;width:${login?68:66}%;height:${login?7.5:5.8}%">`;
   const tabs = `
-    <button class="ui-hot" style="left:8%;top:${tabTop}%;width:40%;height:15%" onclick="openAuth('login')" aria-label="Connexion"></button>
-    <button class="ui-hot" style="left:52%;top:${tabTop}%;width:40%;height:15%" onclick="openAuth('register')" aria-label="Inscription"></button>`;
+    <button class="ui-hot" style="left:11%;top:8%;width:38%;height:14%" onclick="openAuth('login')" aria-label="Connexion"></button>
+    <button class="ui-hot" style="left:53%;top:8%;width:36%;height:14%" onclick="openAuth('register')" aria-label="Inscription"></button>`;
   const body = login
-    ? `${field('auth-email', 33.6, 'Adresse email', 'type="email" autocomplete="email" inputmode="email"')}
-       ${field('auth-pw', 53.8, 'Mot de passe', 'type="password" autocomplete="current-password"')}
-       <button class="ui-hot" id="auth-submit" style="left:8.1%;top:72.3%;width:83.9%;height:15.6%" aria-label="Se connecter"></button>`
-    : `${field('auth-email', 24.6, 'Adresse email', 'type="email" autocomplete="email" inputmode="email"')}
-       ${field('auth-username', 37.5, 'Pseudo', 'maxlength="16" autocomplete="nickname"')}
-       ${field('auth-pw', 50.4, 'Mot de passe', 'type="password" autocomplete="new-password"')}
-       ${field('auth-pw2', 63.3, 'Confirmer le mot de passe', 'type="password"')}
-       <button class="ui-hot" id="auth-submit" style="left:8.5%;top:74.4%;width:83%;height:12.6%" aria-label="S'inscrire"></button>`;
+    ? `${field('auth-email', 34, 'Adresse email', 'type="email" autocomplete="email" inputmode="email"')}
+       ${field('auth-pw', 53.7, 'Mot de passe', 'type="password" autocomplete="current-password"')}
+       <button class="ui-hot" id="auth-submit" style="left:7.9%;top:71.5%;width:84.1%;height:15.1%" aria-label="Se connecter"></button>`
+    : `${field('auth-email', 25.7, 'Adresse email', 'type="email" autocomplete="email" inputmode="email"')}
+       ${field('auth-username', 39.3, 'Pseudo', 'maxlength="16" autocomplete="nickname"')}
+       ${field('auth-pw', 52.9, 'Mot de passe', 'type="password" autocomplete="new-password"')}
+       ${field('auth-pw2', 66.5, 'Confirmer le mot de passe', 'type="password"')}
+       <button class="ui-hot" id="auth-submit" style="left:8.8%;top:78.5%;width:82.3%;height:12.3%" aria-label="S'inscrire"></button>`;
   qid('modal-root').innerHTML = `<div class="modal-bg"><div class="ui-panel ${login?'ui-login':'ui-register'}">
     <button class="cactus-close" onclick="qid('modal-root').innerHTML=''" aria-label="Fermer" title="Fermer"></button>
     ${tabs}${body}
