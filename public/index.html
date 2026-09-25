@@ -555,12 +555,10 @@ body[data-screen="lobby"] #profile-btn{display:block}
    quand on passe d'un panneau à l'autre. Les panneaux, eux, sont centrés sur un
    même point, donc ils grandissent vers le haut et vers le bas sans rien pousser. */
 #s-lobby > .ui-logo{position:absolute;top:96px;left:50%;transform:translateX(-50%)}
-#home-account,#lobby-main,#auth-host,#lobby-waiting{position:absolute;left:50%;top:630px;transform:translate(-50%,-50%)}
-/* Connexion / Inscription sont les plus hauts des panneaux : on les remonte un peu. */
-#auth-host{top:588px}
-/* La salle d'attente s'allonge avec le nombre de joueurs : elle est accrochee par
-   le haut, juste sous le trait du titre, au lieu d'etre centree. */
-#lobby-waiting{top:356px;transform:translateX(-50%)}
+#home-account,#lobby-main,#auth-host{position:absolute;left:50%;top:356px;transform:translateX(-50%)}
+/* La salle d'attente grandit avec le nombre de joueurs : elle est centree dans
+   l'ecran, quitte a passer devant le titre, plutot que de descendre trop bas. */
+#lobby-waiting{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)}
 .lobby-box{
   background:rgba(0,0,0,.4);
   border:1px solid rgba(255,255,255,.1);
