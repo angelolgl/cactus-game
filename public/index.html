@@ -295,7 +295,7 @@ body[data-screen="lobby"] #profile-btn{display:block}
 /* The card artwork is a fixed 1473x794 image (public/profile-card-bg.webp). Every slot below
    is placed on a frame painted in it, so these values must be re-measured if the image changes. */
 .profil-card{position:relative;width:1473px;height:794px;flex-shrink:0;background:url('/profile-card-bg.webp') center/100% 100% no-repeat;filter:drop-shadow(0 24px 50px rgba(0,0,0,.6));font-family:'Playfair Display',serif;color:#0b221c;font-variant-numeric:lining-nums;animation:slideUp .3s cubic-bezier(.34,1.56,.64,1) both}
-.cactus-close{position:absolute;width:44px;height:44px;padding:0;border:0;background:url('/close-cactus.webp?v=6') center/contain no-repeat;cursor:pointer;filter:drop-shadow(0 3px 5px rgba(0,0,0,.35));transition:transform .18s ease}
+.cactus-close{position:absolute;width:44px;height:44px;padding:0;border:0;background:url('/close-cactus.webp?v=7') center/contain no-repeat;cursor:pointer;filter:drop-shadow(0 3px 5px rgba(0,0,0,.35));transition:transform .18s ease}
 .cactus-close:hover{transform:scale(1.1)}
 .cactus-close:active{transform:scale(.95)}
 .pc-close{top:30px;right:36px;width:56px;height:56px}
@@ -2989,7 +2989,7 @@ function renderWaiting(){
   const n = Math.min(5, Math.max(1, lobbyPlayers.length || 1));
   const g = WAIT_GEO[n];
   const H = WAIT_MAX_H, W = Math.round(H * g.w / g.h);
-  el.style.backgroundImage = "url('/ui-wait-" + n + ".webp?v=6')";
+  el.style.backgroundImage = "url('/ui-wait-" + n + ".webp?v=7')";
   el.style.width = W + 'px';
   el.style.height = H + 'px';
 
