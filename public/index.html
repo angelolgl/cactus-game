@@ -540,6 +540,31 @@ body[data-screen="lobby"] #profile-btn{display:block}
   font-family:'Poppins',sans-serif;font-size:14px;color:#ff9a86;min-height:18px}
 
 
+
+/* ── SALLE D'ATTENTE (maquettes ui-wait-1..5) ── */
+.ui-wait{font-family:'Poppins',sans-serif}
+.wt-quit{position:absolute;left:74.2%;width:20.6%}
+.wt-code{position:absolute;left:0;right:0;text-align:center;font-family:'Playfair Display',serif;
+  font-weight:700;color:#f7d98c;letter-spacing:.04em;line-height:1;text-shadow:0 2px 6px rgba(0,0,0,.5)}
+.wt-row{position:absolute;left:5.2%;right:5.2%;display:flex;align-items:center;border-radius:14px;
+  background:#12281c;color:#f4d79a;overflow:hidden}
+.wt-num{flex-shrink:0;text-align:center;font-weight:600;color:#f4d79a}
+.wt-av{flex-shrink:0;border-radius:50%;overflow:hidden;border:2px solid #d9a441;
+  background:radial-gradient(circle at 50% 40%,#f6e2ae,#e2b867);box-shadow:0 1px 4px rgba(0,0,0,.45)}
+.wt-av img{width:100%;height:141%;object-fit:cover;object-position:center top;display:block}
+.wt-name{min-width:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wt-moi{flex-shrink:0;color:rgba(244,215,154,.6)}
+.wt-host{margin-left:auto;flex-shrink:0;color:#f7d98c;font-weight:600}
+.wt-row.off{opacity:.55}
+.wt-cc{position:absolute;font-family:'Playfair Display',serif;font-weight:700;color:#2a1c06;
+  background:transparent;display:flex;align-items:center;justify-content:center}
+.wt-go{position:absolute;left:5%;width:90%}
+/* Quand la partie peut etre lancee, on recouvre le texte peint « En attente de
+   joueurs… » par le libelle du bouton, sur le meme dore. */
+.wt-go.pret{display:flex;align-items:center;justify-content:center;border-radius:12px;
+  background:linear-gradient(180deg,#f9cd61 0%,#f3c661 38%,#e0a94c 72%,#d0a34e 100%);
+  color:#2a1c06;font-family:'Playfair Display',serif;font-weight:700}
+
 /* ── LOBBY ── */
 #s-lobby{
   position:absolute;
@@ -1230,17 +1255,18 @@ body.anim-lock #react-dock{ pointer-events:auto; }
        précédent au lieu de s'ouvrir par-dessus. -->
   <div id="auth-host" style="display:none"></div>
 
-  <div class="lobby-box" id="lobby-waiting" style="display:none">
-    <div class="lw-head"><h2>Salle d'attente</h2><button class="lw-quit" onclick="leaveWaiting()">Quitter</button></div>
-    <div style="font-family:'Playfair Display',serif;font-size:42px;color:var(--gold-light);letter-spacing:.15em;text-align:center;text-shadow:0 2px 8px rgba(0,0,0,.5);margin:12px 0" id="lobby-code-display">----</div>
-    <p style="color:rgba(255,255,255,.4);font-size:12px;text-align:center">Partagez ce code</p>
-    <div style="display:flex;flex-direction:column;gap:8px;margin:16px 0;min-height:50px" id="lobby-players-list"></div>
+  <!-- SALLE D'ATTENTE : maquettes public/ui-wait-1..5.webp selon le nombre de
+       joueurs. Tout ce qui change (code, noms, avatars, nombre de cartes) est
+       pose par-dessus, aux positions mesurees sur chaque image. -->
+  <div class="ui-panel ui-wait" id="lobby-waiting" style="display:none">
+    <button class="ui-hot wt-quit" onclick="leaveWaiting()" aria-label="Quitter"></button>
+    <div class="wt-code" id="lobby-code-display">----</div>
+    <div id="lobby-players-list"></div>
     <div id="host-controls" style="display:none">
-      <div class="slabel" style="margin-bottom:8px">Cartes par joueur</div>
-      <div class="row-btns" id="lobby-cc-btns" style="justify-content:center;flex-wrap:wrap;gap:6px;margin-bottom:14px"></div>
-      <button class="start-btn" id="btn-start-game" onclick="startGame()">Lancer la partie →</button>
+      <button class="ui-hot wt-cc" id="lobby-cc-btns" onclick="cycleCardCount()" aria-label="Cartes par joueur"></button>
+      <button class="ui-hot wt-go" id="btn-start-game" onclick="startGame()" aria-label="Lancer la partie"></button>
     </div>
-    <div style="color:rgba(255,255,255,.4);font-size:13px;text-align:center;margin-top:8px" id="waiting-msg">En attente du lancement par l'hôte...</div>
+    <div id="waiting-msg" style="display:none"></div>
   </div>
 </div>
 
@@ -2900,15 +2926,6 @@ function leaveWaiting(){
 // La salle d'attente grandit avec le nombre de joueurs. Elle part sous le trait
 // du titre et ne doit jamais descendre plus bas que l'ornement peint en bas du
 // cadre : au-delà, on la réduit d'un bloc plutôt que de la laisser deborder.
-function fitWaiting(){
-  const el = qid('lobby-waiting');
-  if (!el || el.style.display === 'none') return;
-  el.style.transform = 'translateX(-50%)';
-  const libre = 431;                       // de 382 (sous le titre) a 813
-  const h = el.offsetHeight;
-  const k = h > libre ? libre / h : 1;
-  el.style.transform = 'translateX(-50%)' + (k < 1 ? ' scale(' + k.toFixed(3) + ')' : '');
-}
 
 function showWaiting(code, host) {
   isHost = host;
@@ -2917,8 +2934,8 @@ function showWaiting(code, host) {
   qid('lobby-waiting').style.display='block';
   qid('lobby-code-display').textContent = code;
   qid('host-controls').style.display = host ? 'block' : 'none';
-  qid('waiting-msg').style.display = host ? 'none' : 'block';
-  fitWaiting();
+  qid('host-controls').style.display = host ? 'block' : 'none';
+  renderWaiting();
 }
 
 let selectedCC = 4;
@@ -2956,56 +2973,108 @@ function refreshFriendBadge(){
   tag.textContent = n;
 }
 
+// Repères mesurés sur chaque maquette de salle d'attente (en % de l'image) :
+// une image par nombre de joueurs, le reste est posé dessus.
+const WAIT_GEO = {
+  1:{w:882,h:1212,rows:[45.2],rowH:9.7,code:[24.8,7.7],cc:[67.4,7.7],go:[86.4,8.3],quit:[7.3,5.7]},
+  2:{w:885,h:1289,rows:[42.8,51.7],rowH:9.0,code:[23.6,7.3],cc:[73.2,7.1],go:[87.0,7.9],quit:[6.8,5.4]},
+  3:{w:884,h:1362,rows:[40.2,49.8,57.9],rowH:8.3,code:[22.2,6.8],cc:[77.1,6.4],go:[88.9,7.3],quit:[6.5,5.1]},
+  4:{w:893,h:1372,rows:[34.3,43.4,52.0,60.6],rowH:7.6,code:[22.0,6.8],cc:[77.3,6.3],go:[89.0,7.1],quit:[6.4,5.0]},
+  5:{w:889,h:1422,rows:[31.8,39.6,47.2,54.7,62.3],rowH:6.7,code:[21.2,6.5],cc:[77.5,6.0],go:[89.3,6.9],quit:[6.2,4.9]},
+};
+const WAIT_MAX_H = 431;   // hauteur libre entre le trait du titre et l'ornement du bas
+
+function renderWaiting(){
+  const el = qid('lobby-waiting');
+  if (!el) return;
+  const n = Math.min(5, Math.max(1, lobbyPlayers.length || 1));
+  const g = WAIT_GEO[n];
+  const H = WAIT_MAX_H, W = Math.round(H * g.w / g.h);
+  el.style.backgroundImage = "url('/ui-wait-" + n + ".webp?v=3')";
+  el.style.width = W + 'px';
+  el.style.height = H + 'px';
+
+  // Code de la salle
+  const c = qid('lobby-code-display');
+  c.style.top = g.code[0] + '%';
+  c.style.fontSize = (g.code[1] / 100 * H * 1.05).toFixed(1) + 'px';
+
+  // Bouton Quitter et case des cartes
+  const q = el.querySelector('.wt-quit');
+  q.style.top = g.quit[0] + '%'; q.style.height = g.quit[1] + '%';
+  const cc = qid('lobby-cc-btns');
+  cc.style.left = '42.4%'; cc.style.width = '15.2%';
+  cc.style.top = g.cc[0] + '%'; cc.style.height = g.cc[1] + '%';
+  cc.style.fontSize = (g.cc[1] / 100 * H * 0.62).toFixed(1) + 'px';
+  const go = qid('btn-start-game');
+  go.style.top = g.go[0] + '%'; go.style.height = g.go[1] + '%';
+  go.style.fontSize = (g.go[1] / 100 * H * 0.42).toFixed(1) + 'px';
+
+  // Lignes de joueurs : on recouvre la ligne peinte pour y mettre le vrai joueur
+  const liste = qid('lobby-players-list');
+  const rowH = g.rowH / 100 * H;
+  liste.innerHTML = lobbyPlayers.map((p, i) => {
+    const haut = g.rows[Math.min(i, g.rows.length - 1)];
+    const moi = i === myIndex;
+    const hote = i === hostIndex;
+    return '<div class="wt-row' + (p.connected === false ? ' off' : '') + '" onclick="openLobbyMenu(event, ' + i + ')"' +
+      ' style="top:' + haut + '%;height:' + g.rowH + '%;padding:0 ' + (rowH * .32).toFixed(0) + 'px;' +
+      'font-size:' + (rowH * .34).toFixed(1) + 'px;gap:' + (rowH * .22).toFixed(0) + 'px">' +
+      '<span class="wt-num" style="width:' + (rowH * .55).toFixed(0) + 'px">' + (i + 1) + '.</span>' +
+      '<span class="wt-av" style="width:' + (rowH * .66).toFixed(0) + 'px;height:' + (rowH * .66).toFixed(0) + 'px">' +
+        '<img src="' + avatarImg(typeof p.avatar === 'number' ? p.avatar : null) + '" alt=""></span>' +
+      '<span class="wt-name">' + escapeHtml(p.name) + '</span>' +
+      (moi ? '<span class="wt-moi" style="font-size:' + (rowH * .26).toFixed(1) + 'px">(toi)</span>' : '') +
+      (hote ? '<span class="wt-host">Hôte</span>' : '') +
+      (p.connected === false ? '<span class="wt-moi" style="margin-left:auto;font-size:' + (rowH * .24).toFixed(1) + 'px">reconnexion...</span>' : '') +
+      '</div>';
+  }).join('');
+}
+
 function updateLobbyPlayers(players, host) {
   // players peut être un tableau de chaînes (ancien) ou d'objets {name, avatar}.
   const norm = (players || []).map(p => (typeof p === 'string') ? { name: p, avatar: null } : p);
   lobbyPlayers = norm;
   if (typeof host === 'number') hostIndex = host;
   isHost = (myIndex === hostIndex);
-  qid('lobby-players-list').innerHTML = norm.map((p,i) =>
-    `<div class="lobby-row" onclick="openLobbyMenu(event, ${i})" style="background:rgba(255,255,255,.08);border-radius:8px;padding:8px 14px;font-size:14px;display:flex;align-items:center;gap:8px${p.connected === false ? ';opacity:.5' : ''}">
-      <span>${i+1}.</span>
-      <img class="lobby-av" src="${avatarImg(typeof p.avatar==='number'?p.avatar:null)}" alt="">
-      <strong${i === myIndex ? ' style="color:var(--gold-light)"' : ''}>${p.name}</strong>${i === myIndex ? '<span style="font-size:11px;color:rgba(240,201,110,.65);margin-left:2px">(toi)</span>' : ''}${p.connected === false ? '<span style="font-size:11px;font-style:italic;margin-left:2px">reconnexion...</span>' : ''}
-      ${i===hostIndex?'<span style="margin-left:auto;font-size:11px;color:var(--gold-light)">Hôte</span>':''}
-    </div>`).join('');
   // Garde myAvatar en phase avec le serveur (utile après reconnexion)
   if (myIndex >= 0 && norm[myIndex] && typeof norm[myIndex].avatar === 'number') {
     myAvatar = norm[myIndex].avatar; refreshMyAvatarUI();
   }
-  // Reflect host status on the lobby controls (handles host transfer)
   const waiting = qid('lobby-waiting');
   if (waiting && waiting.style.display !== 'none') {
     qid('host-controls').style.display = isHost ? 'block' : 'none';
-    qid('waiting-msg').style.display = isHost ? 'none' : 'block';
   }
-  if (isHost) updateCardCountOptions(norm.length);
-  fitWaiting();
+  updateCardCountOptions(norm.length);
+  renderWaiting();
 }
 
-function updateCardCountOptions(n) {
-  let min=4, max=4;
-  if (n===2) { min=4; max=8; }
-  else if (n===3) { min=4; max=5; }
-  else { min=4; max=4; }
-  const btns = qid('lobby-cc-btns');
-  btns.innerHTML = '';
-  for (let c=min; c<=max; c++) {
-    const b = document.createElement('button');
-    b.className = 'cbtn cbc' + (c===min?' sel':'');
-    b.textContent = c;
-    b.onclick = () => {
-      document.querySelectorAll('#lobby-cc-btns .cbc').forEach(x=>x.classList.remove('sel'));
-      b.classList.add('sel'); selectedCC = c;
-    };
-    btns.appendChild(b);
-  }
-  selectedCC = min;
-  // Disable start if less than 2 players
-  qid('btn-start-game').disabled = n < 2;
-  qid('btn-start-game').style.opacity = n < 2 ? '0.5' : '1';
-  qid('btn-start-game').textContent = n < 2 ? 'En attente de joueurs...' : 'Lancer la partie →';
+// Le nombre de cartes tient dans une seule case peinte : un clic passe à la
+// valeur suivante autorisée (4 à 8 à deux joueurs, 4 ou 5 à trois, 4 au delà).
+function cardCountRange(n){
+  if (n === 2) return [4,5,6,7,8];
+  if (n === 3) return [4,5];
+  return [4];
 }
+function updateCardCountOptions(n) {
+  const choix = cardCountRange(n);
+  if (!choix.includes(selectedCC)) selectedCC = choix[0];
+  const cc = qid('lobby-cc-btns');
+  if (cc) { cc.textContent = selectedCC; cc.style.cursor = choix.length > 1 ? 'pointer' : 'default'; }
+  const go = qid('btn-start-game');
+  if (go) {
+    const pret = n >= 2;
+    go.classList.toggle('pret', pret);
+    go.textContent = pret ? 'Lancer la partie' : '';
+    go.style.pointerEvents = pret ? 'auto' : 'none';
+  }
+}
+function cycleCardCount(){
+  const choix = cardCountRange(lobbyPlayers.length);
+  selectedCC = choix[(choix.indexOf(selectedCC) + 1) % choix.length];
+  updateCardCountOptions(lobbyPlayers.length);
+}
+
 
 function startGame() {
   if (lobbyPlayers.length < 2) return;
