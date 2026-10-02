@@ -295,7 +295,7 @@ body[data-screen="lobby"] #profile-btn{display:block}
 /* The card artwork is a fixed 1473x794 image (public/profile-card-bg.webp). Every slot below
    is placed on a frame painted in it, so these values must be re-measured if the image changes. */
 .profil-card{position:relative;width:1473px;height:794px;flex-shrink:0;background:url('/profile-card-bg.webp') center/100% 100% no-repeat;filter:drop-shadow(0 24px 50px rgba(0,0,0,.6));font-family:'Playfair Display',serif;color:#0b221c;font-variant-numeric:lining-nums;animation:slideUp .3s cubic-bezier(.34,1.56,.64,1) both}
-.cactus-close{position:absolute;width:44px;height:44px;padding:0;border:0;background:url('/close-cactus.webp?v=4') center/contain no-repeat;cursor:pointer;filter:drop-shadow(0 3px 5px rgba(0,0,0,.35));transition:transform .18s ease}
+.cactus-close{position:absolute;width:44px;height:44px;padding:0;border:0;background:url('/close-cactus.webp?v=5') center/contain no-repeat;cursor:pointer;filter:drop-shadow(0 3px 5px rgba(0,0,0,.35));transition:transform .18s ease}
 .cactus-close:hover{transform:scale(1.1)}
 .cactus-close:active{transform:scale(.95)}
 .pc-close{top:30px;right:36px;width:56px;height:56px}
@@ -546,15 +546,14 @@ body[data-screen="lobby"] #profile-btn{display:block}
 .wt-quit{position:absolute;left:74.2%;width:20.6%}
 .wt-code{position:absolute;left:0;right:0;text-align:center;font-family:'Playfair Display',serif;
   font-weight:700;color:#f7d98c;letter-spacing:.04em;line-height:1;text-shadow:0 2px 6px rgba(0,0,0,.5)}
-.wt-row{position:absolute;left:5.2%;right:5.2%;display:flex;align-items:center;border-radius:14px;
-  background:#12281c;color:#f4d79a;overflow:hidden}
-.wt-num{flex-shrink:0;text-align:center;font-weight:600;color:#f4d79a}
-.wt-av{flex-shrink:0;border-radius:50%;overflow:hidden;border:2px solid #d9a441;
-  background:radial-gradient(circle at 50% 40%,#f6e2ae,#e2b867);box-shadow:0 1px 4px rgba(0,0,0,.45)}
+.wt-row{position:absolute;left:0;right:0;cursor:pointer}
+.wt-av{position:absolute;border-radius:50%;overflow:hidden}
 .wt-av img{width:100%;height:141%;object-fit:cover;object-position:center top;display:block}
-.wt-name{min-width:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.wt-moi{flex-shrink:0;color:rgba(244,215,154,.6)}
-.wt-host{margin-left:auto;flex-shrink:0;color:#f7d98c;font-weight:600}
+.wt-txt{position:absolute;left:28%;right:6.5%;top:0;bottom:0;display:flex;align-items:center;gap:.5em;
+  color:#f4d79a;font-family:'Poppins',sans-serif;font-weight:600}
+.wt-name{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wt-moi{flex-shrink:0;font-weight:400;font-size:.76em;color:rgba(244,215,154,.6)}
+.wt-host{margin-left:auto;flex-shrink:0;color:#f7d98c}
 .wt-row.off{opacity:.55}
 .wt-cc{position:absolute;font-family:'Playfair Display',serif;font-weight:700;color:#2a1c06;
   background:transparent;display:flex;align-items:center;justify-content:center}
@@ -2976,11 +2975,11 @@ function refreshFriendBadge(){
 // Repères mesurés sur chaque maquette de salle d'attente (en % de l'image) :
 // une image par nombre de joueurs, le reste est posé dessus.
 const WAIT_GEO = {
-  1:{w:882,h:1212,rows:[45.2],rowH:9.7,code:[24.8,7.7],cc:[67.4,7.7],go:[86.4,8.3],quit:[7.3,5.7]},
-  2:{w:885,h:1289,rows:[42.8,51.7],rowH:9.0,code:[23.6,7.3],cc:[73.2,7.1],go:[87.0,7.9],quit:[6.8,5.4]},
-  3:{w:884,h:1362,rows:[40.2,49.8,57.9],rowH:8.3,code:[22.2,6.8],cc:[77.1,6.4],go:[88.9,7.3],quit:[6.5,5.1]},
-  4:{w:893,h:1372,rows:[34.3,43.4,52.0,60.6],rowH:7.6,code:[22.0,6.8],cc:[77.3,6.3],go:[89.0,7.1],quit:[6.4,5.0]},
-  5:{w:889,h:1422,rows:[31.8,39.6,47.2,54.7,62.3],rowH:6.7,code:[21.2,6.5],cc:[77.5,6.0],go:[89.3,6.9],quit:[6.2,4.9]},
+  1:{w:882,h:1212,rows:[45.2],rowH:9.7,code:[24.83,7.68],cc:[67.4,7.7],go:[86.4,8.3],quit:[7.3,5.7]},
+  2:{w:885,h:1289,rows:[42.8,51.7],rowH:9.0,code:[23.66,7.22],cc:[73.2,7.1],go:[87.0,7.9],quit:[6.8,5.4]},
+  3:{w:884,h:1362,rows:[40.2,49.8,57.9],rowH:8.3,code:[22.25,6.82],cc:[77.1,6.4],go:[88.9,7.3],quit:[6.5,5.1]},
+  4:{w:893,h:1372,rows:[34.3,43.4,52.0,60.6],rowH:7.6,code:[19.83,6.85],cc:[77.3,6.3],go:[89.0,7.1],quit:[6.4,5.0]},
+  5:{w:889,h:1422,rows:[31.8,39.6,47.2,54.7,62.3],rowH:6.7,code:[18.50,6.54],cc:[77.5,6.0],go:[89.3,6.9],quit:[6.2,4.9]},
 };
 const WAIT_MAX_H = 431;   // hauteur libre entre le trait du titre et l'ornement du bas
 
@@ -2990,7 +2989,7 @@ function renderWaiting(){
   const n = Math.min(5, Math.max(1, lobbyPlayers.length || 1));
   const g = WAIT_GEO[n];
   const H = WAIT_MAX_H, W = Math.round(H * g.w / g.h);
-  el.style.backgroundImage = "url('/ui-wait-" + n + ".webp?v=3')";
+  el.style.backgroundImage = "url('/ui-wait-" + n + ".webp?v=5')";
   el.style.width = W + 'px';
   el.style.height = H + 'px';
 
@@ -3010,24 +3009,26 @@ function renderWaiting(){
   go.style.top = g.go[0] + '%'; go.style.height = g.go[1] + '%';
   go.style.fontSize = (g.go[1] / 100 * H * 0.42).toFixed(1) + 'px';
 
-  // Lignes de joueurs : on recouvre la ligne peinte pour y mettre le vrai joueur
+  // Les lignes sont peintes dans l'image (cadre, numero, medaillon) : on ne pose
+  // que l'avatar dans le medaillon et le texte dans la zone laissee libre.
   const liste = qid('lobby-players-list');
-  const rowH = g.rowH / 100 * H;
+  const rowH = g.rowH / 100 * H;              // hauteur d'une ligne, en pixels
+  const avH = (g.rowH * 0.78).toFixed(2);     // l'avatar tient dans le rond dore
+  const avW = (avH * H / W).toFixed(2);
   liste.innerHTML = lobbyPlayers.map((p, i) => {
     const haut = g.rows[Math.min(i, g.rows.length - 1)];
-    const moi = i === myIndex;
-    const hote = i === hostIndex;
+    const moi = i === myIndex, hote = i === hostIndex;
+    const centre = (haut + g.rowH / 2).toFixed(2);
     return '<div class="wt-row' + (p.connected === false ? ' off' : '') + '" onclick="openLobbyMenu(event, ' + i + ')"' +
-      ' style="top:' + haut + '%;height:' + g.rowH + '%;padding:0 ' + (rowH * .32).toFixed(0) + 'px;' +
-      'font-size:' + (rowH * .34).toFixed(1) + 'px;gap:' + (rowH * .22).toFixed(0) + 'px">' +
-      '<span class="wt-num" style="width:' + (rowH * .55).toFixed(0) + 'px">' + (i + 1) + '.</span>' +
-      '<span class="wt-av" style="width:' + (rowH * .66).toFixed(0) + 'px;height:' + (rowH * .66).toFixed(0) + 'px">' +
+      ' style="top:' + haut + '%;height:' + g.rowH + '%">' +
+      '<span class="wt-av" style="left:15.6%;width:' + avW + '%;top:' + (Number(centre) - Number(avH) / 2).toFixed(2) + '%;height:' + avH + '%">' +
         '<img src="' + avatarImg(typeof p.avatar === 'number' ? p.avatar : null) + '" alt=""></span>' +
-      '<span class="wt-name">' + escapeHtml(p.name) + '</span>' +
-      (moi ? '<span class="wt-moi" style="font-size:' + (rowH * .26).toFixed(1) + 'px">(toi)</span>' : '') +
-      (hote ? '<span class="wt-host">Hôte</span>' : '') +
-      (p.connected === false ? '<span class="wt-moi" style="margin-left:auto;font-size:' + (rowH * .24).toFixed(1) + 'px">reconnexion...</span>' : '') +
-      '</div>';
+      '<span class="wt-txt" style="font-size:' + (rowH * 0.36).toFixed(1) + 'px">' +
+        '<span class="wt-name">' + escapeHtml(p.name) + '</span>' +
+        (moi ? '<span class="wt-moi">(toi)</span>' : '') +
+        (p.connected === false ? '<span class="wt-moi">reconnexion...</span>' : '') +
+        (hote ? '<span class="wt-host">Hôte</span>' : '') +
+      '</span></div>';
   }).join('');
 }
 
