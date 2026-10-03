@@ -58,8 +58,9 @@ function reassignHost(room) {
 }
 
 // ── Waiting room helpers ──
-// How long a seat in the waiting room is kept for a player whose connection dropped.
-const LOBBY_GRACE_MS = 20000;
+// Combien de temps une place est gardee dans la salle d'attente quand la connexion
+// d'un joueur saute (changer d'onglet suffit a faire tomber la connexion).
+const LOBBY_GRACE_MS = 45000;
 function lobbyPayload(room) {
   return {
     players: room.players.map(p => ({ name: p.name, avatar: p.avatar, connected: p.connected !== false,
